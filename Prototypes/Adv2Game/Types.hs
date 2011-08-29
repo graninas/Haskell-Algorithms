@@ -2,18 +2,26 @@ module Types where
 
 import qualified Data.Map as M
 
-(=|>) :: Monad m => m a -> m a -> [m a]
-(=|>) = undefined
-(~->) :: Monad m => String -> m a -> m a
-(~->) = undefined
 
-infixl 0 =|>
+removeProperty = undefined
+
+(|>) :: a -> a -> [a]
+x |> y = x : [y]
+
+(~->) :: a -> b -> (a, b)
+x ~-> y = (x, y)
+
+infixl 0 |>
 infixl 1 ~->
+
+get = undefined
+put = undefined
 
 setState :: Monad m => String -> m a
 setState = undefined
 
-delProp  = undefined
+delProp :: Monad m => String -> a -> m a
+delProp = undefined
 
 mapSubObjects  = undefined
 enableProperty = undefined
@@ -22,16 +30,19 @@ noP = undefined
 
 getProperty = undefined
 
-prop :: Monad m => String -> String -> m a
-prop = case getProperty "lockable" of
-		"locked" -> \x -> case x of
-						"unlock" -> setState "unlocked"
-						"break"  -> delProp "lockable" >>= mapSubObjects enableProperty
-		"unlocked" -> \_ -> noP
+prop :: Monad m => a -> [(String, m a)]
+prop = \o -> case getProperty "lockable" o of
+		"locked" -> "unlock" ~-> setState "unlocked" |>
+					"break"  ~-> do
+									delProp "lockable" o
+									mapSubObjects enableProperty o
+		"unlocked" -> []
 
 
-prop' :: Monad m => [m a]
-prop' = case getProperty "lockable" of
-		"locked" -> "unlock" ~-> setState "unlocked" =|>
-					"break" ~->  delProp "lockable" >>= mapSubObjects enableProperty
-		"unlocked" -> noP
+
+data Object a = Object
+	{
+		properties :: a
+	}
+
+myObject = Object {properties = [lockable locked, openable closed]}
