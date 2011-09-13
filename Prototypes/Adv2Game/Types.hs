@@ -40,6 +40,11 @@ prop = \o -> case getProperty "lockable" o of
 
 
 
+lockable = undefined
+locked = undefined
+openable = undefined
+closed = undefined
+
 data Object a = Object
 	{
 		properties :: a
