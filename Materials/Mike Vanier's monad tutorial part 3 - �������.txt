@@ -11,11 +11,11 @@ graninas@gmail.com
 
 Давайте взглянем на всё определение класса типов Monad:
 
-  class Monad m where
-    (>>=) :: m a -> (a -> m b) -> m b
-    return :: a -> m a
-    (>>) :: m a -> m b -> m b
-    fail :: String -> m a
+<blockquote><font>class</font>&nbsp;<font color="#cccc00">Monad</font>&nbsp;m&nbsp;<font>where</font><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<font>&#40;</font><font color="#339933">&gt;&gt;=</font><font>&#41;</font>&nbsp;<font color="#339933">::</font>&nbsp;m&nbsp;a&nbsp;<font color="#339933">-&gt;</font>&nbsp;<font>&#40;</font>a&nbsp;<font color="#339933">-&gt;</font>&nbsp;m&nbsp;b<font>&#41;</font>&nbsp;<font color="#339933">-&gt;</font>&nbsp;m&nbsp;b<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<font>return</font>&nbsp;<font color="#339933">::</font>&nbsp;a&nbsp;<font color="#339933">-&gt;</font>&nbsp;m&nbsp;a<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<font>&#40;</font><font color="#339933">&gt;&gt;</font><font>&#41;</font>&nbsp;<font color="#339933">::</font>&nbsp;m&nbsp;a&nbsp;<font color="#339933">-&gt;</font>&nbsp;m&nbsp;b&nbsp;<font color="#339933">-&gt;</font>&nbsp;m&nbsp;b<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<font>fail</font>&nbsp;<font color="#339933">::</font>&nbsp;<font color="#cccc00">String</font>&nbsp;<font color="#339933">-&gt;</font>&nbsp;m&nbsp;a</blockquote>
 
 Мы видим знакомое: оператор >>= и функцию return с теми же типами, но кроме них есть еще оператор >> и функция fail. Что они означают?
 
@@ -23,44 +23,44 @@ graninas@gmail.com
 
 Оператор >> немного интереснее. У него такой тип:
 
-(>>) :: m a -> m b -> m b
+<blockquote><font>&#40;</font><font color="#339933">&gt;&gt;</font><font>&#41;</font>&nbsp;<font color="#339933">::</font>&nbsp;m&nbsp;a&nbsp;<font color="#339933">-&gt;</font>&nbsp;m&nbsp;b&nbsp;<font color="#339933">-&gt;</font>&nbsp;m&nbsp;b</blockquote>
 
 Этот оператор представляет собой монадический оператор последовательности. В частности, это вариант монадического применения (>>= или "bind"), который отбрасывает распакованное значение типа a перед выполнением "действия" типа m b. Он определен следующим образом:
 
-mv1 >> mv2  =  mv1 >>= (\_ -> mv2)
+<blockquote>mv1&nbsp;<font color="#339933">&gt;&gt;</font>&nbsp;mv2&nbsp;&nbsp;<font color="#339933">=</font>&nbsp;&nbsp;mv1&nbsp;<font color="#339933">&gt;&gt;=</font>&nbsp;<font>&#40;</font>\<font color="#339933">_</font>&nbsp;<font color="#339933">-&gt;</font>&nbsp;mv2<font>&#41;</font></blockquote>
 
 Мы можем видеть здесь, что любое значение, распакованное из монадического значения mv1, отвергается, и потом возвращается финальное монадическое значение mv2. Оператор бывает полезным, когда тип распакованного значения равен (), то есть, является пустым типом. Хорошим примером можно считать функцию putStrLn:
 
-putStrLn :: String -> IO ()
+<blockquote><font>putStrLn</font>&nbsp;<font color="#339933">::</font>&nbsp;<font color="#cccc00">String</font>&nbsp;<font color="#339933">-&gt;</font>&nbsp;<font color="#cccc00">IO</font>&nbsp;<font>&#40;</font><font>&#41;</font></blockquote>
 
 Представьте, что вы хотите напечатать две строки, одну за другой, со знаками конца строки после каждой. Можно так:
 
-putStrLn "This is string 1." >> putStrLn "This is string 2."
+<blockquote><font>putStrLn</font>&nbsp;<font>&quot;This&nbsp;is&nbsp;string&nbsp;1.&quot;</font>&nbsp;<font color="#339933">&gt;&gt;</font>&nbsp;<font>putStrLn</font>&nbsp;<font>&quot;This&nbsp;is&nbsp;string&nbsp;2.&quot;</font></blockquote>
 
 И почему же это работает? Посмотрим на типы:
 
-(putStrLn "This is string 1.") :: IO ()
-(putStrLn "This is string 2.") :: IO ()
+<blockquote><font>&#40;</font><font>putStrLn</font>&nbsp;<font>&quot;This&nbsp;is&nbsp;string&nbsp;1.&quot;</font><font>&#41;</font>&nbsp;<font color="#339933">::</font>&nbsp;<font color="#cccc00">IO</font>&nbsp;<font>&#40;</font><font>&#41;</font><br/>
+<font>&#40;</font><font>putStrLn</font>&nbsp;<font>&quot;This&nbsp;is&nbsp;string&nbsp;2.&quot;</font><font>&#41;</font>&nbsp;<font color="#339933">::</font>&nbsp;<font color="#cccc00">IO</font>&nbsp;<font>&#40;</font><font>&#41;</font></blockquote>
 
 То есть, оператор >> комбинирует два монадических значения типа IO () в одно результирующее монадическое значение типа IO (). Давайте возьмем оператор >> и специализируем его для нашего случая:
 
-(>>) :: m a -> m b -> m b
+<blockquote><font>&#40;</font><font color="#339933">&gt;&gt;</font><font>&#41;</font>&nbsp;<font color="#339933">::</font>&nbsp;m&nbsp;a&nbsp;<font color="#339933">-&gt;</font>&nbsp;m&nbsp;b&nbsp;<font color="#339933">-&gt;</font>&nbsp;m&nbsp;b</blockquote>
 
 Если m - это IO, и a, и b - (), то получим:
 
-(>>) :: IO () -> IO () -> IO ()
+<blockquote><font>&#40;</font><font color="#339933">&gt;&gt;</font><font>&#41;</font>&nbsp;<font color="#339933">::</font>&nbsp;<font color="#cccc00">IO</font>&nbsp;<font>&#40;</font><font>&#41;</font>&nbsp;<font color="#339933">-&gt;</font>&nbsp;<font color="#cccc00">IO</font>&nbsp;<font>&#40;</font><font>&#41;</font>&nbsp;<font color="#339933">-&gt;</font>&nbsp;<font color="#cccc00">IO</font>&nbsp;<font>&#40;</font><font>&#41;</font></blockquote>
 
 По записи можно сказать, что, вероятно, оператор >> выполняет подряд два "действия" - печать строки.
 
 Теперь более сложный пример. Нам нужно считать строку текста с терминала и дважды ее напечатать. Мы можем сделать это так:
 
-readAndPrintLineTwice :: IO ()
-readAndPrintLineTwice = getLine >>= (\s -> (putStrLn s >> putStrLn s))
+<blockquote>readAndPrintLineTwice&nbsp;<font color="#339933">::</font>&nbsp;<font color="#cccc00">IO</font>&nbsp;<font>&#40;</font><font>&#41;</font><br/>
+readAndPrintLineTwice&nbsp;<font color="#339933">=</font>&nbsp;<font>getLine</font>&nbsp;<font color="#339933">&gt;&gt;=</font>&nbsp;<font>&#40;</font>\s&nbsp;<font color="#339933">-&gt;</font>&nbsp;<font>&#40;</font><font>putStrLn</font>&nbsp;s&nbsp;<font color="#339933">&gt;&gt;</font>&nbsp;<font>putStrLn</font>&nbsp;s<font>&#41;</font><font>&#41;</font></blockquote>
 
 Из-за приоритетов операторов запись можно оставить без скобок:
 
-readAndPrintLineTwice :: IO ()
-readAndPrintLineTwice = getLine >>= \s -> putStrLn s >> putStrLn s
+<blockquote>readAndPrintLineTwice&nbsp;<font color="#339933">::</font>&nbsp;<font color="#cccc00">IO</font>&nbsp;<font>&#40;</font><font>&#41;</font><br/>
+readAndPrintLineTwice&nbsp;<font color="#339933">=</font>&nbsp;<font>getLine</font>&nbsp;<font color="#339933">&gt;&gt;=</font>&nbsp;\s&nbsp;<font color="#339933">-&gt;</font>&nbsp;<font>putStrLn</font>&nbsp;s&nbsp;<font color="#339933">&gt;&gt;</font>&nbsp;<font>putStrLn</font>&nbsp;s</blockquote>
 
 Итак, что это значит? getLine - монадическое значение ("действие"), которое считывает строку текста с терминала. Оператор >>= "распаковывает" эту строку из монадического значения и связывает ее с именем s (потому что |\s -> putStrLn s >> putStrLn s| - это монадическая функция, второй аргумент оператора >>=). Затем строка, названная s, используется монадическим значением putStrLn s >> putStrLn s, которое ее последовательно печатает два раза.
 
@@ -74,13 +74,13 @@ readAndPrintLineTwice = getLine >>= \s -> putStrLn s >> putStrLn s
 
 Чтобы оператор >>= и функция return были правильными для определенной монады, они должны иметь корректные типы этой монады. Так, например, определения >>= и return для монады Maybe содержат ее тип:
 
-(>>=) :: Maybe a -> (a -> Maybe b) -> Maybe b
-return :: a -> Maybe a
+<blockquote><font>&#40;</font><font color="#339933">&gt;&gt;=</font><font>&#41;</font>&nbsp;<font color="#339933">::</font>&nbsp;<font color="#cccc00">Maybe</font>&nbsp;a&nbsp;<font color="#339933">-&gt;</font>&nbsp;<font>&#40;</font>a&nbsp;<font color="#339933">-&gt;</font>&nbsp;<font color="#cccc00">Maybe</font>&nbsp;b<font>&#41;</font>&nbsp;<font color="#339933">-&gt;</font>&nbsp;<font color="#cccc00">Maybe</font>&nbsp;b<br/>
+<font>return</font>&nbsp;<font color="#339933">::</font>&nbsp;a&nbsp;<font color="#339933">-&gt;</font>&nbsp;<font color="#cccc00">Maybe</font>&nbsp;a</blockquote>
 
 А для монады IO содержат тип IO:
 
-(>>=) :: IO a -> (a -> IO b) -> IO b
-return :: a -> IO b
+<blockquote><font>&#40;</font><font color="#339933">&gt;&gt;=</font><font>&#41;</font>&nbsp;<font color="#339933">::</font>&nbsp;<font color="#cccc00">IO</font>&nbsp;a&nbsp;<font color="#339933">-&gt;</font>&nbsp;<font>&#40;</font>a&nbsp;<font color="#339933">-&gt;</font>&nbsp;<font color="#cccc00">IO</font>&nbsp;b<font>&#41;</font>&nbsp;<font color="#339933">-&gt;</font>&nbsp;<font color="#cccc00">IO</font>&nbsp;b<br/>
+<font>return</font>&nbsp;<font color="#339933">::</font>&nbsp;a&nbsp;<font color="#339933">-&gt;</font>&nbsp;<font color="#cccc00">IO</font>&nbsp;b</blockquote>
 
 Однако, этого недостаточно. Эти функции/операторы также обязаны удовлетворять трем "монадным законам". Монадные законы на самом деле очень просты; они призваны гарантировать, что монадическая композиция будет работать предсказуемым образом. Сначала я дам вам "приятную" версию монадных законов, а затем покажу (уродливый) способ, как они обычно описываются. (Скажите мне спасибо: "приятный" вариант куда легче понять.)
 
@@ -88,9 +88,9 @@ return :: a -> IO b
 
 Вот приятное определение трех монадных законов, выраженных в терминах монадической композиции (вспомните, что оператор (>=>) - это монадический оператор композиции функций):
 
-1. return >=> f       ==    f
-2. f >=> return       ==    f
-3. (f >=> g) >=> h    ==    f >=> (g >=> h)
+<blockquote>1<font color="#339933">.</font>&nbsp;<font>return</font>&nbsp;<font color="#339933">&gt;=&gt;</font>&nbsp;f&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font color="#339933">==</font>&nbsp;&nbsp;&nbsp;&nbsp;f<br/>
+2<font color="#339933">.</font>&nbsp;f&nbsp;<font color="#339933">&gt;=&gt;</font>&nbsp;<font>return</font>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font color="#339933">==</font>&nbsp;&nbsp;&nbsp;&nbsp;f<br/>
+3<font color="#339933">.</font>&nbsp;<font>&#40;</font>f&nbsp;<font color="#339933">&gt;=&gt;</font>&nbsp;g<font>&#41;</font>&nbsp;<font color="#339933">&gt;=&gt;</font>&nbsp;h&nbsp;&nbsp;&nbsp;&nbsp;<font color="#339933">==</font>&nbsp;&nbsp;&nbsp;&nbsp;f&nbsp;<font color="#339933">&gt;=&gt;</font>&nbsp;<font>&#40;</font>g&nbsp;<font color="#339933">&gt;=&gt;</font>&nbsp;h<font>&#41;</font></blockquote>
 
 О чем эти законы говорят нам?
 
@@ -100,9 +100,9 @@ return :: a -> IO b
 
 Вам не кажутся эти законы смутно знакомыми? Взглянем на соответствующие "законы", которым удовлетворяет обычная функция композиции:
 
-1. id . f       ==  f
-2. f  . id      ==  f
-3. (f . g) . h  ==  f . (g . h)
+<blockquote>1<font color="#339933">.</font>&nbsp;<font>id</font>&nbsp;<font color="#339933">.</font>&nbsp;f&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font color="#339933">==</font>&nbsp;&nbsp;f<br/>
+2<font color="#339933">.</font>&nbsp;f&nbsp;&nbsp;<font color="#339933">.</font>&nbsp;<font>id</font>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font color="#339933">==</font>&nbsp;&nbsp;f<br/>
+3<font color="#339933">.</font>&nbsp;<font>&#40;</font>f&nbsp;<font color="#339933">.</font>&nbsp;g<font>&#41;</font>&nbsp;<font color="#339933">.</font>&nbsp;h&nbsp;&nbsp;<font color="#339933">==</font>&nbsp;&nbsp;f&nbsp;<font color="#339933">.</font>&nbsp;<font>&#40;</font>g&nbsp;<font color="#339933">.</font>&nbsp;h<font>&#41;</font></blockquote>
 
 где id - нейтральный элемент, единица. Уловили сходство? Композиция функции с единицей слева или справа даст снова ту же функцию, и функция композиции ассоциативна. Монадическая функция композиции должна быть ассоциативна, и return должен быть монадическим эквивалентом единичной функции, - чтобы поведение монадической композиции было таким же предсказуемым, как и поведение обычной композиции.
 
@@ -118,15 +118,15 @@ _Однако_, есть загвоздка: Haskell _не_ проверяет монадные законы! Единственное, 
 
 В терминах оператора >>= и функции return, монадные законы выглядят так:
 
-1. return x >>= f    ==  f x
-2. mv >>= return     ==  mv
-3. (mv >>= f) >>= g  ==  mv >>= (\x -> (f x >>= g))
+<blockquote>1<font color="#339933">.</font>&nbsp;<font>return</font>&nbsp;x&nbsp;<font color="#339933">&gt;&gt;=</font>&nbsp;f&nbsp;&nbsp;&nbsp;&nbsp;<font color="#339933">==</font>&nbsp;&nbsp;f&nbsp;x<br/>
+2<font color="#339933">.</font>&nbsp;mv&nbsp;<font color="#339933">&gt;&gt;=</font>&nbsp;<font>return</font>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font color="#339933">==</font>&nbsp;&nbsp;mv<br/>
+3<font color="#339933">.</font>&nbsp;<font>&#40;</font>mv&nbsp;<font color="#339933">&gt;&gt;=</font>&nbsp;f<font>&#41;</font>&nbsp;<font color="#339933">&gt;&gt;=</font>&nbsp;g&nbsp;&nbsp;<font color="#339933">==</font>&nbsp;&nbsp;mv&nbsp;<font color="#339933">&gt;&gt;=</font>&nbsp;<font>&#40;</font>\x&nbsp;<font color="#339933">-&gt;</font>&nbsp;<font>&#40;</font>f&nbsp;x&nbsp;<font color="#339933">&gt;&gt;=</font>&nbsp;g<font>&#41;</font><font>&#41;</font></blockquote>
 
 где типы различных значений такие:
 
-mv :: m a
-f  :: a -> m b
-g  :: b -> m c
+<blockquote>mv&nbsp;<font color="#339933">::</font>&nbsp;m&nbsp;a<br/>
+f&nbsp;&nbsp;<font color="#339933">::</font>&nbsp;a&nbsp;<font color="#339933">-&gt;</font>&nbsp;m&nbsp;b<br/>
+g&nbsp;&nbsp;<font color="#339933">::</font>&nbsp;b&nbsp;<font color="#339933">-&gt;</font>&nbsp;m&nbsp;c</blockquote>
 
 для некоторых типов a, b, c и какой-то монады m.
 
@@ -134,13 +134,13 @@ g  :: b -> m c
 
 Давайте развлечемся и попробуем вывести уродливую версию монадных законов из приятной версии. В наших вычислениях понадобится определение монадической композиции, которую мы разобрали выше:
 
-f >=> g  =  \x -> (f x >>= g)
+<blockquote>f&nbsp;<font color="#339933">&gt;=&gt;</font>&nbsp;g&nbsp;&nbsp;<font color="#339933">=</font>&nbsp;&nbsp;\x&nbsp;<font color="#339933">-&gt;</font>&nbsp;<font>&#40;</font>f&nbsp;x&nbsp;<font color="#339933">&gt;&gt;=</font>&nbsp;g<font>&#41;</font></blockquote>
 
 Закон 1:
 
-return >=> f            ==  f
-\x -> (return x >>= f)  ==  \x -> f x
-return x >>= f          ==  f x           -- Q.E.D. ("Что и требовалось доказать")
+<blockquote><font>return</font>&nbsp;<font color="#339933">&gt;=&gt;</font>&nbsp;f&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font color="#339933">==</font>&nbsp;&nbsp;f<br/>
+\x&nbsp;<font color="#339933">-&gt;</font>&nbsp;<font>&#40;</font><font>return</font>&nbsp;x&nbsp;<font color="#339933">&gt;&gt;=</font>&nbsp;f<font>&#41;</font>&nbsp;&nbsp;<font color="#339933">==</font>&nbsp;&nbsp;\x&nbsp;<font color="#339933">-&gt;</font>&nbsp;f&nbsp;x<br/>
+<font>return</font>&nbsp;x&nbsp;<font color="#339933">&gt;&gt;=</font>&nbsp;f&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font color="#339933">==</font>&nbsp;&nbsp;f&nbsp;x&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font color="#5d478b">--&nbsp;Q.E.D.&nbsp;(&quot;Что&nbsp;и&nbsp;требовалось&nbsp;доказать&quot;)</font></blockquote>
 
 Обратите внимание, что |\x -> f x| то же самое, что и просто f.
 
@@ -155,23 +155,23 @@ mv >>= return           ==  mv            -- Q.E.D.
 Закон 3:
 
 
-(f >=> g) >=> h                 ==    f >=> (g >=> h)
-\x -> ((f >=> g) x >>= h)       ==    \x -> (f x >>= (g >=> h))
-(f >=> g) x >>= h               ==    f x >>= (g >=> h)
-(\y -> (f y >>= g)) x >>= h     ==    f x >>= (\y -> (g y >>= h))
-Вычисляем |(\y -> (f y >>= g)) x| получаем: |(f x >>= g)|
-(f x >>= g) >>= h               ==    f x >>= (\y -> (g y >>= h))
-Пусть mv = f x, тогда:
-(mv >>= g) >>= h                ==    mv >>= (\y -> (g y >>= h))
-Заменяем g на f, h на g:
-(mv >>= f) >>= g                ==    mv >>= (\y -> (f y >>= g)) 
-Заменяем y на x в правом выражении и получаем:
-(mv >>= f) >>= g                ==    mv >>= (\x -> (f x >>= g))   -- Q.E.D.
+<blockquote><font>&#40;</font>f&nbsp;<font color="#339933">&gt;=&gt;</font>&nbsp;g<font>&#41;</font>&nbsp;<font color="#339933">&gt;=&gt;</font>&nbsp;h&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font color="#339933">==</font>&nbsp;&nbsp;&nbsp;&nbsp;f&nbsp;<font color="#339933">&gt;=&gt;</font>&nbsp;<font>&#40;</font>g&nbsp;<font color="#339933">&gt;=&gt;</font>&nbsp;h<font>&#41;</font><br/>
+\x&nbsp;<font color="#339933">-&gt;</font>&nbsp;<font>&#40;</font><font>&#40;</font>f&nbsp;<font color="#339933">&gt;=&gt;</font>&nbsp;g<font>&#41;</font>&nbsp;x&nbsp;<font color="#339933">&gt;&gt;=</font>&nbsp;h<font>&#41;</font>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font color="#339933">==</font>&nbsp;&nbsp;&nbsp;&nbsp;\x&nbsp;<font color="#339933">-&gt;</font>&nbsp;<font>&#40;</font>f&nbsp;x&nbsp;<font color="#339933">&gt;&gt;=</font>&nbsp;<font>&#40;</font>g&nbsp;<font color="#339933">&gt;=&gt;</font>&nbsp;h<font>&#41;</font><font>&#41;</font><br/>
+<font>&#40;</font>f&nbsp;<font color="#339933">&gt;=&gt;</font>&nbsp;g<font>&#41;</font>&nbsp;x&nbsp;<font color="#339933">&gt;&gt;=</font>&nbsp;h&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font color="#339933">==</font>&nbsp;&nbsp;&nbsp;&nbsp;f&nbsp;x&nbsp;<font color="#339933">&gt;&gt;=</font>&nbsp;<font>&#40;</font>g&nbsp;<font color="#339933">&gt;=&gt;</font>&nbsp;h<font>&#41;</font><br/>
+<font>&#40;</font>\y&nbsp;<font color="#339933">-&gt;</font>&nbsp;<font>&#40;</font>f&nbsp;y&nbsp;<font color="#339933">&gt;&gt;=</font>&nbsp;g<font>&#41;</font><font>&#41;</font>&nbsp;x&nbsp;<font color="#339933">&gt;&gt;=</font>&nbsp;h&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font color="#339933">==</font>&nbsp;&nbsp;&nbsp;&nbsp;f&nbsp;x&nbsp;<font color="#339933">&gt;&gt;=</font>&nbsp;<font>&#40;</font>\y&nbsp;<font color="#339933">-&gt;</font>&nbsp;<font>&#40;</font>g&nbsp;y&nbsp;<font color="#339933">&gt;&gt;=</font>&nbsp;h<font>&#41;</font><font>&#41;</font><br/>
+<font color="#5d478b">--&nbsp;Вычисляем&nbsp;(\y&nbsp;-&gt;&nbsp;(f&nbsp;y&nbsp;&gt;&gt;=&nbsp;g))&nbsp;x&nbsp;получаем:&nbsp;(f&nbsp;x&nbsp;&gt;&gt;=&nbsp;g)</font><br/>
+<font>&#40;</font>f&nbsp;x&nbsp;<font color="#339933">&gt;&gt;=</font>&nbsp;g<font>&#41;</font>&nbsp;<font color="#339933">&gt;&gt;=</font>&nbsp;h&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font color="#339933">==</font>&nbsp;&nbsp;&nbsp;&nbsp;f&nbsp;x&nbsp;<font color="#339933">&gt;&gt;=</font>&nbsp;<font>&#40;</font>\y&nbsp;<font color="#339933">-&gt;</font>&nbsp;<font>&#40;</font>g&nbsp;y&nbsp;<font color="#339933">&gt;&gt;=</font>&nbsp;h<font>&#41;</font><font>&#41;</font><br/>
+<font color="#5d478b">--&nbsp;Пусть&nbsp;mv&nbsp;=&nbsp;f&nbsp;x,&nbsp;тогда:</font><br/>
+<font>&#40;</font>mv&nbsp;<font color="#339933">&gt;&gt;=</font>&nbsp;g<font>&#41;</font>&nbsp;<font color="#339933">&gt;&gt;=</font>&nbsp;h&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font color="#339933">==</font>&nbsp;&nbsp;&nbsp;&nbsp;mv&nbsp;<font color="#339933">&gt;&gt;=</font>&nbsp;<font>&#40;</font>\y&nbsp;<font color="#339933">-&gt;</font>&nbsp;<font>&#40;</font>g&nbsp;y&nbsp;<font color="#339933">&gt;&gt;=</font>&nbsp;h<font>&#41;</font><font>&#41;</font><br/>
+<font color="#5d478b">--&nbsp;Заменяем&nbsp;g&nbsp;на&nbsp;f,&nbsp;h&nbsp;на&nbsp;g:</font><br/>
+<font>&#40;</font>mv&nbsp;<font color="#339933">&gt;&gt;=</font>&nbsp;f<font>&#41;</font>&nbsp;<font color="#339933">&gt;&gt;=</font>&nbsp;g&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font color="#339933">==</font>&nbsp;&nbsp;&nbsp;&nbsp;mv&nbsp;<font color="#339933">&gt;&gt;=</font>&nbsp;<font>&#40;</font>\y&nbsp;<font color="#339933">-&gt;</font>&nbsp;<font>&#40;</font>f&nbsp;y&nbsp;<font color="#339933">&gt;&gt;=</font>&nbsp;g<font>&#41;</font><font>&#41;</font>&nbsp;<br/>
+<font color="#5d478b">--&nbsp;Заменяем&nbsp;y&nbsp;на&nbsp;x&nbsp;в&nbsp;правом&nbsp;выражении&nbsp;и&nbsp;получаем:</font><br/>
+<font>&#40;</font>mv&nbsp;<font color="#339933">&gt;&gt;=</font>&nbsp;f<font>&#41;</font>&nbsp;<font color="#339933">&gt;&gt;=</font>&nbsp;g&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font color="#339933">==</font>&nbsp;&nbsp;&nbsp;&nbsp;mv&nbsp;<font color="#339933">&gt;&gt;=</font>&nbsp;<font>&#40;</font>\x&nbsp;<font color="#339933">-&gt;</font>&nbsp;<font>&#40;</font>f&nbsp;x&nbsp;<font color="#339933">&gt;&gt;=</font>&nbsp;g<font>&#41;</font><font>&#41;</font>&nbsp;&nbsp;&nbsp;<font color="#5d478b">--&nbsp;Q.E.D.</font></blockquote>
 
 На шаге вычисления |(\y -> (f y >>= g)) x| мы просто применяем всю функцию (\y -> ...) к аргументу x; при этом y заменяется переменной x в теле функции (оно обозначено многоточием (...)), и тело функции возвращается как результат. В функциональном языке программирования Lingo эта операция называется _бета-редукцией_. {1: В данном случае речь идет о разделе математики под названием лямбда-исчисление, где описывается, в том числе, бета-редукция.} Бета-редукция - основной способ вычисления функций. Последний шаг, где происходит замена y на x, корректен потому же, почему следующие две функции:
 
-\x -> f x
-\y -> f y
+<blockquote>\x&nbsp;<font color="#339933">-&gt;</font>&nbsp;f&nbsp;x<br/>
+\y&nbsp;<font color="#339933">-&gt;</font>&nbsp;f&nbsp;y</blockquote>
 
 - это одно и то же (имя формального аргумента не имеет значения). В функциональном языке Lingo мы бы сказали, что две функции _альфа-эквивалентны_. Другие шаги, должно быть, вы поняли.
 
@@ -185,36 +185,34 @@ Do-нотация
 
 Вспомним функцию readAndPrintLineTwice, определенную выше:
 
-readAndPrintLineTwice :: IO ()
-readAndPrintLineTwice = getLine >>= \s -> putStrLn s >> putStrLn s
+<blockquote>readAndPrintLineTwice&nbsp;<font color="#339933">::</font>&nbsp;<font color="#cccc00">IO</font>&nbsp;<font>&#40;</font><font>&#41;</font><br/>
+readAndPrintLineTwice&nbsp;<font color="#339933">=</font>&nbsp;<font>getLine</font>&nbsp;<font color="#339933">&gt;&gt;=</font>&nbsp;\s&nbsp;<font color="#339933">-&gt;</font>&nbsp;<font>putStrLn</font>&nbsp;s&nbsp;<font color="#339933">&gt;&gt;</font>&nbsp;<font>putStrLn</font>&nbsp;s</blockquote>
 
 У нее есть одно достоинство: она записывается в одну строку. Недостаток - это не самая легкочитаемая строка в мире. Дизайнеры языка Haskell заметили, что монадические определения часто трудно читать, и придумали действительно приятный синтаксический сахар, с которым определения получаются более читаемыми.
 
 В основе этого синтаксического сахара лежит наблюдение, что огромное количество операций в монадическом коде записывается в двух формах:
 
--- Форма 1.
--- mv :: m a
--- f  :: a -> m b
-
-mv >>= \x -> mf x
-
--- Форма 2.
--- mv  :: m a
--- mv2 :: m b
-
-mv >> mv2
+<blockquote><font color="#5d478b">--&nbsp;Форма&nbsp;1.</font><br/>
+<font color="#5d478b">--&nbsp;mv&nbsp;::&nbsp;m&nbsp;a</font><br/>
+<font color="#5d478b">--&nbsp;f&nbsp;&nbsp;::&nbsp;a&nbsp;-&gt;&nbsp;m&nbsp;b</font><br/>
+&nbsp;<br/>
+mv&nbsp;<font color="#339933">&gt;&gt;=</font>&nbsp;\x&nbsp;<font color="#339933">-&gt;</font>&nbsp;mf&nbsp;x<br/>
+&nbsp;<br/>
+<font color="#5d478b">--&nbsp;Форма&nbsp;2.</font><br/>
+<font color="#5d478b">--&nbsp;mv&nbsp;&nbsp;::&nbsp;m&nbsp;a</font><br/>
+<font color="#5d478b">--&nbsp;mv2&nbsp;::&nbsp;m&nbsp;b</font><br/>
+&nbsp;<br/>
+mv&nbsp;<font color="#339933">&gt;&gt;</font>&nbsp;mv2</blockquote>
 
 Нотация разрабатывалась с намерением сделать эти две формы легкочитаемыми. Она начинается с ключевого слова do, за которым следуют некоторые монадические операции. Так эти два наших примера будут записаны в do-нотации:
 
--- Форма 1, do-нотация.
-
-do v <- mv
-   f v
-
--- Форма 2, do-нотация.
-
-do mv
-   mv2
+<blockquote><font color="#5d478b">--&nbsp;Форма&nbsp;1,&nbsp;do-нотация.</font><br/>
+<font>do</font>&nbsp;v&nbsp;<font color="#339933">&lt;-</font>&nbsp;mv<br/>
+&nbsp;&nbsp;&nbsp;f&nbsp;v<br/>
+&nbsp;<br/>
+<font color="#5d478b">--&nbsp;Форма&nbsp;2,&nbsp;do-нотация.</font><br/>
+<font>do</font>&nbsp;mv<br/>
+&nbsp;&nbsp;&nbsp;mv2</blockquote>
 
 В Форме 1 первая строка значит, что мы берем монадическое значение mv и "распаковываем" его в обычное под названием v. Вторая строка - это просто вычисление f от v. Результат строки f v является результатом всего выражения.
 
@@ -222,59 +220,63 @@ do mv
 
 Компилятор в Haskell преобразовывает удобную do-нотацию в запись без do для Формы 1 и Формы 2. Это просто синтаксическое преобразование, а смысл обеих записей идентичен. Кроме того, обе формы можно смешивать в одном выражении каждой из нотаций. Пример:
 
--- mv  :: m a
--- v1  :: a
--- f   :: a -> m b
--- v2  :: b
--- mv3 :: m c
-
-do v1 <- mv
-   v2 <- f v1
-   mv3
-   return v2
+<blockquote><font color="#5d478b">--&nbsp;mv&nbsp;&nbsp;::&nbsp;m&nbsp;a</font><br/>
+<font color="#5d478b">--&nbsp;v1&nbsp;&nbsp;::&nbsp;a</font><br/>
+<font color="#5d478b">--&nbsp;f&nbsp;&nbsp;&nbsp;::&nbsp;a&nbsp;-&gt;&nbsp;m&nbsp;b</font><br/>
+<font color="#5d478b">--&nbsp;v2&nbsp;&nbsp;::&nbsp;b</font><br/>
+<font color="#5d478b">--&nbsp;mv3&nbsp;::&nbsp;m&nbsp;c</font><br/>
+&nbsp;<br/>
+<font>do</font>&nbsp;&nbsp;&nbsp;&nbsp;<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;v1&nbsp;<font color="#339933">&lt;-</font>&nbsp;mv<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;v2&nbsp;<font color="#339933">&lt;-</font>&nbsp;f&nbsp;v1<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;mv3<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font>return</font>&nbsp;v2</blockquote>
 
 Это в точности то же самое, что и:
 
-mv >>= (\v1 ->
-  (f v1 >>= (\v2 ->
-     (mv3 >> 
-        (return v2)))))
+<blockquote>mv&nbsp;<font color="#339933">&gt;&gt;=</font>&nbsp;<font>&#40;</font>\v1&nbsp;<font color="#339933">-&gt;</font><br/>
+&nbsp;&nbsp;<font>&#40;</font>f&nbsp;v1&nbsp;<font color="#339933">&gt;&gt;=</font>&nbsp;<font>&#40;</font>\v2&nbsp;<font color="#339933">-&gt;</font><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font>&#40;</font>mv3&nbsp;<font color="#339933">&gt;&gt;</font>&nbsp;<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font>&#40;</font><font>return</font>&nbsp;v2<font>&#41;</font><font>&#41;</font><font>&#41;</font><font>&#41;</font><font>&#41;</font></blockquote>
 
 Или без скокбок:
 
-mv >>= \v1 ->
-  f v1 >>= \v2 ->
-    mv3 >> return v2
+<blockquote>mv&nbsp;<font color="#339933">&gt;&gt;=</font>&nbsp;\v1&nbsp;<font color="#339933">-&gt;</font><br/>
+&nbsp;&nbsp;f&nbsp;v1&nbsp;<font color="#339933">&gt;&gt;=</font>&nbsp;\v2&nbsp;<font color="#339933">-&gt;</font><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;mv3&nbsp;<font color="#339933">&gt;&gt;</font>&nbsp;<font>return</font>&nbsp;v2</blockquote>
 
 Можете себе представить, что когда монадические выражения разрастаются, do-форма остается такой же легкой для чтения, в то время как форма без do (ее называют еще "Обессахаренная") часто становится вообще нечитаемой. Вот потому-то do-нотация и существует. Еще здорово, что do-нотация работает для _всех_ монад, не только для какой-то одной.
 
 Кроме того, можно смешивать do-нотацию и обессахаренную нотацию в одном выражении. Вот так:
 
-do v1 <- mv
-   v2 <- f v1
-   mv3 >> return v2
+<blockquote><font>do</font>&nbsp;v1&nbsp;<font color="#339933">&lt;-</font>&nbsp;mv<br/>
+&nbsp;&nbsp;&nbsp;v2&nbsp;<font color="#339933">&lt;-</font>&nbsp;f&nbsp;v1<br/>
+&nbsp;&nbsp;&nbsp;mv3&nbsp;<font color="#339933">&gt;&gt;</font>&nbsp;<font>return</font>&nbsp;v2</blockquote>
 
 Иногда это полезно, но может часто стать причиной плохой читаемости кода.
 
 Давайте посмотрим, как наши предыдущие примеры будут выглядеть в do-нотации.
 
--- Считываем строку, затем печатаем ее.
-readAndPrintLine :: IO ()
-readAndPrintLine =
-  do line <- getLine 
-     putStrLn line
-
--- Печатаем две строки, одну за другой.
--- Не функция.
-do putStrLn "This is string 1."
-   putStrLn "This is string 2."
-
--- Считываем строку и дважды ее печатаем. 
-readAndPrintLineTwice :: IO ()
-readAndPrintLineTwice =
-  do line <- getLine
-     putStrLn line
-     putStrLn line
+<blockquote><font color="#5d478b">--&nbsp;Считываем&nbsp;строку,&nbsp;затем&nbsp;печатаем&nbsp;ее.</font><br/>
+readAndPrintLine&nbsp;<font color="#339933">::</font>&nbsp;<font color="#cccc00">IO</font>&nbsp;<font>&#40;</font><font>&#41;</font><br/>
+readAndPrintLine&nbsp;<font color="#339933">=</font><br/>
+&nbsp;&nbsp;<font>do</font>&nbsp;<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;line&nbsp;<font color="#339933">&lt;-</font>&nbsp;<font>getLine</font>&nbsp;<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font>putStrLn</font>&nbsp;line<br/>
+&nbsp;<br/>
+<font color="#5d478b">--&nbsp;Печатаем&nbsp;две&nbsp;строки,&nbsp;одну&nbsp;за&nbsp;другой.</font><br/>
+<font color="#5d478b">--&nbsp;Не&nbsp;функция.</font><br/>
+<font>do</font>&nbsp;<br/>
+&nbsp;&nbsp;&nbsp;<font>putStrLn</font>&nbsp;<font>&quot;This&nbsp;is&nbsp;string&nbsp;1.&quot;</font><br/>
+&nbsp;&nbsp;&nbsp;<font>putStrLn</font>&nbsp;<font>&quot;This&nbsp;is&nbsp;string&nbsp;2.&quot;</font><br/>
+&nbsp;<br/>
+<font color="#5d478b">--&nbsp;Считываем&nbsp;строку&nbsp;и&nbsp;дважды&nbsp;ее&nbsp;печатаем.&nbsp;</font><br/>
+readAndPrintLineTwice&nbsp;<font color="#339933">::</font>&nbsp;<font color="#cccc00">IO</font>&nbsp;<font>&#40;</font><font>&#41;</font><br/>
+readAndPrintLineTwice&nbsp;<font color="#339933">=</font><br/>
+&nbsp;&nbsp;<font>do</font>&nbsp;<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;line&nbsp;<font color="#339933">&lt;-</font>&nbsp;<font>getLine</font><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font>putStrLn</font>&nbsp;line<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font>putStrLn</font>&nbsp;line</blockquote>
 
 Здесь код гораздо легче читать благодаря do-нотации. Интересно, что у нее есть дополнительное преимущество (или недостаток, - смотря, каких взглядов вы придерживаетесь): код в Haskell выглядит императивно! Если мы будем читать код сверху вниз, он похож на императивный язык, у которого вместо присвоения стрелка <-. Скажем, readAndPrintLine можно описать так: "вызываем getLine, чтобы считать строку, которую кладем в переменную line; затем вызываем putStrLn, чтобы напечатать эту переменную." Это решительно не то, что происходит на самом деле (например, line - не переменная), но читать так можно. Для большого количества кода, который выполняет много действий ввода и вывода, do-нотация - очень удобный способ записи.
 
