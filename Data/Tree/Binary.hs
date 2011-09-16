@@ -1,13 +1,19 @@
 module Data.Tree.Binary where
 
+import Prelude hiding (lookup)
+
 data Ord a => BTree a b =
 						  Leaf
 						| Branch a b (BTree a b) (BTree a b)
 	deriving (Show)
 
 
+leaf :: BTree a b
 leaf = Leaf
+
+branch :: Ord a => a -> b -> BTree a b -> BTree a b -> BTree a b
 branch = Branch
+
 left  (Branch _ _ l _) = l
 right (Branch _ _ _ r) = r
 

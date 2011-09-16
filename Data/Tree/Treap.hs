@@ -1,5 +1,7 @@
 module Treap where
 
+import Prelude hiding (lookup)
+
 data (Ord a, Enum a, Ord b) => Treap a b c =
 						  Leaf
 						| Branch a b c (Treap a b c) (Treap a b c)
@@ -7,8 +9,12 @@ data (Ord a, Enum a, Ord b) => Treap a b c =
 
 type RecalcFunc a b c = Treap a b c -> Treap a b c -> c
 
+leaf :: Treap a b c
 leaf = Leaf
+
+branch :: (Ord a, Enum a, Ord b) => a -> b -> c -> Treap a b c -> Treap a b c -> Treap a b c
 branch = Branch
+
 left  (Branch _ _ _ l _) = l
 right (Branch _ _ _ _ r) = r
 
