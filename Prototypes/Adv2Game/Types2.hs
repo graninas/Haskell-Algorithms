@@ -31,9 +31,6 @@ propertyActions (Property _ xs) = foldr (\(_, act) -> (act:)) [] xs
 actions :: [Property] -> [String]
 actions = foldr (\p -> (propertyActions p ++)) []
 
-evalAction :: Property -> String -> Property
-evalAction 
-
 
 main :: IO ()
 main = do

@@ -1,6 +1,6 @@
 module SizeTreap where
 
-import Treap
+import Data.Tree.Treap
 
 testData :: [(Int, Int, Int)]
 testData = [(1, 2, 1), (3, 6, 1), (6, 44, 1), (7, 0, 1), (2, 85, 1), (4, -2, 1), (5, 4, 1), (8, 21, 1)]
