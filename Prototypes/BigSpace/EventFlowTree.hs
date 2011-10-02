@@ -24,27 +24,27 @@ mkEmptyTree :: Int -> EventFlowTree
 mkEmptyTree minLeafsCnt =
 					let
 						lls@(_, leafsCnt) = head [(pow, x) | (pow, x) <- numberPowList 2, x >= minLeafsCnt]
-						ticks = [0..leafs-1]
+						ticks = [0..leafsCnt-1]
 					in mkTree lls ticks emptyEvent
 
 
-update :: EventFlowTree -> Event -> EventFlowTree
-update (Branch tf
+update :: Event -> EventFlowTree -> EventFlowTree
+update event@(eTick, _, _) 
+		(Branch tf
 			l@(Leaf (tickL, _, _))
-			r)
-		event@(eTick, _, _) =
+			r) =
 			case tickL == eTick of
 				True  -> Branch tf (Leaf event) r
 				False -> Branch tf l (Leaf event)
 
-update (Branch tf
+update event@(eTick, _, _)
+		(Branch tf
 			l@(Branch (_, lr) _ _)
-			r)
-		event@(eTick, _, _) =
+			r) =
 			case lr < eTick of
-				True  -> Branch tf l (update r event)
-				False -> Branch tf (update l event) r
+				True  -> Branch tf l (update event r)
+				False -> Branch tf (update event l) r
 
 fromTimeLine :: Int -> TimeLine -> EventFlowTree
-fromTimeLine minLeafsCnt tl = let tree = mkEmptyTree minLeafsCnt in undefined
+fromTimeLine minLeafsCnt tl = foldr update (mkEmptyTree minLeafsCnt) tl
 					
