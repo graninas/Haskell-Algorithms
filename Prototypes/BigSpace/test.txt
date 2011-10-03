@@ -1,1 +1,7 @@
-Branch (0,3) (Branch (0,1) (Leaf (0,'_',"")) (Leaf (1,'_',""))) (Branch (2,3) (Leaf (2,'F',"SS!")) (Leaf (3,'_',"")))
+Branch (0,3) 
+	(Branch (0,1) 
+		(Leaf (0,'_',"")) 
+		(Leaf (1,'_',""))) 
+	(Branch (2,3) 
+		(Leaf (2,'F',"SS!")) 
+		(Leaf (3,'_',"")))

@@ -11,7 +11,7 @@ preGenWorldTL =
 	: (100, 'S', "SpaceShip begin")
 	: (zip3 [101..] "paceShip" $ repeat [])
 	++ (
-		  (150, '_', "SpaceShip sended back to the past.")
+		  (150, 'r', "SpaceShip sended to past and returned.")
 		: (200, '_', "Time end")
 		: []
 		)

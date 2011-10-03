@@ -45,6 +45,13 @@ update event@(eTick, _, _)
 				True  -> Branch tf l (update event r)
 				False -> Branch tf (update event l) r
 
+lookupByEvent :: Char -> EventFlowTree -> Maybe Event
+lookupByEvent ch (Leaf e@(t, ech, _)) | ech == ch = Just e
+									  | otherwise = Nothing
+lookupByEvent ch (Branch _ l r) = case lookupByEvent ch l of
+									Just e -> Just e
+									Nothing -> lookupByEvent ch r
+
 fromTimeLine :: Int -> TimeLine -> EventFlowTree
 fromTimeLine minLeafsCnt tl = foldr update (mkEmptyTree minLeafsCnt) tl
 					
