@@ -1,13 +1,15 @@
-Еще Одно Руководство по Монадам (часть 4: Монада Maybe)
+Еще Одно Руководство по Монадам (часть 4: Монада Maybe и монада списка)
 Mike Vanier
 http://mvanier.livejournal.com
 
 Перевод: Гранин А. С.
 graninas@gmail.com
 
-В предыдущих статьях этой серии мы изучали концептуальный базис монад, но обсуждение наше было слишком абстрактным. Теперь, когда вы, я надеюсь, поняли, что монады такое и для чего они нужны, пришло время для детального рассмотрения специфических монад. Это значит, что мы определим корректные воплощения класса типов <font color=blue>Monad</font> для множества различных понятий вычислений, которые мы увидели раньше. Мы используем наши знания, чтобы получить монадическую композицию в каждом конкретном случае через монадическое применение (оператор <font color=blue>>>=</font>), и с помощью монадных законов мы выведем определение <font color=blue>return</font>.
+By Mike Vanier
 
-Монада <font color=blue>Maybe</font>
+В предыдущих статьях этой серии мы изучали концептуальный базис монад, но обсуждение наше было слишком абстрактным. Теперь, когда вы, я надеюсь, поняли, что монады такое и для чего они нужны, пришло время для детального рассмотрения специфических монад. Это значит, что мы определим корректные воплощения класса типов <font color=blue>Monad</font> для множества различных понятий вычислений, которые мы увидели раньше. Мы используем наши знания, чтобы получить монадическую композицию в каждом конкретном случае через монадическое применение (оператор <font color=blue>>>=</font>), и с помощью монадных законов мы выведем определение <font color=blue>return</font>.
+<habracut />
+<h4>Монада <font color=blue>Maybe</font></h4>
 
 Монаду <font color=blue>Maybe</font> обычно первой представляют в руководствах по Haskell, потому что она очень проста в использовании, реализации и понимании. Для начала взглянем на определение типа данных <font color=blue>Maybe</font>:
 
@@ -228,7 +230,7 @@ h&nbsp;x&nbsp;<font color="#66cc66"><b>=</b></font>&nbsp;<font color="#06c">if</
 
 А теперь перейдем к следующей монаде.
 
-Монада <font color=blue>list</font> (список)
+<h4>Монада <font color=blue>list</font> (список)</h4>
 
 Если монада <font color=blue>Maybe</font> вам просто понравилась, то монаду <font color=blue>list</font> вы даже полюбите. ;-) В данном случае мы заполним следующее определение:
 
@@ -395,9 +397,9 @@ f&nbsp;<font color="#339933">&gt;=&gt;</font>&nbsp;<font>&#40;</font>g&nbsp;<fon
 
 И это конец. Фууух! На самом деле хаскеллисты редко этим занимаются, но доказательства необходимы, чтобы показать, что предполагаемая монада - это действительно монада.
 
-<blockquote><blockquote><b><i>Заметка на полях: Вывод тождеств с <font color=blue>map/concat</font> (уравнения 1, 2 и 3)</i></b>
+<blockquote><blockquote><b>Заметка на полях: Вывод тождеств с <font color=blue>map/concat</font> (уравнения 1, 2 и 3)</b>
 
-<b><i>Подготовка</i></b>
+<u><b>Подготовка</b></u>
 
 Прежде чем приступать к доказательствам тождеств, нам сначала надо доказать несколько других (математика трудна!). Перечислим их:
 
@@ -447,7 +449,7 @@ f&nbsp;<font color="#339933">&gt;=&gt;</font>&nbsp;<font>&#40;</font>g&nbsp;<fon
 
 Теперь с этим докажем уравнения 1, 2 и 3.
 
-<b>Уравнение 1:</b>
+<u><b>Уравнение 1:</b></u>
 
 <blockquote><font>map</font>&nbsp;<font>&#40;</font>f&nbsp;<font color="#339933">.</font>&nbsp;g<font>&#41;</font>&nbsp;&nbsp;<font color="#66cc66"><b>=</b></font>&nbsp;&nbsp;<font>map</font>&nbsp;f&nbsp;<font color="#339933">.</font>&nbsp;<font>map</font>&nbsp;g</blockquote>
 
@@ -470,7 +472,7 @@ f&nbsp;<font color="#339933">&gt;=&gt;</font>&nbsp;<font>&#40;</font>g&nbsp;<fon
 &nbsp;&nbsp;<font color="#66cc66"><b>=</b></font>&nbsp;<font>&#40;</font>f&nbsp;<font>&#40;</font>g&nbsp;x<font>&#41;</font><font>&#41;</font>&nbsp;:&nbsp;<font>&#40;</font><font>map</font>&nbsp;<font>&#40;</font>f&nbsp;<font color="#339933">.</font>&nbsp;g<font>&#41;</font>&nbsp;xs<font>&#41;</font>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font color="#5d478b">--&nbsp;inductive&nbsp;hypothesis</font><br/>
 <font color="#5d478b">--&nbsp;Верно,&nbsp;что&nbsp;и&nbsp;требовалось&nbsp;доказать.</font></blockquote>
 
-<b>Уравнение 2:</b>
+<u><b>Уравнение 2:</b></u>
 
 <blockquote><font>map</font>&nbsp;f&nbsp;<font color="#339933">.</font>&nbsp;<font>concat</font>&nbsp;<font color="#66cc66"><b>=</b></font>&nbsp;&nbsp;<font>concat</font>&nbsp;<font color="#339933">.</font>&nbsp;<font>map</font>&nbsp;<font>&#40;</font><font>map</font>&nbsp;f<font>&#41;</font></blockquote>
 
@@ -496,7 +498,7 @@ f&nbsp;<font color="#339933">&gt;=&gt;</font>&nbsp;<font>&#40;</font>g&nbsp;<fon
 &nbsp;&nbsp;<font color="#66cc66"><b>=</b></font>&nbsp;<font>map</font>&nbsp;f&nbsp;x&nbsp;<font color="#339933">++</font>&nbsp;<font>concat</font>&nbsp;<font>&#40;</font><font>map</font>&nbsp;<font>&#40;</font><font>map</font>&nbsp;f<font>&#41;</font>&nbsp;xs<font>&#41;</font>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font color="#5d478b">--&nbsp;по&nbsp;уравнению&nbsp;4</font><br/>
 <font color="#5d478b">--&nbsp;Верно,&nbsp;что&nbsp;и&nbsp;требовалось&nbsp;доказать.</font></blockquote>
 
-<b>Уравнение 3:</b>
+<u><b>Уравнение 3:</b></u>
 
 <blockquote><font>concat</font>&nbsp;<font color="#339933">.</font>&nbsp;<font>concat</font>&nbsp;&nbsp;<font color="#66cc66"><b>=</b></font>&nbsp;&nbsp;<font>concat</font>&nbsp;<font color="#339933">.</font>&nbsp;<font>map</font>&nbsp;<font>concat</font></blockquote>
 
@@ -549,6 +551,12 @@ f&nbsp;<font color="#339933">&gt;=&gt;</font>&nbsp;<font>&#40;</font>g&nbsp;<fon
 
 Монада списков - это нечто большее, чем просто альтернатива генераторам списков. С одной стороны, есть много очень общих функций, которые работают с воплощениями любых монад; с монадой списка они тоже будут работать. С другой стороны есть расширение класса типов <font color=blue>Monad</font>, которое называется <font color=blue>MonadPlus</font>. Оно дополняет функциональность монад (конкретно, там определяется "нулевой" элемент для монады и вводится операция "сложения" двух монадических значений). Списки сделаны воплощениями как <font color=blue>Monad</font>, так и <font color=blue>MonadPlus</font>, и это значит, что общие функции из <font color=blue>MonadPlus</font> будут работать и над списками. (Есть, например, обобщение функции <font color=blue>concat</font> - функия <font color=blue>msum</font>, которая работает со всеми воплощениями <font color=blue>MonadPlus</font>, в том числе и со списками.) Очень здорово пользоваться обобщенными функциями, которые могут работать со многими типами данных, но не задавать их для каждого типа отдельно. Это чистая победа.
 
-В следующий раз
+<h5>В следующий раз</h5>
 
 В следующей статье мы познакомимся с монадами, позволяющими отслеживать ошибки.
+
+<h5>Содержание</h5>
+<a href="http://habrahabr.ru/blogs/Haskell/127556/">Часть 1: основы</a>
+<a href="http://habrahabr.ru/blogs/Haskell/128070/">Часть 2: функции &gt;&gt;= и return</a>
+<a href="http://habrahabr.ru/blogs/Haskell/128538/">Часть 3: Монадные Законы</a>
+<a href="http://habrahabr.ru/blogs/Haskell/129909/">Часть 4: Монада Maybe и монада списка</a>
