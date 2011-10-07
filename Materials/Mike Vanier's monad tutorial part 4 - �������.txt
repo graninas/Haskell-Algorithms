@@ -11,11 +11,11 @@ graninas@gmail.com
 
 Монаду <font color=blue>Maybe</font> обычно первой представляют в руководствах по Haskell, потому что она очень проста в использовании, реализации и понимании. Для начала взглянем на определение типа данных <font color=blue>Maybe</font>:
 
-data Maybe a = Nothing | Just a
+<blockquote><font>data</font>&nbsp;<font color="#cccc00">Maybe</font>&nbsp;a&nbsp;<font color="#339933">=</font>&nbsp;Nothing&nbsp;<font color="#339933">|</font>&nbsp;Just&nbsp;a</blockquote>
 
 Здесь указано, что <font color=blue>Maybe</font> - это конструктор типа, в который помещается определенный тип <font color=blue>a</font>, чтобы получить (конкретный) тип данных. Еще говорят, что <font color=blue>Maybe</font> - это "полиморфный" тип данных, смысл тот же. Так, если бы <font color=blue>a</font> был <font color=blue>Int</font>, мы бы получили:
 
-data Maybe Int = Nothing | Just Int
+<blockquote><font>data</font>&nbsp;<font color="#cccc00">Maybe</font>&nbsp;<font color="#cccc00">Int</font>&nbsp;<font color="#339933">=</font>&nbsp;Nothing&nbsp;<font color="#339933">|</font>&nbsp;Just&nbsp;<font color="#cccc00">Int</font></blockquote>
 
 Только вот нам не нужно это писать непосредственно, так как абстрактное определение выше подходит ко всем типам.
 
@@ -23,204 +23,204 @@ data Maybe Int = Nothing | Just Int
 
 Полиморфный тип <font color=blue>Maybe</font> полезен тем, что мы можем использовать его как модель "расширенной функции", которая либо производит что-то как выходное значение, либо терпит в этом крах и не может вернуть никакое значение. (То есть, такая функция может провалиться.) Это записывается так:
 
-f :: a -> Maybe b
+<blockquote>f&nbsp;<font color="#339933">::</font>&nbsp;a&nbsp;<font color="#339933">-&gt;</font>&nbsp;<font color="#cccc00">Maybe</font>&nbsp;b</blockquote>
 
 Функция <font color=blue>f</font> берет значение типа <font color=blue>a</font> и либо возвращает <font color=blue>Nothing</font> (признак неудачи), либо значение <font color=blue>Just x</font>, где у <font color=blue>x</font> тип <font color=blue>b</font>. Функции вроде <font color=blue>f</font> будут работать в монаде <font color=blue>Maybe</font>, и композиция двух таких функций выглядит следующим образом:
 
-f :: a -> Maybe b   -- предполагаем, что f где-то определена
-g :: b -> Maybe c   -- предполагаем, что g где-то определена
-
-h :: a -> Maybe c   -- монадическая композиция f и g
-h = f >=> g         -- вспомним: >=> - это оператор монадической композиции
+<blockquote>f&nbsp;<font color="#339933">::</font>&nbsp;a&nbsp;<font color="#339933">-&gt;</font>&nbsp;<font color="#cccc00">Maybe</font>&nbsp;b&nbsp;&nbsp;&nbsp;<font color="#5d478b">--&nbsp;предполагаем,&nbsp;что&nbsp;f&nbsp;где-то&nbsp;определена</font><br/>
+g&nbsp;<font color="#339933">::</font>&nbsp;b&nbsp;<font color="#339933">-&gt;</font>&nbsp;<font color="#cccc00">Maybe</font>&nbsp;c&nbsp;&nbsp;&nbsp;<font color="#5d478b">--&nbsp;предполагаем,&nbsp;что&nbsp;g&nbsp;где-то&nbsp;определена</font><br/>
+&nbsp;<br/>
+h&nbsp;<font color="#339933">::</font>&nbsp;a&nbsp;<font color="#339933">-&gt;</font>&nbsp;<font color="#cccc00">Maybe</font>&nbsp;c&nbsp;&nbsp;&nbsp;<font color="#5d478b">--&nbsp;монадическая&nbsp;композиция&nbsp;f&nbsp;и&nbsp;g</font><br/>
+h&nbsp;<font color="#339933">=</font>&nbsp;f&nbsp;<font color="#339933">&gt;=&gt;</font>&nbsp;g&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font color="#5d478b">--&nbsp;вспомним:&nbsp;&gt;=&gt;&nbsp;-&nbsp;это&nbsp;оператор&nbsp;монадической&nbsp;композиции</font></blockquote>
 
 Мы говорили, что все монады должны быть конструкторами типов. <font color=blue>Maybe</font> - это конструктор типа, так что тут все хорошо. Но для того чтобы <font color=blue>Maybe</font> стал монадой, нам нужно создать экземпляр класса типов <font color=blue>Monad</font>, а это значит, что мы должны заполнить следующее определение:
 
-instance Monad Maybe where
-  (>>=)  = {- определение >>= для Maybe -}
-  return = {- определение return для Maybe -}
+<blockquote><font>instance</font>&nbsp;<font color="#cccc00">Monad</font>&nbsp;<font color="#cccc00">Maybe</font>&nbsp;<font>where</font><br/>
+&nbsp;&nbsp;<font>&#40;</font><font color="#339933">&gt;&gt;=</font><font>&#41;</font>&nbsp;&nbsp;<font color="#339933">=</font>&nbsp;<font color="#5d478b">{-&nbsp;определение&nbsp;&gt;&gt;=&nbsp;для&nbsp;Maybe&nbsp;-}</font><br/>
+&nbsp;&nbsp;<font>return</font>&nbsp;<font color="#339933">=</font>&nbsp;<font color="#5d478b">{-&nbsp;определение&nbsp;return&nbsp;для&nbsp;Maybe&nbsp;-}</font></blockquote>
 
 Как мы можем задать <font color=blue>(>>=)</font> и <font color=blue>return</font> для <font color=blue>Maybe</font>?
 
 Сначала напишем каркас определения для <font color=blue>>>=</font>, покрывающий два возможных случая левого операнда типа <font color=blue>Maybe a</font>:
 
-Nothing >>= f  =  {- нужно дописать -}
-Just x  >>= f  =  {- нужно дописать -}
+<blockquote>Nothing&nbsp;<font color="#339933">&gt;&gt;=</font>&nbsp;f&nbsp;&nbsp;<font color="#339933">=</font>&nbsp;&nbsp;<font color="#5d478b">{-&nbsp;нужно&nbsp;дописать&nbsp;-}</font><br/>
+Just&nbsp;x&nbsp;&nbsp;<font color="#339933">&gt;&gt;=</font>&nbsp;f&nbsp;&nbsp;<font color="#339933">=</font>&nbsp;&nbsp;<font color="#5d478b">{-&nbsp;нужно&nbsp;дописать&nbsp;-}</font></blockquote>
 
 где <font color=blue>x</font> имеет тип <font color=blue>a</font>. Левую часть определения можно написать и по-другому:
 
-(>>=) Nothing  f  =  {- нужно дописать -}
-(>>=) (Just x) f  =  {- нужно дописать -}
+<blockquote><font>&#40;</font><font color="#339933">&gt;&gt;=</font><font>&#41;</font>&nbsp;Nothing&nbsp;&nbsp;f&nbsp;&nbsp;<font color="#339933">=</font>&nbsp;&nbsp;<font color="#5d478b">{-&nbsp;нужно&nbsp;дописать&nbsp;-}</font><br/>
+<font>&#40;</font><font color="#339933">&gt;&gt;=</font><font>&#41;</font>&nbsp;<font>&#40;</font>Just&nbsp;x<font>&#41;</font>&nbsp;f&nbsp;&nbsp;<font color="#339933">=</font>&nbsp;&nbsp;<font color="#5d478b">{-&nbsp;нужно&nbsp;дописать&nbsp;-}</font></blockquote>
 
 Но лучше все-таки, если оператор <font color=blue>(>>=)</font> задан как оператор, а не как функция, и Haskell нам это позволяет.
 
 Для завершения этого определения подумаем, что мы хотим получить от монадической композиции в монаде <font color=blue>Maybe</font>. Давайте возьмем наш пример с функциями <font color=blue>f</font> и <font color=blue>g</font>, монадически их скомпонуем и получим функцию <font color=blue>h</font>:
 
-f :: a -> Maybe b
-g :: b -> Maybe c
-h :: a -> Maybe c
-h = f >=> g
+<blockquote>f&nbsp;<font color="#339933">::</font>&nbsp;a&nbsp;<font color="#339933">-&gt;</font>&nbsp;<font color="#cccc00">Maybe</font>&nbsp;b<br/>
+g&nbsp;<font color="#339933">::</font>&nbsp;b&nbsp;<font color="#339933">-&gt;</font>&nbsp;<font color="#cccc00">Maybe</font>&nbsp;c<br/>
+h&nbsp;<font color="#339933">::</font>&nbsp;a&nbsp;<font color="#339933">-&gt;</font>&nbsp;<font color="#cccc00">Maybe</font>&nbsp;c<br/>
+h&nbsp;<font color="#339933">=</font>&nbsp;f&nbsp;<font color="#339933">&gt;=&gt;</font>&nbsp;g</blockquote>
 
 Если мы передадим аргумент в функцию <font color=blue>f</font>, и она вернет <font color=blue>Nothing</font> (то есть, потерпит неудачу), то что должна вернуть функция <font color=blue>h</font>?
 
-f x = Nothing
-h x = (f >=> g) x = ???
+<blockquote>f&nbsp;x&nbsp;<font color="#339933">=</font>&nbsp;Nothing<br/>
+h&nbsp;x&nbsp;<font color="#339933">=</font>&nbsp;<font>&#40;</font>f&nbsp;<font color="#339933">&gt;=&gt;</font>&nbsp;g<font>&#41;</font>&nbsp;x&nbsp;<font color="#339933">=</font>&nbsp;<font color="#339933">???</font></blockquote>
 
 Кажется очевидным, что если <font color=blue>f x</font> вернет <font color=blue>Nothing</font>, то и <font color=blue>h</font> тоже должна вернуть <font color=blue>Nothing</font>, поскольку если часть выражения (функция <font color=blue>f</font>) не смогла вернуть результат, то и все выражение (функция <font color=blue>h</font>) не сможет его вернуть. Единственный вариант, когда <font color=blue>h</font> возвращает значение, это когда <font color=blue>f</font> вернет результат (назовем его <font color=blue>y</font>), он будет передан функции <font color=blue>g</font>, и <font color=blue>g y</font> - тоже будет корректный результат. Если провалится <font color=blue>f</font> или <font color=blue>g</font>, то и <font color=blue>h</font> завершится неудачей, то есть, вычислением <font color=blue>h x</font> будет <font color=blue>Nothing</font>.
 
 Имея это в виду, из нашего определения <font color=blue>h</font> получим:
 
-h = f >=> g
-h = \x -> (f x >>= g)  -- эквивалент (из определения >=>)
-h x = f x >>= g        -- эквивалент
--- предположим, что f x == Nothing
-h x = (Nothing >>= g)
-    = Nothing
--- таким образом:
-Nothing >>= g = Nothing
+<blockquote>h&nbsp;<font color="#339933">=</font>&nbsp;f&nbsp;<font color="#339933">&gt;=&gt;</font>&nbsp;g<br/>
+h&nbsp;<font color="#339933">=</font>&nbsp;\x&nbsp;<font color="#339933">-&gt;</font>&nbsp;<font>&#40;</font>f&nbsp;x&nbsp;<font color="#339933">&gt;&gt;=</font>&nbsp;g<font>&#41;</font>&nbsp;&nbsp;<font color="#5d478b">--&nbsp;эквивалент&nbsp;(из&nbsp;определения&nbsp;&gt;=&gt;)</font><br/>
+h&nbsp;x&nbsp;<font color="#339933">=</font>&nbsp;f&nbsp;x&nbsp;<font color="#339933">&gt;&gt;=</font>&nbsp;g&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font color="#5d478b">--&nbsp;эквивалент</font><br/>
+<font color="#5d478b">--&nbsp;предположим,&nbsp;что&nbsp;f&nbsp;x&nbsp;==&nbsp;Nothing</font><br/>
+h&nbsp;x&nbsp;<font color="#339933">=</font>&nbsp;<font>&#40;</font>Nothing&nbsp;<font color="#339933">&gt;&gt;=</font>&nbsp;g<font>&#41;</font><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<font color="#339933">=</font>&nbsp;Nothing<br/>
+<font color="#5d478b">--&nbsp;таким&nbsp;образом:</font><br/>
+Nothing&nbsp;<font color="#339933">&gt;&gt;=</font>&nbsp;g&nbsp;<font color="#339933">=</font>&nbsp;Nothing</blockquote>
 
 Теперь мы знаем, как оператор <font color=blue>(>>=)</font> реагирует на аргумент <font color=blue>Nothing</font>, - он просто возвращает тот же <font color=blue>Nothing</font>:
 
-Nothing >>= f  =  Nothing
-Just x  >>= f  =  {- нужно дописать -}
+<blockquote>Nothing&nbsp;<font color="#339933">&gt;&gt;=</font>&nbsp;f&nbsp;&nbsp;<font color="#339933">=</font>&nbsp;&nbsp;Nothing<br/>
+Just&nbsp;x&nbsp;&nbsp;<font color="#339933">&gt;&gt;=</font>&nbsp;f&nbsp;&nbsp;<font color="#339933">=</font>&nbsp;&nbsp;<font color="#5d478b">{-&nbsp;нужно&nbsp;дописать&nbsp;-}</font></blockquote>
 
 Обратите внимание, я здесь заменил <font color=blue>g</font> на <font color=blue>f</font>, и это корректно, ведь имена функций не важны. На практике мы вообще избавляемся от имен функций, если это возможно, и заменяем их специальным оператором <font color=blue>_</font> (нижнее подчеркивание), вот так:
 
-Nothing >>= _ =  Nothing
+<blockquote>Nothing&nbsp;<font color="#339933">&gt;&gt;=</font>&nbsp;<font color="#339933">_</font>&nbsp;<font color="#339933">=</font>&nbsp;&nbsp;Nothing</blockquote>
 
 Со вторым уравнением этого сделать нельзя, потому что функцию <font color=blue>f</font> мы еще будем использовать в определении.
 
 Теперь давайте подойдем с другой стороны. Если <font color=blue>f x</font> <i>не</i> провалится, результатом будет значение <font color=blue>Just y</font> для некоторого <font color=blue>y</font>. Нам нужно "распаковать" значение <font color=blue>y</font> из <font color=blue>Just y</font>, которое мы бы потом передали функции <font color=blue>g</font>, и <font color=blue>g y</font> - это результат всей функции <font color=blue>h</font>:
 
-h = f >=> g
-h = \x -> (f x >>= g)  -- эквивалент (из определения >=>)
-h x = f x >>= g        -- эквивалент
--- предположим, что f x == Just y 
-h x = (Just y >>= g)
-    = g y
+<blockquote>h&nbsp;<font color="#339933">=</font>&nbsp;f&nbsp;<font color="#339933">&gt;=&gt;</font>&nbsp;g<br/>
+h&nbsp;<font color="#339933">=</font>&nbsp;\x&nbsp;<font color="#339933">-&gt;</font>&nbsp;<font>&#40;</font>f&nbsp;x&nbsp;<font color="#339933">&gt;&gt;=</font>&nbsp;g<font>&#41;</font>&nbsp;&nbsp;<font color="#5d478b">--&nbsp;эквивалент&nbsp;(из&nbsp;определения&nbsp;&gt;=&gt;)</font><br/>
+h&nbsp;x&nbsp;<font color="#339933">=</font>&nbsp;f&nbsp;x&nbsp;<font color="#339933">&gt;&gt;=</font>&nbsp;g&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font color="#5d478b">--&nbsp;эквивалент</font><br/>
+<font color="#5d478b">--&nbsp;предположим,&nbsp;что&nbsp;f&nbsp;x&nbsp;==&nbsp;Just&nbsp;y&nbsp;</font><br/>
+h&nbsp;x&nbsp;<font color="#339933">=</font>&nbsp;<font>&#40;</font>Just&nbsp;y&nbsp;<font color="#339933">&gt;&gt;=</font>&nbsp;g<font>&#41;</font><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<font color="#339933">=</font>&nbsp;g&nbsp;y</blockquote>
 
 Что дает нам вторую часть определения:
 
-Nothing >>= f  =  Nothing
-Just x  >>= f  =  f x
+<blockquote>Nothing&nbsp;<font color="#339933">&gt;&gt;=</font>&nbsp;f&nbsp;&nbsp;<font color="#339933">=</font>&nbsp;&nbsp;Nothing<br/>
+Just&nbsp;x&nbsp;&nbsp;<font color="#339933">&gt;&gt;=</font>&nbsp;f&nbsp;&nbsp;<font color="#339933">=</font>&nbsp;&nbsp;f&nbsp;x</blockquote>
 
 Заметьте, что я заменил <font color=blue>y</font> на <font color=blue>x</font> и <font color=blue>g</font> на <font color=blue>f</font>. Опять же, имена переменных и функций не имеют значения до тех пор, пока вы последовательны.
 
 На этом завершается определение оператора <font color=blue>>>=</font> для монады <font color=blue>Maybe</font>. Теперь нам нужно получить <font color=blue>return</font> для этой монады:
 
-return x  =  ???
+<blockquote><font>return</font>&nbsp;x&nbsp;&nbsp;<font color="#339933">=</font>&nbsp;&nbsp;<font color="#339933">???</font></blockquote>
 
 для любого значения <font color=blue>x</font>. Какие у нас есть варианты? Мы могли бы просто сказать, что
 
-return x  =  Nothing
+<blockquote><font>return</font>&nbsp;x&nbsp;&nbsp;<font color="#339933">=</font>&nbsp;&nbsp;Nothing</blockquote>
 
 для любого <font color=blue>x</font>. Однако мы бы нарушили монадные законы, если бы так сделали:
 
-return x >>= f  ==  f x
-Nothing >>=  f  ==  f x
-Nothing         ==  f x   -- НЕВЕРНО!
+<blockquote><font>return</font>&nbsp;x&nbsp;<font color="#339933">&gt;&gt;=</font>&nbsp;f&nbsp;&nbsp;<font color="#339933">==</font>&nbsp;&nbsp;f&nbsp;x<br/>
+Nothing&nbsp;<font color="#339933">&gt;&gt;=</font>&nbsp;&nbsp;f&nbsp;&nbsp;<font color="#339933">==</font>&nbsp;&nbsp;f&nbsp;x<br/>
+Nothing&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font color="#339933">==</font>&nbsp;&nbsp;f&nbsp;x&nbsp;&nbsp;&nbsp;<font color="#5d478b">--&nbsp;НЕВЕРНО!</font></blockquote>
 
 Предполагая, что по крайней мере <i>некоторые</i> <font color=blue>f x</font> не <font color=blue>Nothing</font> (например, рассмотрим монадическую функцию <font color=blue>f x</font> = <font color=blue>Just x</font>), получим ошибку. Есть и другой вариант:
 
-return x  =  Just x
+<blockquote><font>return</font>&nbsp;x&nbsp;&nbsp;<font color="#339933">=</font>&nbsp;&nbsp;Just&nbsp;x</blockquote>
 
 и он удовлетворяет монадным законам:
 
-return x >>= f
-  = (Just x) >>= f   -- по определению return для монады Maybe
-  = f x              -- по определению >>= для монады Maybe
-                     -- выполнение первого монадного закона
-
-Just x >>= return
-  = return x         -- по определению >>= для монады Maybe
-  = Just x           -- по определению return для монады Maybe
-                     -- выполнение второго монадного закона
-
-Nothing >>= return
-  = Nothing          -- по определению >>= для монады Maybe
-                     -- выполнение второго монадного закона
+<blockquote><font>return</font>&nbsp;x&nbsp;<font color="#339933">&gt;&gt;=</font>&nbsp;f<br/>
+&nbsp;&nbsp;<font color="#339933">=</font>&nbsp;<font>&#40;</font>Just&nbsp;x<font>&#41;</font>&nbsp;<font color="#339933">&gt;&gt;=</font>&nbsp;f&nbsp;&nbsp;&nbsp;<font color="#5d478b">--&nbsp;по&nbsp;определению&nbsp;return&nbsp;для&nbsp;монады&nbsp;Maybe</font><br/>
+&nbsp;&nbsp;<font color="#339933">=</font>&nbsp;f&nbsp;x&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font color="#5d478b">--&nbsp;по&nbsp;определению&nbsp;&gt;&gt;=&nbsp;для&nbsp;монады&nbsp;Maybe</font><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font color="#5d478b">--&nbsp;выполнение&nbsp;первого&nbsp;монадного&nbsp;закона</font><br/>
+&nbsp;<br/>
+Just&nbsp;x&nbsp;<font color="#339933">&gt;&gt;=</font>&nbsp;<font>return</font><br/>
+&nbsp;&nbsp;<font color="#339933">=</font>&nbsp;<font>return</font>&nbsp;x&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font color="#5d478b">--&nbsp;по&nbsp;определению&nbsp;&gt;&gt;=&nbsp;для&nbsp;монады&nbsp;Maybe</font><br/>
+&nbsp;&nbsp;<font color="#339933">=</font>&nbsp;Just&nbsp;x&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font color="#5d478b">--&nbsp;по&nbsp;определению&nbsp;return&nbsp;для&nbsp;монады&nbsp;Maybe</font><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font color="#5d478b">--&nbsp;выполнение&nbsp;второго&nbsp;монадного&nbsp;закона</font><br/>
+&nbsp;<br/>
+Nothing&nbsp;<font color="#339933">&gt;&gt;=</font>&nbsp;<font>return</font><br/>
+&nbsp;&nbsp;<font color="#339933">=</font>&nbsp;Nothing&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font color="#5d478b">--&nbsp;по&nbsp;определению&nbsp;&gt;&gt;=&nbsp;для&nbsp;монады&nbsp;Maybe</font><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font color="#5d478b">--&nbsp;выполнение&nbsp;второго&nbsp;монадного&nbsp;закона</font></blockquote>
 
 Раз законы соблюдаются, этот вариант и возьмем. Полное определение монады <font color=blue>Maybe</font> выглядит так:
 
-instance Monad Maybe where
-  return x  =  Just x
-
-  Nothing >>= f  =  Nothing
-  Just x  >>= f  =  f x
+<blockquote><font>instance</font>&nbsp;<font color="#cccc00">Monad</font>&nbsp;<font color="#cccc00">Maybe</font>&nbsp;<font>where</font><br/>
+&nbsp;&nbsp;<font>return</font>&nbsp;x&nbsp;&nbsp;<font color="#339933">=</font>&nbsp;&nbsp;Just&nbsp;x<br/>
+&nbsp;<br/>
+&nbsp;&nbsp;Nothing&nbsp;<font color="#339933">&gt;&gt;=</font>&nbsp;f&nbsp;&nbsp;<font color="#339933">=</font>&nbsp;&nbsp;Nothing<br/>
+&nbsp;&nbsp;Just&nbsp;x&nbsp;&nbsp;<font color="#339933">&gt;&gt;=</font>&nbsp;f&nbsp;&nbsp;<font color="#339933">=</font>&nbsp;&nbsp;f&nbsp;x</blockquote>
 
 Вау! Мы только что создали нашу первую монаду!
 
 Просто чтобы обезопасить себя, проверим, что она удовлетворяет третьему монадному закону, который гласит:
 
-(mv >>= f) >>= g    ==    mv >>= (\x -> (f x >>= g))
+<blockquote><font>&#40;</font>mv&nbsp;<font color="#339933">&gt;&gt;=</font>&nbsp;f<font>&#41;</font>&nbsp;<font color="#339933">&gt;&gt;=</font>&nbsp;g&nbsp;&nbsp;&nbsp;&nbsp;<font color="#339933">==</font>&nbsp;&nbsp;&nbsp;&nbsp;mv&nbsp;<font color="#339933">&gt;&gt;=</font>&nbsp;<font>&#40;</font>\x&nbsp;<font color="#339933">-&gt;</font>&nbsp;<font>&#40;</font>f&nbsp;x&nbsp;<font color="#339933">&gt;&gt;=</font>&nbsp;g<font>&#41;</font><font>&#41;</font></blockquote>
 
 Сначала проверим закон для случая, когда mv = Nothing:
 
-(Nothing >>= f) >>= g             -- с левой стороны
-  = Nothing >>= g                 -- по определению >>=
-  = Nothing                       -- по определению >>=
-
-Nothing >>= (\x -> (f x >>= g))   -- с правой стороны
-  = Nothing                       -- по определению >>=
+<blockquote><font>&#40;</font>Nothing&nbsp;<font color="#339933">&gt;&gt;=</font>&nbsp;f<font>&#41;</font>&nbsp;<font color="#339933">&gt;&gt;=</font>&nbsp;g&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font color="#5d478b">--&nbsp;с&nbsp;левой&nbsp;стороны</font><br/>
+&nbsp;&nbsp;<font color="#339933">=</font>&nbsp;Nothing&nbsp;<font color="#339933">&gt;&gt;=</font>&nbsp;g&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font color="#5d478b">--&nbsp;по&nbsp;определению&nbsp;&gt;&gt;=</font><br/>
+&nbsp;&nbsp;<font color="#339933">=</font>&nbsp;Nothing&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font color="#5d478b">--&nbsp;по&nbsp;определению&nbsp;&gt;&gt;=</font><br/>
+&nbsp;<br/>
+Nothing&nbsp;<font color="#339933">&gt;&gt;=</font>&nbsp;<font>&#40;</font>\x&nbsp;<font color="#339933">-&gt;</font>&nbsp;<font>&#40;</font>f&nbsp;x&nbsp;<font color="#339933">&gt;&gt;=</font>&nbsp;g<font>&#41;</font><font>&#41;</font>&nbsp;&nbsp;&nbsp;<font color="#5d478b">--&nbsp;с&nbsp;правой&nbsp;стороны</font><br/>
+&nbsp;&nbsp;<font color="#339933">=</font>&nbsp;Nothing&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font color="#5d478b">--&nbsp;по&nbsp;определению&nbsp;&gt;&gt;=</font></blockquote>
 
 Хорошо, проверка прошла успешно. Теперь посмотрим, работает ли он для <font color=blue>mv = Just v</font>, где <font color=blue>v</font> - некоторое значение:
 
-((Just v) >>= f) >>= g            -- с левой стороны
-  = f v >>= g                     -- по определению >>=
-
-(Just v) >>= (\x -> (f x >>= g))  -- с правой стороны
-  = (\x -> (f x >>= g)) v         -- по определению >>=
-  = f v >>= g                     -- нормальное применение функции (бета-редукция)
+<blockquote><font>&#40;</font><font>&#40;</font>Just&nbsp;v<font>&#41;</font>&nbsp;<font color="#339933">&gt;&gt;=</font>&nbsp;f<font>&#41;</font>&nbsp;<font color="#339933">&gt;&gt;=</font>&nbsp;g&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font color="#5d478b">--&nbsp;с&nbsp;левой&nbsp;стороны</font><br/>
+&nbsp;&nbsp;<font color="#339933">=</font>&nbsp;f&nbsp;v&nbsp;<font color="#339933">&gt;&gt;=</font>&nbsp;g&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font color="#5d478b">--&nbsp;по&nbsp;определению&nbsp;&gt;&gt;=</font><br/>
+&nbsp;<br/>
+<font>&#40;</font>Just&nbsp;v<font>&#41;</font>&nbsp;<font color="#339933">&gt;&gt;=</font>&nbsp;<font>&#40;</font>\x&nbsp;<font color="#339933">-&gt;</font>&nbsp;<font>&#40;</font>f&nbsp;x&nbsp;<font color="#339933">&gt;&gt;=</font>&nbsp;g<font>&#41;</font><font>&#41;</font>&nbsp;&nbsp;<font color="#5d478b">--&nbsp;с&nbsp;правой&nbsp;стороны</font><br/>
+&nbsp;&nbsp;<font color="#339933">=</font>&nbsp;<font>&#40;</font>\x&nbsp;<font color="#339933">-&gt;</font>&nbsp;<font>&#40;</font>f&nbsp;x&nbsp;<font color="#339933">&gt;&gt;=</font>&nbsp;g<font>&#41;</font><font>&#41;</font>&nbsp;v&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font color="#5d478b">--&nbsp;по&nbsp;определению&nbsp;&gt;&gt;=</font><br/>
+&nbsp;&nbsp;<font color="#339933">=</font>&nbsp;f&nbsp;v&nbsp;<font color="#339933">&gt;&gt;=</font>&nbsp;g&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font color="#5d478b">--&nbsp;нормальное&nbsp;применение&nbsp;функции&nbsp;(бета-редукция)</font></blockquote>
 
 И тоже успешно. Значит, закон выполняется! Это <i>действительно</i> правильное определение монады <font color=blue>Maybe</font>! И публика сходит с ума!
 
 В чем смысл всего этого? Это значит, что теперь мы легко можем соединить кучу монадических функций монады <font color=blue>Maybe</font>. Вы, возможно, задаетесь вопросом, почему это важно? Совсем нетрудно представить себе много монадических функций в монаде <font color=blue>Maybe</font>, то есть, таких, которые могут провалиться. Скажем, пусть у них будет тип <font color=blue>Int -> Maybe Int</font>. Вот три подобных функции:
 
-f :: Int -> Maybe Int
-f x = if x `mod` 2 == 0 then Nothing else Just (2 * x)
-
-g :: Int -> Maybe Int
-g x = if x `mod` 3 == 0 then Nothing else Just (3 * x)
-
-h :: Int -> Maybe Int
-h x = if x `mod` 5 == 0 then Nothing else Just (5 * x)
+<blockquote>f&nbsp;<font color="#339933">::</font>&nbsp;<font color="#cccc00">Int</font>&nbsp;<font color="#339933">-&gt;</font>&nbsp;<font color="#cccc00">Maybe</font>&nbsp;<font color="#cccc00">Int</font><br/>
+f&nbsp;x&nbsp;<font color="#339933">=</font>&nbsp;<font>if</font>&nbsp;x&nbsp;`<font>mod</font>`&nbsp;<font>2</font>&nbsp;<font color="#339933">==</font>&nbsp;<font>0</font>&nbsp;<font>then</font>&nbsp;Nothing&nbsp;<font>else</font>&nbsp;Just&nbsp;<font>&#40;</font><font>2</font>&nbsp;<font color="#339933">*</font>&nbsp;x<font>&#41;</font><br/>
+&nbsp;<br/>
+g&nbsp;<font color="#339933">::</font>&nbsp;<font color="#cccc00">Int</font>&nbsp;<font color="#339933">-&gt;</font>&nbsp;<font color="#cccc00">Maybe</font>&nbsp;<font color="#cccc00">Int</font><br/>
+g&nbsp;x&nbsp;<font color="#339933">=</font>&nbsp;<font>if</font>&nbsp;x&nbsp;`<font>mod</font>`&nbsp;<font>3</font>&nbsp;<font color="#339933">==</font>&nbsp;<font>0</font>&nbsp;<font>then</font>&nbsp;Nothing&nbsp;<font>else</font>&nbsp;Just&nbsp;<font>&#40;</font><font>3</font>&nbsp;<font color="#339933">*</font>&nbsp;x<font>&#41;</font><br/>
+&nbsp;<br/>
+h&nbsp;<font color="#339933">::</font>&nbsp;<font color="#cccc00">Int</font>&nbsp;<font color="#339933">-&gt;</font>&nbsp;<font color="#cccc00">Maybe</font>&nbsp;<font color="#cccc00">Int</font><br/>
+h&nbsp;x&nbsp;<font color="#339933">=</font>&nbsp;<font>if</font>&nbsp;x&nbsp;`<font>mod</font>`&nbsp;<font>5</font>&nbsp;<font color="#339933">==</font>&nbsp;<font>0</font>&nbsp;<font>then</font>&nbsp;Nothing&nbsp;<font>else</font>&nbsp;Just&nbsp;<font>&#40;</font><font>5</font>&nbsp;<font color="#339933">*</font>&nbsp;x<font>&#41;</font></blockquote>
 
 Нам бы хотелось соединить их в одну функцию, которая есть результат применения по порядку <font color=blue>f</font>, <font color=blue>g</font>, <font color=blue>h</font>:
 
-k :: Int -> Maybe Int
+<blockquote>k&nbsp;<font color="#339933">::</font>&nbsp;<font color="#cccc00">Int</font>&nbsp;<font color="#339933">-&gt;</font>&nbsp;<font color="#cccc00">Maybe</font>&nbsp;<font color="#cccc00">Int</font></blockquote>
 
 И если какая-то из трех функций потерпит неудачу, функция <font color=blue>k</font> должна вернуть <font color=blue>Nothing</font>. Эта функция умножает входное число на 30, если оно не делится целочисленно на 2, 3 или 5 (а если делится, функция возвращает <font color=blue>Nothing</font>).
 
 Из предыдущего материала, если вы его хорошо поняли, должно быть понятно, что вы можете задать <font color=blue>k</font> через монадическую композицию:
 
-k = f >=> g >=> h
+<blockquote>k&nbsp;<font color="#339933">=</font>&nbsp;f&nbsp;<font color="#339933">&gt;=&gt;</font>&nbsp;g&nbsp;<font color="#339933">&gt;=&gt;</font>&nbsp;h</blockquote>
 
 Или можете взять оператор <font color=blue>>>=</font>:
 
-k x = f x >>= g >>= h
+<blockquote>k&nbsp;x&nbsp;<font color="#339933">=</font>&nbsp;f&nbsp;x&nbsp;<font color="#339933">&gt;&gt;=</font>&nbsp;g&nbsp;<font color="#339933">&gt;&gt;=</font>&nbsp;h</blockquote>
 
 Или, возможно, вам нравится <font color=blue>do</font>-нотация:
 
-k x = do y <- f x
-         z <- g y
-         h z
+<blockquote>k&nbsp;x&nbsp;<font color="#339933">=</font>&nbsp;<font>do</font>&nbsp;y&nbsp;<font color="#339933">&lt;-</font>&nbsp;f&nbsp;x<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;z&nbsp;<font color="#339933">&lt;-</font>&nbsp;g&nbsp;y<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;h&nbsp;z</blockquote>
 
 Это просто, как ни крути. {1: В оригинале - устойчивое выражение "Any way you slice it", аналогичное по смыслу. - Прим. пер.}
 
 А вообще, функцию <font color=blue>h</font> можно определить вовсе без монадных конструкций, это будет выглядеть так:
 
-k x = case f x of
-        Nothing -> Nothing
-        Just y  -> case g y of
-                     Nothing -> Nothing
-                     Just z  -> h z
+<blockquote>k&nbsp;x&nbsp;<font color="#339933">=</font>&nbsp;<font>case</font>&nbsp;f&nbsp;x&nbsp;<font>of</font><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Nothing&nbsp;<font color="#339933">-&gt;</font>&nbsp;Nothing<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Just&nbsp;y&nbsp;&nbsp;<font color="#339933">-&gt;</font>&nbsp;<font>case</font>&nbsp;g&nbsp;y&nbsp;<font>of</font><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Nothing&nbsp;<font color="#339933">-&gt;</font>&nbsp;Nothing<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Just&nbsp;z&nbsp;&nbsp;<font color="#339933">-&gt;</font>&nbsp;h&nbsp;z</blockquote>
 
 Теперь понятно, почему монада <font color=blue>Maybe</font> важна. Она резко упрощает код, соединяя в цепь несколько <font color=blue>Maybe</font>-функций. Представьте себе грубый немонадический код для композиции десяти <font color=blue>Maybe</font>-функций в таком виде. Получился бы такой большой отступ вправо, что читаемость сильно пострадала бы, и общая структура вычислений потерялась бы в лабиринте вложенных <font color=blue>case</font>-выражений. Но с помощью монад композиция десяти функций записывается просто:
 
-f11 = f1 >=> f2 >=> f3 >=> f4 >=> f5 >=> f6 >=> f7 >=> f8 >=> f9 >=> f10
+<blockquote>f11&nbsp;<font color="#339933">=</font>&nbsp;f1&nbsp;<font color="#339933">&gt;=&gt;</font>&nbsp;f2&nbsp;<font color="#339933">&gt;=&gt;</font>&nbsp;f3&nbsp;<font color="#339933">&gt;=&gt;</font>&nbsp;f4&nbsp;<font color="#339933">&gt;=&gt;</font>&nbsp;f5&nbsp;<font color="#339933">&gt;=&gt;</font>&nbsp;f6&nbsp;<font color="#339933">&gt;=&gt;</font>&nbsp;f7&nbsp;<font color="#339933">&gt;=&gt;</font>&nbsp;f8&nbsp;<font color="#339933">&gt;=&gt;</font>&nbsp;f9&nbsp;<font color="#339933">&gt;=&gt;</font>&nbsp;f10</blockquote>
 
 или (с использованием <font color=blue>>>=</font>):
 
-f11 x = f1 x >>= f2 >>= f3 >>= f4 >>= f5 >>= f6 >>= f7 >>= f8 >>= f9 >>= f10
+<blockquote>f11&nbsp;x&nbsp;<font color="#339933">=</font>&nbsp;f1&nbsp;x&nbsp;<font color="#339933">&gt;&gt;=</font>&nbsp;f2&nbsp;<font color="#339933">&gt;&gt;=</font>&nbsp;f3&nbsp;<font color="#339933">&gt;&gt;=</font>&nbsp;f4&nbsp;<font color="#339933">&gt;&gt;=</font>&nbsp;f5&nbsp;<font color="#339933">&gt;&gt;=</font>&nbsp;f6&nbsp;<font color="#339933">&gt;&gt;=</font>&nbsp;f7&nbsp;<font color="#339933">&gt;&gt;=</font>&nbsp;f8&nbsp;<font color="#339933">&gt;&gt;=</font>&nbsp;f9&nbsp;<font color="#339933">&gt;&gt;=</font>&nbsp;f10</blockquote>
 
 С помощью монад композиция монадических функций такая же простая, как композиция обычных (немонадических) функций.
 
@@ -232,76 +232,77 @@ f11 x = f1 x >>= f2 >>= f3 >>= f4 >>= f5 >>= f6 >>= f7 >>= f8 >>= f9 >>= f10
 
 Если монада <font color=blue>Maybe</font> вам просто понравилась, то монаду <font color=blue>list</font> вы даже полюбите. ;-) В данном случае мы заполним следующее определение:
 
-instance Monad [] where
-  (>>=)  = {- definition of >>= for lists -}
-  return = {- definition of return for lists -}
+<blockquote><font>instance</font>&nbsp;<font color="#cccc00">Monad</font>&nbsp;<font>&#91;</font><font>&#93;</font>&nbsp;<font>where</font><br/>
+&nbsp;&nbsp;<font>&#40;</font><font color="#339933">&gt;&gt;=</font><font>&#41;</font>&nbsp;&nbsp;<font color="#339933">=</font>&nbsp;<font color="#5d478b">{-&nbsp;definition&nbsp;of&nbsp;&gt;&gt;=&nbsp;for&nbsp;lists&nbsp;-}</font><br/>
+&nbsp;&nbsp;<font>return</font>&nbsp;<font color="#339933">=</font>&nbsp;<font color="#5d478b">{-&nbsp;definition&nbsp;of&nbsp;return&nbsp;for&nbsp;lists&nbsp;-}</font></blockquote>
 
 Заметьте, что для представления пустого списка <font color=blue>[]</font> мы используем списковый конструктор типа. Это небольшой хак (для списков в Haskell вшита специальная синтаксическая поддержка). Но ничего не поделаешь.
 
 Как и для всех монад, первой задачей будет понять, что представляют из себя монадические функции этой монады. Для списка монадическая функция <font color=blue>f</font> выглядит так:
 
-f :: a -> [b]
+<blockquote>f&nbsp;<font color="#339933">::</font>&nbsp;a&nbsp;<font color="#339933">-&gt;</font>&nbsp;<font>&#91;</font>b<font>&#93;</font></blockquote>
 
 (где <font color=blue>[b]</font> значит, конечно, "список элементов типа <font color=blue>b</font>"). Вспомните, что обобщенное определение монадической функции записывается следующим образом:
 
-f :: a -> m b
+<blockquote>f&nbsp;<font color="#339933">::</font>&nbsp;a&nbsp;<font color="#339933">-&gt;</font>&nbsp;m&nbsp;b</blockquote>
 
 для некоторой монады <font color=blue>m</font>, которая должна быть конструктором типа. Список - очевидный кандидат в монаду, поскольку "список из" - это конструктор типа (пусть даже его синтаксис жестко зашит в Haskell); по желанию, мы могли бы определить список сами:
 
-data List a = Nil | Cons a (List a)
+<blockquote><font>data</font>&nbsp;List&nbsp;a&nbsp;<font color="#339933">=</font>&nbsp;Nil&nbsp;<font color="#339933">|</font>&nbsp;Cons&nbsp;a&nbsp;<font>&#40;</font>List&nbsp;a<font>&#41;</font></blockquote>
 
 Тип монадическая функций для него выглядел бы соответственно:
 
-f :: a -> List b
+<blockquote>f&nbsp;<font color="#339933">::</font>&nbsp;a&nbsp;<font color="#339933">-&gt;</font>&nbsp;List&nbsp;b</blockquote>
 
 Но мы будем все-таки придерживаться стандартного синтаксиса.
 
 Чем являются функции подобного сорта? Обычно их понимают как функции, которые берут входное значение типа <font color=blue>a</font> и производят кучу значений типа <font color=blue>b</font>, собранных в один удобный контейнер (список). (И опять у нас монада, которая выглядит как контейнер.) Другой способ думать о них как о функциях, возвращающих множество значений, то есть, такие функции возвращают кучу разных значений "в одном". (Я не имею в виду "параллельно", потому что это подразумевает параллельную обработку, чего здесь нет.) Множественные выходные значения - это просто элементы списка. При использовании функций наподобие следующих открываются полезные перспективы:
 
-f :: Int -> [Int]
-g :: Int -> [Int]
+<blockquote>f&nbsp;<font color="#339933">::</font>&nbsp;<font color="#cccc00">Int</font>&nbsp;<font color="#339933">-&gt;</font>&nbsp;<font>&#91;</font><font color="#cccc00">Int</font><font>&#93;</font><br/>
+g&nbsp;<font color="#339933">::</font>&nbsp;<font color="#cccc00">Int</font>&nbsp;<font color="#339933">-&gt;</font>&nbsp;<font>&#91;</font><font color="#cccc00">Int</font><font>&#93;</font></blockquote>
 
 Здесь и <font color=blue>f</font>, и <font color=blue>g</font> принимают одно <font color=blue>Int</font>-значение и возвращают много <font color=blue>Int</font>-значений. А что если мы хотим взять каждый результат функции <font color=blue>f</font> и применить его к каждому результату функции <font color=blue>g</font>, коллекционируя результаты применения? Было бы здорово, если бы это можно было сделать непосредственно, без распаковки каждого элемента из списков-результатов функций <font color=blue>g</font> и <font color=blue>f</font>. И это можно сделать с помощью монады списка.
 
 Давайте перейдем к более материальным примерам этих функций:
 
-f :: Int -> [Int]
-f x = [x-1, x, x+1]
-
-g :: Int -> [Int]
-g x = [-x, x]
+<blockquote>f&nbsp;<font color="#339933">::</font>&nbsp;<font color="#cccc00">Int</font>&nbsp;<font color="#339933">-&gt;</font>&nbsp;<font>&#91;</font><font color="#cccc00">Int</font><font>&#93;</font><br/>
+f&nbsp;x&nbsp;<font color="#339933">=</font>&nbsp;<font>&#91;</font>x<font color="#339933">-</font><font>1</font><font color="#339933">,</font>&nbsp;x<font color="#339933">,</font>&nbsp;x<font color="#339933">+</font><font>1</font><font>&#93;</font><br/>
+&nbsp;<br/>
+g&nbsp;<font color="#339933">::</font>&nbsp;<font color="#cccc00">Int</font>&nbsp;<font color="#339933">-&gt;</font>&nbsp;<font>&#91;</font><font color="#cccc00">Int</font><font>&#93;</font><br/>
+g&nbsp;x&nbsp;<font color="#339933">=</font>&nbsp;<font>&#91;</font><font color="#339933">-</font>x<font color="#339933">,</font>&nbsp;x<font>&#93;</font></blockquote>
 
 Как же нам "скомпоновать" эти две функции? <font color=blue>f x</font> возвращает список, и для применения <font color=blue>g</font> к каждому элементу нам нужна функция <font color=blue>map</font>:
 
-f 10   -->  [9, 10, 11]
-map g (f 10)  -->  [[-9, 9], [-10, 10], [-11, 11]]
+<blockquote>f&nbsp;<font>10</font>&nbsp;&nbsp;&nbsp;<font color="#339933">--&gt;</font>&nbsp;&nbsp;<font>&#91;</font><font>9</font><font color="#339933">,</font>&nbsp;<font>10</font><font color="#339933">,</font>&nbsp;<font>11</font><font>&#93;</font><br/>
+<font>map</font>&nbsp;g&nbsp;<font>&#40;</font>f&nbsp;<font>10</font><font>&#41;</font>&nbsp;&nbsp;<font color="#339933">--&gt;</font>&nbsp;&nbsp;<font>&#91;</font><font>&#91;</font><font color="#339933">-</font><font>9</font><font color="#339933">,</font>&nbsp;<font>9</font><font>&#93;</font><font color="#339933">,</font>&nbsp;<font>&#91;</font><font color="#339933">-</font><font>10</font><font color="#339933">,</font>&nbsp;<font>10</font><font>&#93;</font><font color="#339933">,</font>&nbsp;<font>&#91;</font><font color="#339933">-</font><font>11</font><font color="#339933">,</font>&nbsp;<font>11</font><font>&#93;</font><font>&#93;</font></blockquote>
 
 Этот новый результат интересен, но он не может быть композицией <font color=blue>f</font> и <font color=blue>g</font>, потому что у него другой тип (список списков <font color=blue>Int</font>, а не просто список <font color=blue>Int</font>). Мы можем его сгладить в простой список функцией <font color=blue>concat</font> (которая просто соединяет списки в один):
 
--- Обратите особое внимание на тип concat: [[a]] -> [a]
-concat (map g (f 10))  -->  [-9, 9, -10, 10, -11, 11]
+<blockquote><font color="#5d478b">--&nbsp;Обратите&nbsp;особое&nbsp;внимание&nbsp;на&nbsp;тип&nbsp;concat:&nbsp;[[a]]&nbsp;-&gt;&nbsp;[a]</font><br/>
+<font>concat</font>&nbsp;<font>&#40;</font><font>map</font>&nbsp;g&nbsp;<font>&#40;</font>f&nbsp;<font>10</font><font>&#41;</font><font>&#41;</font>&nbsp;&nbsp;<font color="#339933">--&gt;</font>&nbsp;&nbsp;<font>&#91;</font><font color="#339933">-</font><font>9</font><font color="#339933">,</font>&nbsp;<font>9</font><font color="#339933">,</font>&nbsp;<font color="#339933">-</font><font>10</font><font color="#339933">,</font>&nbsp;<font>10</font><font color="#339933">,</font>&nbsp;<font color="#339933">-</font><font>11</font><font color="#339933">,</font>&nbsp;<font>11</font><font>&#93;</font></blockquote>
 
 Мы получили набор всех результатов, произведенных через применение <font color=blue>f</font> к целому числу и затем применив <font color=blue>g</font> к тому, что получилось после <font color=blue>f</font>. Если вы думаете об <font color=blue>f</font> и <font color=blue>g</font> как о функциях, которые создают множество результатов "здесь и сейчас", их выходные значения будут множеством всех возможных применений сначала функции <font color=blue>f</font>, а затем функции <font color=blue>g</font>. Мы можем представить это в виде диаграммы:
 
-                g   <font color=blue>  -9
-         </font>  9 ----> <font color=blue>
-         </font>          <font color=blue>   9
-         </font>
-     f   <font color=blue>      g   </font> -10
-10 ----> <font color=blue> 10 ----> </font>
-         <font color=blue>          </font>  10
-         <font color=blue>
-         </font>      g   <font color=blue> -11
-         </font> 11 ----> <font color=blue>
-                    </font>  11
+<pre>
+                  g   |  -9
+           |  9 ----> |
+           |          |   9
+           |
+       f   |      g   | -10
+  10 ----> | 10 ----> |
+           |          |  10
+           |
+           |      g   | -11
+           | 11 ----> |
+                      |  11</pre>
 
 Хорошо видно, что композиция <font color=blue>f</font> и <font color=blue>g</font> - это множество всех путей между <font color=blue>f</font> и <font color=blue>g</font>.
 
 Любопытно, что мы только что определили оператор <font color=blue>>>=</font> для монады списка! Он задан так:
 
--- mv :: [a]
--- g  :: a -> [b]
-mv >>= g = concat (map g mv)
+<blockquote><font color="#5d478b">--&nbsp;mv&nbsp;::&nbsp;[a]</font><br/>
+<font color="#5d478b">--&nbsp;g&nbsp;&nbsp;::&nbsp;a&nbsp;-&gt;&nbsp;[b]</font><br/>
+mv&nbsp;<font color="#339933">&gt;&gt;=</font>&nbsp;g&nbsp;<font color="#339933">=</font>&nbsp;<font>concat</font>&nbsp;<font>&#40;</font><font>map</font>&nbsp;g&nbsp;mv<font>&#41;</font></blockquote>
 
 где <font color=blue>mv</font> - это монадическое значение в монаде списка (которое просто список значений типа <font color=blue>a</font>). В предыдущем примере <font color=blue>mv</font> - это результат вычисления <font color=blue>f 10</font>. Определение работает даже для пустого списка <font color=blue>[]</font>, поскольку отображение (mapping) функции на пустой список даст пустой список, и <font color=blue>concat</font> для пустого списка тоже всегда пустой список. Получилось очень простое определение оператора <font color=blue>>>=</font>.
 
@@ -309,240 +310,240 @@ mv >>= g = concat (map g mv)
 
 Как задать <font color=blue>return</font> для этой монады? Давайте подумаем о монадическом значении-списке как о "действии", возвращающем много значений. Вспомним, что <font color=blue>return</font> должен быть эквивалентом единичной функции, - как и в других монадах. Что будет эквивалентом единичной функции в монаде списка? Она должна брать значение и возвращать "действие", которое после "вычисления" просто вернет это значение. Так мы поняли, что <font color=blue>return</font> не может просто возвращать пустой список. Разумно предположить о <font color=blue>return</font> что-то такое:
 
-return :: a -> [b]
-return x = [x]
+<blockquote><font>return</font>&nbsp;<font color="#339933">::</font>&nbsp;a&nbsp;<font color="#339933">-&gt;</font>&nbsp;<font>&#91;</font>b<font>&#93;</font><br/>
+<font>return</font>&nbsp;x&nbsp;<font color="#339933">=</font>&nbsp;<font>&#91;</font>x<font>&#93;</font></blockquote>
 
 То есть, <font color=blue>return</font> элементарно создает список из отдельного значения. Проверим, соблюдаются ли в этом случае монадные законы:
 
--- f :: a -> [b]
--- x :: a
-return x >>= f  =  concat (map f (return x))   -- по определению >>=
-                =  concat (map f [x])          -- по определению return
-                =  concat [f x]                -- по определению map
-                =  f x                         -- по определению concat
-                   -- выполнение первого монадного закона
-
--- mv :: [a]
-mv >>= return   =  concat (map return mv)      -- по определению >>=
-                =  concat (map (\x -> [x]) mv) -- по определению return
-                -- Два случая:
-                -- Случай 1:  mv == []
-                =  concat (map (\x -> [x]) []) -- по определению mv
-                =  concat []                   -- по определению map
-                =  []                          -- по определению concat
-                =  mv                          -- по определению mv
-                -- Случай 2:  mv == [v1, v2, ...]
-                =  concat (map (\x -> [x]) [v1, v2, ...])  -- по определению mv
-                =  concat [[v1], [v2], ...]    -- по определению map
-                =  [v1, v2, ...]               -- по определению concat
-                =  mv                          -- по определению mv
-                   -- выполнение второго монадного закона
+<blockquote><font color="#5d478b">--&nbsp;f&nbsp;::&nbsp;a&nbsp;-&gt;&nbsp;[b]</font><br/>
+<font color="#5d478b">--&nbsp;x&nbsp;::&nbsp;a</font><br/>
+<font>return</font>&nbsp;x&nbsp;<font color="#339933">&gt;&gt;=</font>&nbsp;f&nbsp;&nbsp;<font color="#339933">=</font>&nbsp;&nbsp;<font>concat</font>&nbsp;<font>&#40;</font><font>map</font>&nbsp;f&nbsp;<font>&#40;</font><font>return</font>&nbsp;x<font>&#41;</font><font>&#41;</font>&nbsp;&nbsp;&nbsp;<font color="#5d478b">--&nbsp;по&nbsp;определению&nbsp;&gt;&gt;=</font><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font color="#339933">=</font>&nbsp;&nbsp;<font>concat</font>&nbsp;<font>&#40;</font><font>map</font>&nbsp;f&nbsp;<font>&#91;</font>x<font>&#93;</font><font>&#41;</font>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font color="#5d478b">--&nbsp;по&nbsp;определению&nbsp;return</font><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font color="#339933">=</font>&nbsp;&nbsp;<font>concat</font>&nbsp;<font>&#91;</font>f&nbsp;x<font>&#93;</font>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font color="#5d478b">--&nbsp;по&nbsp;определению&nbsp;map</font><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font color="#339933">=</font>&nbsp;&nbsp;f&nbsp;x&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font color="#5d478b">--&nbsp;по&nbsp;определению&nbsp;concat</font><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font color="#5d478b">--&nbsp;выполнение&nbsp;первого&nbsp;монадного&nbsp;закона</font><br/>
+&nbsp;<br/>
+<font color="#5d478b">--&nbsp;mv&nbsp;::&nbsp;[a]</font><br/>
+mv&nbsp;<font color="#339933">&gt;&gt;=</font>&nbsp;<font>return</font>&nbsp;&nbsp;&nbsp;<font color="#339933">=</font>&nbsp;&nbsp;<font>concat</font>&nbsp;<font>&#40;</font><font>map</font>&nbsp;<font>return</font>&nbsp;mv<font>&#41;</font>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font color="#5d478b">--&nbsp;по&nbsp;определению&nbsp;&gt;&gt;=</font><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font color="#339933">=</font>&nbsp;&nbsp;<font>concat</font>&nbsp;<font>&#40;</font><font>map</font>&nbsp;<font>&#40;</font>\x&nbsp;<font color="#339933">-&gt;</font>&nbsp;<font>&#91;</font>x<font>&#93;</font><font>&#41;</font>&nbsp;mv<font>&#41;</font>&nbsp;<font color="#5d478b">--&nbsp;по&nbsp;определению&nbsp;return</font><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font color="#5d478b">--&nbsp;Два&nbsp;случая:</font><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font color="#5d478b">--&nbsp;Случай&nbsp;1:&nbsp;&nbsp;mv&nbsp;==&nbsp;[]</font><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font color="#339933">=</font>&nbsp;&nbsp;<font>concat</font>&nbsp;<font>&#40;</font><font>map</font>&nbsp;<font>&#40;</font>\x&nbsp;<font color="#339933">-&gt;</font>&nbsp;<font>&#91;</font>x<font>&#93;</font><font>&#41;</font>&nbsp;<font>&#91;</font><font>&#93;</font><font>&#41;</font>&nbsp;<font color="#5d478b">--&nbsp;по&nbsp;определению&nbsp;mv</font><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font color="#339933">=</font>&nbsp;&nbsp;<font>concat</font>&nbsp;<font>&#91;</font><font>&#93;</font>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font color="#5d478b">--&nbsp;по&nbsp;определению&nbsp;map</font><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font color="#339933">=</font>&nbsp;&nbsp;<font>&#91;</font><font>&#93;</font>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font color="#5d478b">--&nbsp;по&nbsp;определению&nbsp;concat</font><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font color="#339933">=</font>&nbsp;&nbsp;mv&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font color="#5d478b">--&nbsp;по&nbsp;определению&nbsp;mv</font><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font color="#5d478b">--&nbsp;Случай&nbsp;2:&nbsp;&nbsp;mv&nbsp;==&nbsp;[v1,&nbsp;v2,&nbsp;...]</font><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font color="#339933">=</font>&nbsp;&nbsp;<font>concat</font>&nbsp;<font>&#40;</font><font>map</font>&nbsp;<font>&#40;</font>\x&nbsp;<font color="#339933">-&gt;</font>&nbsp;<font>&#91;</font>x<font>&#93;</font><font>&#41;</font>&nbsp;<font>&#91;</font>v1<font color="#339933">,</font>&nbsp;v2<font color="#339933">,</font>&nbsp;<font color="#339933">...</font><font>&#93;</font><font>&#41;</font>&nbsp;&nbsp;<font color="#5d478b">--&nbsp;по&nbsp;определению&nbsp;mv</font><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font color="#339933">=</font>&nbsp;&nbsp;<font>concat</font>&nbsp;<font>&#91;</font><font>&#91;</font>v1<font>&#93;</font><font color="#339933">,</font>&nbsp;<font>&#91;</font>v2<font>&#93;</font><font color="#339933">,</font>&nbsp;<font color="#339933">...</font><font>&#93;</font>&nbsp;&nbsp;&nbsp;&nbsp;<font color="#5d478b">--&nbsp;по&nbsp;определению&nbsp;map</font><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font color="#339933">=</font>&nbsp;&nbsp;<font>&#91;</font>v1<font color="#339933">,</font>&nbsp;v2<font color="#339933">,</font>&nbsp;<font color="#339933">...</font><font>&#93;</font>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font color="#5d478b">--&nbsp;по&nbsp;определению&nbsp;concat</font><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font color="#339933">=</font>&nbsp;&nbsp;mv&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font color="#5d478b">--&nbsp;по&nbsp;определению&nbsp;mv</font><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font color="#5d478b">--&nbsp;выполнение&nbsp;второго&nbsp;монадного&nbsp;закона</font></blockquote>
 
 Ну что ж, два закона для монады доказаны. Возможно, вам захочется попробовать другие определения <font color=blue>return</font> (когда <font color=blue>return</font> возвращает, например, конкретный список <font color=blue>[0, 2, 3]</font>, или когда возвращает бесконечное количество копий своего аргумента), и вы увидите, что они все будут нарушать монадные законы. Это хороший способ попрактиковаться с монадными законами.
 
 Осталось доказать третий монадный закон, прежде чем называть список настоящей монадой. Надо сказать, это труднее, но попробуем все равно. Упростим себе задачу - возьмем "приятную" форму третьего монадного закона (определенного через монадическую композицию). Для начала нам нужно определение монадической композиции списков:
 
--- Третий монадный закон (приятная версия):  
-(f >=> g) >=> h  =  f >=> (g >=> h)
--- По определению: 
-f >=> g = \x -> f x >>= g
--- Возьмем определение >>= для монады списка:
-f >=> g = \x -> concat (map g (f x))
--- Можно переписать выражение через оператор композиции (.):
-f >=> g = concat . map g . f
+<blockquote><font color="#5d478b">--&nbsp;Третий&nbsp;монадный&nbsp;закон&nbsp;(приятная&nbsp;версия):&nbsp;&nbsp;</font><br/>
+<font>&#40;</font>f&nbsp;<font color="#339933">&gt;=&gt;</font>&nbsp;g<font>&#41;</font>&nbsp;<font color="#339933">&gt;=&gt;</font>&nbsp;h&nbsp;&nbsp;<font color="#339933">=</font>&nbsp;&nbsp;f&nbsp;<font color="#339933">&gt;=&gt;</font>&nbsp;<font>&#40;</font>g&nbsp;<font color="#339933">&gt;=&gt;</font>&nbsp;h<font>&#41;</font><br/>
+<font color="#5d478b">--&nbsp;По&nbsp;определению:&nbsp;</font><br/>
+f&nbsp;<font color="#339933">&gt;=&gt;</font>&nbsp;g&nbsp;<font color="#339933">=</font>&nbsp;\x&nbsp;<font color="#339933">-&gt;</font>&nbsp;f&nbsp;x&nbsp;<font color="#339933">&gt;&gt;=</font>&nbsp;g<br/>
+<font color="#5d478b">--&nbsp;Возьмем&nbsp;определение&nbsp;&gt;&gt;=&nbsp;для&nbsp;монады&nbsp;списка:</font><br/>
+f&nbsp;<font color="#339933">&gt;=&gt;</font>&nbsp;g&nbsp;<font color="#339933">=</font>&nbsp;\x&nbsp;<font color="#339933">-&gt;</font>&nbsp;<font>concat</font>&nbsp;<font>&#40;</font><font>map</font>&nbsp;g&nbsp;<font>&#40;</font>f&nbsp;x<font>&#41;</font><font>&#41;</font><br/>
+<font color="#5d478b">--&nbsp;Можно&nbsp;переписать&nbsp;выражение&nbsp;через&nbsp;оператор&nbsp;композиции&nbsp;(.):</font><br/>
+f&nbsp;<font color="#339933">&gt;=&gt;</font>&nbsp;g&nbsp;<font color="#339933">=</font>&nbsp;<font>concat</font>&nbsp;<font color="#339933">.</font>&nbsp;<font>map</font>&nbsp;g&nbsp;<font color="#339933">.</font>&nbsp;f</blockquote>
 
 Кроме того, я воспользуюсь несколькими свойствами функций <font color=blue>concat</font> и <font color=blue>map</font>. Вам пока придется принять их на веру; потом я покажу, как их получить:
 
--- уравнение 1:
-map (f . g)  =  map f . map g
--- уравнение 2:
-map f . concat =  concat . map (map f)
--- уравнение 3:
-concat . concat  =  concat . map concat
+<blockquote><font color="#5d478b">--&nbsp;уравнение&nbsp;1:</font><br/>
+<font>map</font>&nbsp;<font>&#40;</font>f&nbsp;<font color="#339933">.</font>&nbsp;g<font>&#41;</font>&nbsp;&nbsp;<font color="#339933">=</font>&nbsp;&nbsp;<font>map</font>&nbsp;f&nbsp;<font color="#339933">.</font>&nbsp;<font>map</font>&nbsp;g<br/>
+<font color="#5d478b">--&nbsp;уравнение&nbsp;2:</font><br/>
+<font>map</font>&nbsp;f&nbsp;<font color="#339933">.</font>&nbsp;<font>concat</font>&nbsp;<font color="#339933">=</font>&nbsp;&nbsp;<font>concat</font>&nbsp;<font color="#339933">.</font>&nbsp;<font>map</font>&nbsp;<font>&#40;</font><font>map</font>&nbsp;f<font>&#41;</font><br/>
+<font color="#5d478b">--&nbsp;уравнение&nbsp;3:</font><br/>
+<font>concat</font>&nbsp;<font color="#339933">.</font>&nbsp;<font>concat</font>&nbsp;&nbsp;<font color="#339933">=</font>&nbsp;&nbsp;<font>concat</font>&nbsp;<font color="#339933">.</font>&nbsp;<font>map</font>&nbsp;<font>concat</font></blockquote>
 
 Я как-то уже говорил, что точка <font color=blue>(.)</font> является (чистым) оператором композиции. У нее меньший приоритет, чем у применения функции, следовательно, выражения вроде <font color=blue>map f . map g</font> значат лишь <font color=blue>(map f) . (map g)</font>. Программисты на Haskell обычно избавляются от скобок, где это возможно. Также важно понимать, что, например, функция <font color=blue>map f</font> - это функция <font color=blue>map</font>, у которой вообще-то два аргумента (такие: функция для элементов списка и сам список). Если вы вспомните, что я рассказывал про карринг, то вы догадаетесь, что <font color=blue>map f</font> - это функция, которая принимает один список и возвращает другой, где к каждому элементу применена функция <font color=blue>f</font>. Каррингом мы теперь будем много пользоваться.
 
 Итак, вывод доказательства с учетом всего сказанного:
 
-(f >=> g) >=> h
-  = (concat . map g . f) >=> h                     -- по определению >=>
-  = concat . map h . (concat . map g . f)          -- по определению >=>
-  = concat . map h . concat . map g . f            -- удаляем ненужные скобки
-
-f >=> (g >=> h)
-  = f >=> (concat . map h . g)                     -- по определению >=>
-  = concat . map (concat . map h . g) . f          -- по определению >=>
-  = concat . map ((concat . map h) . g) . f        -- эквивалентное преобразование
-  = concat . (map (concat . map h)) . (map g) . f  -- по уравнению 1
-  = concat . map (concat . map h) . map g . f      -- удаляем ненужные скобки
-  = concat . map concat . map (map h) . map g . f  -- по уравнению 1
+<blockquote><font>&#40;</font>f&nbsp;<font color="#339933">&gt;=&gt;</font>&nbsp;g<font>&#41;</font>&nbsp;<font color="#339933">&gt;=&gt;</font>&nbsp;h<br/>
+&nbsp;&nbsp;<font color="#339933">=</font>&nbsp;<font>&#40;</font><font>concat</font>&nbsp;<font color="#339933">.</font>&nbsp;<font>map</font>&nbsp;g&nbsp;<font color="#339933">.</font>&nbsp;f<font>&#41;</font>&nbsp;<font color="#339933">&gt;=&gt;</font>&nbsp;h&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font color="#5d478b">--&nbsp;по&nbsp;определению&nbsp;&gt;=&gt;</font><br/>
+&nbsp;&nbsp;<font color="#339933">=</font>&nbsp;<font>concat</font>&nbsp;<font color="#339933">.</font>&nbsp;<font>map</font>&nbsp;h&nbsp;<font color="#339933">.</font>&nbsp;<font>&#40;</font><font>concat</font>&nbsp;<font color="#339933">.</font>&nbsp;<font>map</font>&nbsp;g&nbsp;<font color="#339933">.</font>&nbsp;f<font>&#41;</font>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font color="#5d478b">--&nbsp;по&nbsp;определению&nbsp;&gt;=&gt;</font><br/>
+&nbsp;&nbsp;<font color="#339933">=</font>&nbsp;<font>concat</font>&nbsp;<font color="#339933">.</font>&nbsp;<font>map</font>&nbsp;h&nbsp;<font color="#339933">.</font>&nbsp;<font>concat</font>&nbsp;<font color="#339933">.</font>&nbsp;<font>map</font>&nbsp;g&nbsp;<font color="#339933">.</font>&nbsp;f&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font color="#5d478b">--&nbsp;удаляем&nbsp;ненужные&nbsp;скобки</font><br/>
+&nbsp;<br/>
+f&nbsp;<font color="#339933">&gt;=&gt;</font>&nbsp;<font>&#40;</font>g&nbsp;<font color="#339933">&gt;=&gt;</font>&nbsp;h<font>&#41;</font><br/>
+&nbsp;&nbsp;<font color="#339933">=</font>&nbsp;f&nbsp;<font color="#339933">&gt;=&gt;</font>&nbsp;<font>&#40;</font><font>concat</font>&nbsp;<font color="#339933">.</font>&nbsp;<font>map</font>&nbsp;h&nbsp;<font color="#339933">.</font>&nbsp;g<font>&#41;</font>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font color="#5d478b">--&nbsp;по&nbsp;определению&nbsp;&gt;=&gt;</font><br/>
+&nbsp;&nbsp;<font color="#339933">=</font>&nbsp;<font>concat</font>&nbsp;<font color="#339933">.</font>&nbsp;<font>map</font>&nbsp;<font>&#40;</font><font>concat</font>&nbsp;<font color="#339933">.</font>&nbsp;<font>map</font>&nbsp;h&nbsp;<font color="#339933">.</font>&nbsp;g<font>&#41;</font>&nbsp;<font color="#339933">.</font>&nbsp;f&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font color="#5d478b">--&nbsp;по&nbsp;определению&nbsp;&gt;=&gt;</font><br/>
+&nbsp;&nbsp;<font color="#339933">=</font>&nbsp;<font>concat</font>&nbsp;<font color="#339933">.</font>&nbsp;<font>map</font>&nbsp;<font>&#40;</font><font>&#40;</font><font>concat</font>&nbsp;<font color="#339933">.</font>&nbsp;<font>map</font>&nbsp;h<font>&#41;</font>&nbsp;<font color="#339933">.</font>&nbsp;g<font>&#41;</font>&nbsp;<font color="#339933">.</font>&nbsp;f&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font color="#5d478b">--&nbsp;эквивалентное&nbsp;преобразование</font><br/>
+&nbsp;&nbsp;<font color="#339933">=</font>&nbsp;<font>concat</font>&nbsp;<font color="#339933">.</font>&nbsp;<font>&#40;</font><font>map</font>&nbsp;<font>&#40;</font><font>concat</font>&nbsp;<font color="#339933">.</font>&nbsp;<font>map</font>&nbsp;h<font>&#41;</font><font>&#41;</font>&nbsp;<font color="#339933">.</font>&nbsp;<font>&#40;</font><font>map</font>&nbsp;g<font>&#41;</font>&nbsp;<font color="#339933">.</font>&nbsp;f&nbsp;&nbsp;<font color="#5d478b">--&nbsp;по&nbsp;уравнению&nbsp;1</font><br/>
+&nbsp;&nbsp;<font color="#339933">=</font>&nbsp;<font>concat</font>&nbsp;<font color="#339933">.</font>&nbsp;<font>map</font>&nbsp;<font>&#40;</font><font>concat</font>&nbsp;<font color="#339933">.</font>&nbsp;<font>map</font>&nbsp;h<font>&#41;</font>&nbsp;<font color="#339933">.</font>&nbsp;<font>map</font>&nbsp;g&nbsp;<font color="#339933">.</font>&nbsp;f&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font color="#5d478b">--&nbsp;удаляем&nbsp;ненужные&nbsp;скобки</font><br/>
+&nbsp;&nbsp;<font color="#339933">=</font>&nbsp;<font>concat</font>&nbsp;<font color="#339933">.</font>&nbsp;<font>map</font>&nbsp;<font>concat</font>&nbsp;<font color="#339933">.</font>&nbsp;<font>map</font>&nbsp;<font>&#40;</font><font>map</font>&nbsp;h<font>&#41;</font>&nbsp;<font color="#339933">.</font>&nbsp;<font>map</font>&nbsp;g&nbsp;<font color="#339933">.</font>&nbsp;f&nbsp;&nbsp;<font color="#5d478b">--&nbsp;по&nbsp;уравнению&nbsp;1</font></blockquote>
 
 Теперь нам нужно показать, что:
 
-concat . map h . concat  =  concat . map concat . map (map h)
+<blockquote><font>concat</font>&nbsp;<font color="#339933">.</font>&nbsp;<font>map</font>&nbsp;h&nbsp;<font color="#339933">.</font>&nbsp;<font>concat</font>&nbsp;&nbsp;<font color="#339933">=</font>&nbsp;&nbsp;<font>concat</font>&nbsp;<font color="#339933">.</font>&nbsp;<font>map</font>&nbsp;<font>concat</font>&nbsp;<font color="#339933">.</font>&nbsp;<font>map</font>&nbsp;<font>&#40;</font><font>map</font>&nbsp;h<font>&#41;</font></blockquote>
 
 Давайте это докажем.
 
--- добавим скобки для ясности:
-concat . (map h . concat) = concat . map concat . map (map h)
--- по уравнению 2:
-concat . concat . map (map h)  =  concat . map concat . map (map h)
--- добавим скобки для ясности:
-(concat . concat) . map (map h)  =  concat . map concat . map (map h)
--- по уравнению 3:
-concat . map concat . map (map h)  =  concat . map concat . map (map h)
+<blockquote><font color="#5d478b">--&nbsp;добавим&nbsp;скобки&nbsp;для&nbsp;ясности:</font><br/>
+<font>concat</font>&nbsp;<font color="#339933">.</font>&nbsp;<font>&#40;</font><font>map</font>&nbsp;h&nbsp;<font color="#339933">.</font>&nbsp;<font>concat</font><font>&#41;</font>&nbsp;<font color="#339933">=</font>&nbsp;<font>concat</font>&nbsp;<font color="#339933">.</font>&nbsp;<font>map</font>&nbsp;<font>concat</font>&nbsp;<font color="#339933">.</font>&nbsp;<font>map</font>&nbsp;<font>&#40;</font><font>map</font>&nbsp;h<font>&#41;</font><br/>
+<font color="#5d478b">--&nbsp;по&nbsp;уравнению&nbsp;2:</font><br/>
+<font>concat</font>&nbsp;<font color="#339933">.</font>&nbsp;<font>concat</font>&nbsp;<font color="#339933">.</font>&nbsp;<font>map</font>&nbsp;<font>&#40;</font><font>map</font>&nbsp;h<font>&#41;</font>&nbsp;&nbsp;<font color="#339933">=</font>&nbsp;&nbsp;<font>concat</font>&nbsp;<font color="#339933">.</font>&nbsp;<font>map</font>&nbsp;<font>concat</font>&nbsp;<font color="#339933">.</font>&nbsp;<font>map</font>&nbsp;<font>&#40;</font><font>map</font>&nbsp;h<font>&#41;</font><br/>
+<font color="#5d478b">--&nbsp;добавим&nbsp;скобки&nbsp;для&nbsp;ясности:</font><br/>
+<font>&#40;</font><font>concat</font>&nbsp;<font color="#339933">.</font>&nbsp;<font>concat</font><font>&#41;</font>&nbsp;<font color="#339933">.</font>&nbsp;<font>map</font>&nbsp;<font>&#40;</font><font>map</font>&nbsp;h<font>&#41;</font>&nbsp;&nbsp;<font color="#339933">=</font>&nbsp;&nbsp;<font>concat</font>&nbsp;<font color="#339933">.</font>&nbsp;<font>map</font>&nbsp;<font>concat</font>&nbsp;<font color="#339933">.</font>&nbsp;<font>map</font>&nbsp;<font>&#40;</font><font>map</font>&nbsp;h<font>&#41;</font><br/>
+<font color="#5d478b">--&nbsp;по&nbsp;уравнению&nbsp;3:</font><br/>
+<font>concat</font>&nbsp;<font color="#339933">.</font>&nbsp;<font>map</font>&nbsp;<font>concat</font>&nbsp;<font color="#339933">.</font>&nbsp;<font>map</font>&nbsp;<font>&#40;</font><font>map</font>&nbsp;h<font>&#41;</font>&nbsp;&nbsp;<font color="#339933">=</font>&nbsp;&nbsp;<font>concat</font>&nbsp;<font color="#339933">.</font>&nbsp;<font>map</font>&nbsp;<font>concat</font>&nbsp;<font color="#339933">.</font>&nbsp;<font>map</font>&nbsp;<font>&#40;</font><font>map</font>&nbsp;h<font>&#41;</font></blockquote>
 
 И это конец. Фууух! На самом деле хаскеллисты редко этим занимаются, но доказательства необходимы, чтобы показать, что предполагаемая монада - это действительно монада.
 
-> <b><i>Заметка на полях: Вывод тождеств с <font color=blue>map/concat</font> (уравнения 1, 2 и 3)</i></b>
+<blockquote><blockquote><b><i>Заметка на полях: Вывод тождеств с <font color=blue>map/concat</font> (уравнения 1, 2 и 3)</i></b>
 
 <b><i>Подготовка</i></b>
 
 Прежде чем приступать к доказательствам тождеств, нам сначала надо доказать несколько других (математика трудна!). Перечислим их:
 
-  -- Выражение 4:
-concat (x:xs) = x ++ concat xs
--- Выражение 5:
-concat (x ++ y) = concat x ++ concat y
--- Выражение 6:
-map f (x ++ y) = map f x ++ map f y
+<blockquote><font color="#5d478b">--&nbsp;Выражение&nbsp;4:</font><br/>
+<font>concat</font>&nbsp;<font>&#40;</font>x:xs<font>&#41;</font>&nbsp;<font color="#339933">=</font>&nbsp;x&nbsp;<font color="#339933">++</font>&nbsp;<font>concat</font>&nbsp;xs<br/>
+<font color="#5d478b">--&nbsp;Выражение&nbsp;5:</font><br/>
+<font>concat</font>&nbsp;<font>&#40;</font>x&nbsp;<font color="#339933">++</font>&nbsp;y<font>&#41;</font>&nbsp;<font color="#339933">=</font>&nbsp;<font>concat</font>&nbsp;x&nbsp;<font color="#339933">++</font>&nbsp;<font>concat</font>&nbsp;y<br/>
+<font color="#5d478b">--&nbsp;Выражение&nbsp;6:</font><br/>
+<font>map</font>&nbsp;f&nbsp;<font>&#40;</font>x&nbsp;<font color="#339933">++</font>&nbsp;y<font>&#41;</font>&nbsp;<font color="#339933">=</font>&nbsp;<font>map</font>&nbsp;f&nbsp;x&nbsp;<font color="#339933">++</font>&nbsp;<font>map</font>&nbsp;f&nbsp;y</blockquote>
 
 Выражение 4 следует из определения <font color=blue>concat</font>. Выражение 5 легко доказать через индукцию по x с использованием уравнения 4.
 
--- базовый случай: x - пустой список
-concat ([] ++ y) = concat [] ++ concat y
-concat y = [] ++ concat y  -- по определению concat []
-concat y = concat y        -- по определению ++
--- Верно.
-
--- индукция: список x не пустой; x1 - голова списка; xs - хвост списка.
-concat ((x1:xs) ++ y) 
-  = concat (x1 : (xs ++ y))      -- по определению ++
-  = x1 ++ concat (xs ++ y)       -- по уравнению 4
-  = x1 ++ concat xs ++ concat y  -- inductive hypothesis
-
-concat (x1:xs) ++ concat y
-  = x1 ++ concat xs ++ concat y  -- по уравнению 4
--- Верно, что и требовалось доказать.
+<blockquote><font color="#5d478b">--&nbsp;базовый&nbsp;случай:&nbsp;x&nbsp;-&nbsp;пустой&nbsp;список</font><br/>
+<font>concat</font>&nbsp;<font>&#40;</font><font>&#91;</font><font>&#93;</font>&nbsp;<font color="#339933">++</font>&nbsp;y<font>&#41;</font>&nbsp;<font color="#339933">=</font>&nbsp;<font>concat</font>&nbsp;<font>&#91;</font><font>&#93;</font>&nbsp;<font color="#339933">++</font>&nbsp;<font>concat</font>&nbsp;y<br/>
+<font>concat</font>&nbsp;y&nbsp;<font color="#339933">=</font>&nbsp;<font>&#91;</font><font>&#93;</font>&nbsp;<font color="#339933">++</font>&nbsp;<font>concat</font>&nbsp;y&nbsp;&nbsp;<font color="#5d478b">--&nbsp;по&nbsp;определению&nbsp;concat&nbsp;[]</font><br/>
+<font>concat</font>&nbsp;y&nbsp;<font color="#339933">=</font>&nbsp;<font>concat</font>&nbsp;y&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font color="#5d478b">--&nbsp;по&nbsp;определению&nbsp;++</font><br/>
+<font color="#5d478b">--&nbsp;Верно.</font><br/>
+&nbsp;<br/>
+<font color="#5d478b">--&nbsp;индукция:&nbsp;список&nbsp;x&nbsp;не&nbsp;пустой;&nbsp;x1&nbsp;-&nbsp;голова&nbsp;списка;&nbsp;xs&nbsp;-&nbsp;хвост&nbsp;списка.</font><br/>
+<font>concat</font>&nbsp;<font>&#40;</font><font>&#40;</font>x1:xs<font>&#41;</font>&nbsp;<font color="#339933">++</font>&nbsp;y<font>&#41;</font>&nbsp;<br/>
+&nbsp;&nbsp;<font color="#339933">=</font>&nbsp;<font>concat</font>&nbsp;<font>&#40;</font>x1&nbsp;:&nbsp;<font>&#40;</font>xs&nbsp;<font color="#339933">++</font>&nbsp;y<font>&#41;</font><font>&#41;</font>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font color="#5d478b">--&nbsp;по&nbsp;определению&nbsp;++</font><br/>
+&nbsp;&nbsp;<font color="#339933">=</font>&nbsp;x1&nbsp;<font color="#339933">++</font>&nbsp;<font>concat</font>&nbsp;<font>&#40;</font>xs&nbsp;<font color="#339933">++</font>&nbsp;y<font>&#41;</font>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font color="#5d478b">--&nbsp;по&nbsp;уравнению&nbsp;4</font><br/>
+&nbsp;&nbsp;<font color="#339933">=</font>&nbsp;x1&nbsp;<font color="#339933">++</font>&nbsp;<font>concat</font>&nbsp;xs&nbsp;<font color="#339933">++</font>&nbsp;<font>concat</font>&nbsp;y&nbsp;&nbsp;<font color="#5d478b">--&nbsp;inductive&nbsp;hypothesis</font><br/>
+&nbsp;<br/>
+<font>concat</font>&nbsp;<font>&#40;</font>x1:xs<font>&#41;</font>&nbsp;<font color="#339933">++</font>&nbsp;<font>concat</font>&nbsp;y<br/>
+&nbsp;&nbsp;<font color="#339933">=</font>&nbsp;x1&nbsp;<font color="#339933">++</font>&nbsp;<font>concat</font>&nbsp;xs&nbsp;<font color="#339933">++</font>&nbsp;<font>concat</font>&nbsp;y&nbsp;&nbsp;<font color="#5d478b">--&nbsp;по&nbsp;уравнению&nbsp;4</font><br/>
+<font color="#5d478b">--&nbsp;Верно,&nbsp;что&nbsp;и&nbsp;требовалось&nbsp;доказать.</font></blockquote>
 
 Уравнение 6 можно доказать таким же образом:
 
-  -- базовый случай: x - пустой список
-map f ([] ++ y) = map f [] ++ map f y
-map f y = [] ++ map f y
-map f y = map f y
--- Верно.
-
--- индукция: список x - не пустой; x1 - голова списка; xs - хвост списка.
-map f (x ++ y)
-  = map f ((x1:xs) ++ y)
-  = map f (x1 : (xs ++ y))            -- по определению ++
-  = f x1 : map f (xs ++ y)            -- по определению map
-  = f x1 : (map f xs ++ map f y)      -- inductive hypothesis
-  = (f x1 : map f xs) ++ map f y      -- по определению ++
-  = map f (x1:xs) ++ map f y          -- по определению map
-  = map f x ++ map f y                -- по определению x
--- Верно, что и требовалось доказать.
+<blockquote><font color="#5d478b">--&nbsp;базовый&nbsp;случай:&nbsp;x&nbsp;-&nbsp;пустой&nbsp;список</font><br/>
+<font>map</font>&nbsp;f&nbsp;<font>&#40;</font><font>&#91;</font><font>&#93;</font>&nbsp;<font color="#339933">++</font>&nbsp;y<font>&#41;</font>&nbsp;<font color="#339933">=</font>&nbsp;<font>map</font>&nbsp;f&nbsp;<font>&#91;</font><font>&#93;</font>&nbsp;<font color="#339933">++</font>&nbsp;<font>map</font>&nbsp;f&nbsp;y<br/>
+<font>map</font>&nbsp;f&nbsp;y&nbsp;<font color="#339933">=</font>&nbsp;<font>&#91;</font><font>&#93;</font>&nbsp;<font color="#339933">++</font>&nbsp;<font>map</font>&nbsp;f&nbsp;y<br/>
+<font>map</font>&nbsp;f&nbsp;y&nbsp;<font color="#339933">=</font>&nbsp;<font>map</font>&nbsp;f&nbsp;y<br/>
+<font color="#5d478b">--&nbsp;Верно.</font><br/>
+&nbsp;<br/>
+<font color="#5d478b">--&nbsp;индукция:&nbsp;список&nbsp;x&nbsp;-&nbsp;не&nbsp;пустой;&nbsp;x1&nbsp;-&nbsp;голова&nbsp;списка;&nbsp;xs&nbsp;-&nbsp;хвост&nbsp;списка.</font><br/>
+<font>map</font>&nbsp;f&nbsp;<font>&#40;</font>x&nbsp;<font color="#339933">++</font>&nbsp;y<font>&#41;</font><br/>
+&nbsp;&nbsp;<font color="#339933">=</font>&nbsp;<font>map</font>&nbsp;f&nbsp;<font>&#40;</font><font>&#40;</font>x1:xs<font>&#41;</font>&nbsp;<font color="#339933">++</font>&nbsp;y<font>&#41;</font><br/>
+&nbsp;&nbsp;<font color="#339933">=</font>&nbsp;<font>map</font>&nbsp;f&nbsp;<font>&#40;</font>x1&nbsp;:&nbsp;<font>&#40;</font>xs&nbsp;<font color="#339933">++</font>&nbsp;y<font>&#41;</font><font>&#41;</font>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font color="#5d478b">--&nbsp;по&nbsp;определению&nbsp;++</font><br/>
+&nbsp;&nbsp;<font color="#339933">=</font>&nbsp;f&nbsp;x1&nbsp;:&nbsp;<font>map</font>&nbsp;f&nbsp;<font>&#40;</font>xs&nbsp;<font color="#339933">++</font>&nbsp;y<font>&#41;</font>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font color="#5d478b">--&nbsp;по&nbsp;определению&nbsp;map</font><br/>
+&nbsp;&nbsp;<font color="#339933">=</font>&nbsp;f&nbsp;x1&nbsp;:&nbsp;<font>&#40;</font><font>map</font>&nbsp;f&nbsp;xs&nbsp;<font color="#339933">++</font>&nbsp;<font>map</font>&nbsp;f&nbsp;y<font>&#41;</font>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font color="#5d478b">--&nbsp;inductive&nbsp;hypothesis</font><br/>
+&nbsp;&nbsp;<font color="#339933">=</font>&nbsp;<font>&#40;</font>f&nbsp;x1&nbsp;:&nbsp;<font>map</font>&nbsp;f&nbsp;xs<font>&#41;</font>&nbsp;<font color="#339933">++</font>&nbsp;<font>map</font>&nbsp;f&nbsp;y&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font color="#5d478b">--&nbsp;по&nbsp;определению&nbsp;++</font><br/>
+&nbsp;&nbsp;<font color="#339933">=</font>&nbsp;<font>map</font>&nbsp;f&nbsp;<font>&#40;</font>x1:xs<font>&#41;</font>&nbsp;<font color="#339933">++</font>&nbsp;<font>map</font>&nbsp;f&nbsp;y&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font color="#5d478b">--&nbsp;по&nbsp;определению&nbsp;map</font><br/>
+&nbsp;&nbsp;<font color="#339933">=</font>&nbsp;<font>map</font>&nbsp;f&nbsp;x&nbsp;<font color="#339933">++</font>&nbsp;<font>map</font>&nbsp;f&nbsp;y&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font color="#5d478b">--&nbsp;по&nbsp;определению&nbsp;x</font><br/>
+<font color="#5d478b">--&nbsp;Верно,&nbsp;что&nbsp;и&nbsp;требовалось&nbsp;доказать.</font></blockquote>
 
 Теперь с этим докажем уравнения 1, 2 и 3.
 
 <b>Уравнение 1:</b>
 
-map (f . g)  =  map f . map g
+<blockquote><font>map</font>&nbsp;<font>&#40;</font>f&nbsp;<font color="#339933">.</font>&nbsp;g<font>&#41;</font>&nbsp;&nbsp;<font color="#339933">=</font>&nbsp;&nbsp;<font>map</font>&nbsp;f&nbsp;<font color="#339933">.</font>&nbsp;<font>map</font>&nbsp;g</blockquote>
 
 Воспользуемся индукцией по неявному аргументу-списку с обеих сторон, а также определением <font color=blue>map</font>:
 
--- базовый случай: пустой список
-map (f . g) [] = []
-(map f . map g) [] = map f (map g []) = map f [] = []
--- OK
-
--- индукция: непустой список:
-map (f . g) (x:xs) 
-  = ((f . g) x) : (map (f . g) xs)        -- по определению map
-  = (f (g x)) : (map (f . g) xs)          -- по определению (.)
-(map f . map g) (x:xs) 
-  = map f (map g (x:xs))                  -- по определению (.)
-  = map f ((g x) : (map g xs))            -- по определению map
-  = (f (g x)) : (map f (map g xs))        -- по определению map
-  = (f (g x)) : ((map f . map g) xs)      -- по определению (.)
-  = (f (g x)) : (map (f . g) xs)          -- inductive hypothesis
--- Верно, что и требовалось доказать.
+<blockquote><font color="#5d478b">--&nbsp;базовый&nbsp;случай:&nbsp;пустой&nbsp;список</font><br/>
+<font>map</font>&nbsp;<font>&#40;</font>f&nbsp;<font color="#339933">.</font>&nbsp;g<font>&#41;</font>&nbsp;<font>&#91;</font><font>&#93;</font>&nbsp;<font color="#339933">=</font>&nbsp;<font>&#91;</font><font>&#93;</font><br/>
+<font>&#40;</font><font>map</font>&nbsp;f&nbsp;<font color="#339933">.</font>&nbsp;<font>map</font>&nbsp;g<font>&#41;</font>&nbsp;<font>&#91;</font><font>&#93;</font>&nbsp;<font color="#339933">=</font>&nbsp;<font>map</font>&nbsp;f&nbsp;<font>&#40;</font><font>map</font>&nbsp;g&nbsp;<font>&#91;</font><font>&#93;</font><font>&#41;</font>&nbsp;<font color="#339933">=</font>&nbsp;<font>map</font>&nbsp;f&nbsp;<font>&#91;</font><font>&#93;</font>&nbsp;<font color="#339933">=</font>&nbsp;<font>&#91;</font><font>&#93;</font><br/>
+<font color="#5d478b">--&nbsp;OK</font><br/>
+&nbsp;<br/>
+<font color="#5d478b">--&nbsp;индукция:&nbsp;непустой&nbsp;список:</font><br/>
+<font>map</font>&nbsp;<font>&#40;</font>f&nbsp;<font color="#339933">.</font>&nbsp;g<font>&#41;</font>&nbsp;<font>&#40;</font>x:xs<font>&#41;</font>&nbsp;<br/>
+&nbsp;&nbsp;<font color="#339933">=</font>&nbsp;<font>&#40;</font><font>&#40;</font>f&nbsp;<font color="#339933">.</font>&nbsp;g<font>&#41;</font>&nbsp;x<font>&#41;</font>&nbsp;:&nbsp;<font>&#40;</font><font>map</font>&nbsp;<font>&#40;</font>f&nbsp;<font color="#339933">.</font>&nbsp;g<font>&#41;</font>&nbsp;xs<font>&#41;</font>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font color="#5d478b">--&nbsp;по&nbsp;определению&nbsp;map</font><br/>
+&nbsp;&nbsp;<font color="#339933">=</font>&nbsp;<font>&#40;</font>f&nbsp;<font>&#40;</font>g&nbsp;x<font>&#41;</font><font>&#41;</font>&nbsp;:&nbsp;<font>&#40;</font><font>map</font>&nbsp;<font>&#40;</font>f&nbsp;<font color="#339933">.</font>&nbsp;g<font>&#41;</font>&nbsp;xs<font>&#41;</font>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font color="#5d478b">--&nbsp;по&nbsp;определению&nbsp;(.)</font><br/>
+<font>&#40;</font><font>map</font>&nbsp;f&nbsp;<font color="#339933">.</font>&nbsp;<font>map</font>&nbsp;g<font>&#41;</font>&nbsp;<font>&#40;</font>x:xs<font>&#41;</font>&nbsp;<br/>
+&nbsp;&nbsp;<font color="#339933">=</font>&nbsp;<font>map</font>&nbsp;f&nbsp;<font>&#40;</font><font>map</font>&nbsp;g&nbsp;<font>&#40;</font>x:xs<font>&#41;</font><font>&#41;</font>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font color="#5d478b">--&nbsp;по&nbsp;определению&nbsp;(.)</font><br/>
+&nbsp;&nbsp;<font color="#339933">=</font>&nbsp;<font>map</font>&nbsp;f&nbsp;<font>&#40;</font><font>&#40;</font>g&nbsp;x<font>&#41;</font>&nbsp;:&nbsp;<font>&#40;</font><font>map</font>&nbsp;g&nbsp;xs<font>&#41;</font><font>&#41;</font>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font color="#5d478b">--&nbsp;по&nbsp;определению&nbsp;map</font><br/>
+&nbsp;&nbsp;<font color="#339933">=</font>&nbsp;<font>&#40;</font>f&nbsp;<font>&#40;</font>g&nbsp;x<font>&#41;</font><font>&#41;</font>&nbsp;:&nbsp;<font>&#40;</font><font>map</font>&nbsp;f&nbsp;<font>&#40;</font><font>map</font>&nbsp;g&nbsp;xs<font>&#41;</font><font>&#41;</font>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font color="#5d478b">--&nbsp;по&nbsp;определению&nbsp;map</font><br/>
+&nbsp;&nbsp;<font color="#339933">=</font>&nbsp;<font>&#40;</font>f&nbsp;<font>&#40;</font>g&nbsp;x<font>&#41;</font><font>&#41;</font>&nbsp;:&nbsp;<font>&#40;</font><font>&#40;</font><font>map</font>&nbsp;f&nbsp;<font color="#339933">.</font>&nbsp;<font>map</font>&nbsp;g<font>&#41;</font>&nbsp;xs<font>&#41;</font>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font color="#5d478b">--&nbsp;по&nbsp;определению&nbsp;(.)</font><br/>
+&nbsp;&nbsp;<font color="#339933">=</font>&nbsp;<font>&#40;</font>f&nbsp;<font>&#40;</font>g&nbsp;x<font>&#41;</font><font>&#41;</font>&nbsp;:&nbsp;<font>&#40;</font><font>map</font>&nbsp;<font>&#40;</font>f&nbsp;<font color="#339933">.</font>&nbsp;g<font>&#41;</font>&nbsp;xs<font>&#41;</font>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font color="#5d478b">--&nbsp;inductive&nbsp;hypothesis</font><br/>
+<font color="#5d478b">--&nbsp;Верно,&nbsp;что&nbsp;и&nbsp;требовалось&nbsp;доказать.</font></blockquote>
 
 <b>Уравнение 2:</b>
 
-map f . concat =  concat . map (map f)
+<blockquote><font>map</font>&nbsp;f&nbsp;<font color="#339933">.</font>&nbsp;<font>concat</font>&nbsp;<font color="#339933">=</font>&nbsp;&nbsp;<font>concat</font>&nbsp;<font color="#339933">.</font>&nbsp;<font>map</font>&nbsp;<font>&#40;</font><font>map</font>&nbsp;f<font>&#41;</font></blockquote>
 
 Докажем по индукции:
 
--- базовый случай: пустой список
-(map f . concat) [] = map f (concat []) = map f [] = []
-(concat . map (map f)) [] = concat (map (map f) []) = concat [] = []
--- OK
-
--- индукция: непустой список
-(map f . concat) (x:xs)
-  = map f (concat (x:xs))                   -- по определению (.)
-  = map f (x ++ concat xs)                  -- по уравнению 4 
-  = map f x ++ (map f (concat xs))          -- по уравнению 6
-  = map f x ++ ((map f . concat) xs)        -- по определению (.)
-  = map f x ++ ((concat . map (map f)) xs)  -- inductive hypothesis
-  = map f x ++ concat (map (map f) xs)      -- по определению (.)
-
-(concat . map (map f)) (x:xs)
-  = concat (map (map f) (x:xs))             -- по определению (.)
-  = concat (map f x : map (map f) xs)       -- по определению map
-  = map f x ++ concat (map (map f) xs)      -- по уравнению 4
--- Верно, что и требовалось доказать.
+<blockquote><font color="#5d478b">--&nbsp;базовый&nbsp;случай:&nbsp;пустой&nbsp;список</font><br/>
+<font>&#40;</font><font>map</font>&nbsp;f&nbsp;<font color="#339933">.</font>&nbsp;<font>concat</font><font>&#41;</font>&nbsp;<font>&#91;</font><font>&#93;</font>&nbsp;<font color="#339933">=</font>&nbsp;<font>map</font>&nbsp;f&nbsp;<font>&#40;</font><font>concat</font>&nbsp;<font>&#91;</font><font>&#93;</font><font>&#41;</font>&nbsp;<font color="#339933">=</font>&nbsp;<font>map</font>&nbsp;f&nbsp;<font>&#91;</font><font>&#93;</font>&nbsp;<font color="#339933">=</font>&nbsp;<font>&#91;</font><font>&#93;</font><br/>
+<font>&#40;</font><font>concat</font>&nbsp;<font color="#339933">.</font>&nbsp;<font>map</font>&nbsp;<font>&#40;</font><font>map</font>&nbsp;f<font>&#41;</font><font>&#41;</font>&nbsp;<font>&#91;</font><font>&#93;</font>&nbsp;<font color="#339933">=</font>&nbsp;<font>concat</font>&nbsp;<font>&#40;</font><font>map</font>&nbsp;<font>&#40;</font><font>map</font>&nbsp;f<font>&#41;</font>&nbsp;<font>&#91;</font><font>&#93;</font><font>&#41;</font>&nbsp;<font color="#339933">=</font>&nbsp;<font>concat</font>&nbsp;<font>&#91;</font><font>&#93;</font>&nbsp;<font color="#339933">=</font>&nbsp;<font>&#91;</font><font>&#93;</font><br/>
+<font color="#5d478b">--&nbsp;OK</font><br/>
+&nbsp;<br/>
+<font color="#5d478b">--&nbsp;индукция:&nbsp;непустой&nbsp;список</font><br/>
+<font>&#40;</font><font>map</font>&nbsp;f&nbsp;<font color="#339933">.</font>&nbsp;<font>concat</font><font>&#41;</font>&nbsp;<font>&#40;</font>x:xs<font>&#41;</font><br/>
+&nbsp;&nbsp;<font color="#339933">=</font>&nbsp;<font>map</font>&nbsp;f&nbsp;<font>&#40;</font><font>concat</font>&nbsp;<font>&#40;</font>x:xs<font>&#41;</font><font>&#41;</font>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font color="#5d478b">--&nbsp;по&nbsp;определению&nbsp;(.)</font><br/>
+&nbsp;&nbsp;<font color="#339933">=</font>&nbsp;<font>map</font>&nbsp;f&nbsp;<font>&#40;</font>x&nbsp;<font color="#339933">++</font>&nbsp;<font>concat</font>&nbsp;xs<font>&#41;</font>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font color="#5d478b">--&nbsp;по&nbsp;уравнению&nbsp;4&nbsp;</font><br/>
+&nbsp;&nbsp;<font color="#339933">=</font>&nbsp;<font>map</font>&nbsp;f&nbsp;x&nbsp;<font color="#339933">++</font>&nbsp;<font>&#40;</font><font>map</font>&nbsp;f&nbsp;<font>&#40;</font><font>concat</font>&nbsp;xs<font>&#41;</font><font>&#41;</font>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font color="#5d478b">--&nbsp;по&nbsp;уравнению&nbsp;6</font><br/>
+&nbsp;&nbsp;<font color="#339933">=</font>&nbsp;<font>map</font>&nbsp;f&nbsp;x&nbsp;<font color="#339933">++</font>&nbsp;<font>&#40;</font><font>&#40;</font><font>map</font>&nbsp;f&nbsp;<font color="#339933">.</font>&nbsp;<font>concat</font><font>&#41;</font>&nbsp;xs<font>&#41;</font>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font color="#5d478b">--&nbsp;по&nbsp;определению&nbsp;(.)</font><br/>
+&nbsp;&nbsp;<font color="#339933">=</font>&nbsp;<font>map</font>&nbsp;f&nbsp;x&nbsp;<font color="#339933">++</font>&nbsp;<font>&#40;</font><font>&#40;</font><font>concat</font>&nbsp;<font color="#339933">.</font>&nbsp;<font>map</font>&nbsp;<font>&#40;</font><font>map</font>&nbsp;f<font>&#41;</font><font>&#41;</font>&nbsp;xs<font>&#41;</font>&nbsp;&nbsp;<font color="#5d478b">--&nbsp;inductive&nbsp;hypothesis</font><br/>
+&nbsp;&nbsp;<font color="#339933">=</font>&nbsp;<font>map</font>&nbsp;f&nbsp;x&nbsp;<font color="#339933">++</font>&nbsp;<font>concat</font>&nbsp;<font>&#40;</font><font>map</font>&nbsp;<font>&#40;</font><font>map</font>&nbsp;f<font>&#41;</font>&nbsp;xs<font>&#41;</font>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font color="#5d478b">--&nbsp;по&nbsp;определению&nbsp;(.)</font><br/>
+&nbsp;<br/>
+<font>&#40;</font><font>concat</font>&nbsp;<font color="#339933">.</font>&nbsp;<font>map</font>&nbsp;<font>&#40;</font><font>map</font>&nbsp;f<font>&#41;</font><font>&#41;</font>&nbsp;<font>&#40;</font>x:xs<font>&#41;</font><br/>
+&nbsp;&nbsp;<font color="#339933">=</font>&nbsp;<font>concat</font>&nbsp;<font>&#40;</font><font>map</font>&nbsp;<font>&#40;</font><font>map</font>&nbsp;f<font>&#41;</font>&nbsp;<font>&#40;</font>x:xs<font>&#41;</font><font>&#41;</font>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font color="#5d478b">--&nbsp;по&nbsp;определению&nbsp;(.)</font><br/>
+&nbsp;&nbsp;<font color="#339933">=</font>&nbsp;<font>concat</font>&nbsp;<font>&#40;</font><font>map</font>&nbsp;f&nbsp;x&nbsp;:&nbsp;<font>map</font>&nbsp;<font>&#40;</font><font>map</font>&nbsp;f<font>&#41;</font>&nbsp;xs<font>&#41;</font>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font color="#5d478b">--&nbsp;по&nbsp;определению&nbsp;map</font><br/>
+&nbsp;&nbsp;<font color="#339933">=</font>&nbsp;<font>map</font>&nbsp;f&nbsp;x&nbsp;<font color="#339933">++</font>&nbsp;<font>concat</font>&nbsp;<font>&#40;</font><font>map</font>&nbsp;<font>&#40;</font><font>map</font>&nbsp;f<font>&#41;</font>&nbsp;xs<font>&#41;</font>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font color="#5d478b">--&nbsp;по&nbsp;уравнению&nbsp;4</font><br/>
+<font color="#5d478b">--&nbsp;Верно,&nbsp;что&nbsp;и&nbsp;требовалось&nbsp;доказать.</font></blockquote>
 
 <b>Уравнение 3:</b>
 
-concat . concat  =  concat . map concat
+<blockquote><font>concat</font>&nbsp;<font color="#339933">.</font>&nbsp;<font>concat</font>&nbsp;&nbsp;<font color="#339933">=</font>&nbsp;&nbsp;<font>concat</font>&nbsp;<font color="#339933">.</font>&nbsp;<font>map</font>&nbsp;<font>concat</font></blockquote>
 
 Как всегда, воспользуемся индукцией:
 
--- базовый случай: пустой список
-(concat . concat) [] = concat (concat []) = concat [] = []
-(concat . map concat) [] = concat (map concat []) = concat [] = []
--- OK
-
--- индукция: непустой список
-(concat . concat) (x:xs)
-  = concat (concat (x:xs))                 -- по определению (.)
-  = concat (x ++ concat xs)                -- по уравнению 4
-  = concat x ++ concat (concat xs)         -- по уравнению 5
-
-(concat . map concat) (x:xs)
-  = concat (map concat (x:xs))             -- по определению (.)
-  = concat (concat x : map concat xs)      -- по определению map
-  = concat x ++ concat (map concat xs)     -- по уравнению 4
-  = concat x ++ (concat . map concat) xs   -- по определению (.)
-  = concat x ++ (concat . concat) xs       -- inductive hypothesis
-  = concat x ++ concat (concat xs)         -- по определению (.)
--- Верно, что и требовалось доказать.
-<
+<blockquote><font color="#5d478b">--&nbsp;базовый&nbsp;случай:&nbsp;пустой&nbsp;список</font><br/>
+<font>&#40;</font><font>concat</font>&nbsp;<font color="#339933">.</font>&nbsp;<font>concat</font><font>&#41;</font>&nbsp;<font>&#91;</font><font>&#93;</font>&nbsp;<font color="#339933">=</font>&nbsp;<font>concat</font>&nbsp;<font>&#40;</font><font>concat</font>&nbsp;<font>&#91;</font><font>&#93;</font><font>&#41;</font>&nbsp;<font color="#339933">=</font>&nbsp;<font>concat</font>&nbsp;<font>&#91;</font><font>&#93;</font>&nbsp;<font color="#339933">=</font>&nbsp;<font>&#91;</font><font>&#93;</font><br/>
+<font>&#40;</font><font>concat</font>&nbsp;<font color="#339933">.</font>&nbsp;<font>map</font>&nbsp;<font>concat</font><font>&#41;</font>&nbsp;<font>&#91;</font><font>&#93;</font>&nbsp;<font color="#339933">=</font>&nbsp;<font>concat</font>&nbsp;<font>&#40;</font><font>map</font>&nbsp;<font>concat</font>&nbsp;<font>&#91;</font><font>&#93;</font><font>&#41;</font>&nbsp;<font color="#339933">=</font>&nbsp;<font>concat</font>&nbsp;<font>&#91;</font><font>&#93;</font>&nbsp;<font color="#339933">=</font>&nbsp;<font>&#91;</font><font>&#93;</font><br/>
+<font color="#5d478b">--&nbsp;Верно</font><br/>
+&nbsp;<br/>
+<font color="#5d478b">--&nbsp;индукция:&nbsp;непустой&nbsp;список</font><br/>
+<font>&#40;</font><font>concat</font>&nbsp;<font color="#339933">.</font>&nbsp;<font>concat</font><font>&#41;</font>&nbsp;<font>&#40;</font>x:xs<font>&#41;</font><br/>
+&nbsp;&nbsp;<font color="#339933">=</font>&nbsp;<font>concat</font>&nbsp;<font>&#40;</font><font>concat</font>&nbsp;<font>&#40;</font>x:xs<font>&#41;</font><font>&#41;</font>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font color="#5d478b">--&nbsp;по&nbsp;определению&nbsp;(.)</font><br/>
+&nbsp;&nbsp;<font color="#339933">=</font>&nbsp;<font>concat</font>&nbsp;<font>&#40;</font>x&nbsp;<font color="#339933">++</font>&nbsp;<font>concat</font>&nbsp;xs<font>&#41;</font>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font color="#5d478b">--&nbsp;по&nbsp;уравнению&nbsp;4</font><br/>
+&nbsp;&nbsp;<font color="#339933">=</font>&nbsp;<font>concat</font>&nbsp;x&nbsp;<font color="#339933">++</font>&nbsp;<font>concat</font>&nbsp;<font>&#40;</font><font>concat</font>&nbsp;xs<font>&#41;</font>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font color="#5d478b">--&nbsp;по&nbsp;уравнению&nbsp;5</font><br/>
+&nbsp;<br/>
+<font>&#40;</font><font>concat</font>&nbsp;<font color="#339933">.</font>&nbsp;<font>map</font>&nbsp;<font>concat</font><font>&#41;</font>&nbsp;<font>&#40;</font>x:xs<font>&#41;</font><br/>
+&nbsp;&nbsp;<font color="#339933">=</font>&nbsp;<font>concat</font>&nbsp;<font>&#40;</font><font>map</font>&nbsp;<font>concat</font>&nbsp;<font>&#40;</font>x:xs<font>&#41;</font><font>&#41;</font>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font color="#5d478b">--&nbsp;по&nbsp;определению&nbsp;(.)</font><br/>
+&nbsp;&nbsp;<font color="#339933">=</font>&nbsp;<font>concat</font>&nbsp;<font>&#40;</font><font>concat</font>&nbsp;x&nbsp;:&nbsp;<font>map</font>&nbsp;<font>concat</font>&nbsp;xs<font>&#41;</font>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font color="#5d478b">--&nbsp;по&nbsp;определению&nbsp;map</font><br/>
+&nbsp;&nbsp;<font color="#339933">=</font>&nbsp;<font>concat</font>&nbsp;x&nbsp;<font color="#339933">++</font>&nbsp;<font>concat</font>&nbsp;<font>&#40;</font><font>map</font>&nbsp;<font>concat</font>&nbsp;xs<font>&#41;</font>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font color="#5d478b">--&nbsp;по&nbsp;уравнению&nbsp;4</font><br/>
+&nbsp;&nbsp;<font color="#339933">=</font>&nbsp;<font>concat</font>&nbsp;x&nbsp;<font color="#339933">++</font>&nbsp;<font>&#40;</font><font>concat</font>&nbsp;<font color="#339933">.</font>&nbsp;<font>map</font>&nbsp;<font>concat</font><font>&#41;</font>&nbsp;xs&nbsp;&nbsp;&nbsp;<font color="#5d478b">--&nbsp;по&nbsp;определению&nbsp;(.)</font><br/>
+&nbsp;&nbsp;<font color="#339933">=</font>&nbsp;<font>concat</font>&nbsp;x&nbsp;<font color="#339933">++</font>&nbsp;<font>&#40;</font><font>concat</font>&nbsp;<font color="#339933">.</font>&nbsp;<font>concat</font><font>&#41;</font>&nbsp;xs&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font color="#5d478b">--&nbsp;inductive&nbsp;hypothesis</font><br/>
+&nbsp;&nbsp;<font color="#339933">=</font>&nbsp;<font>concat</font>&nbsp;x&nbsp;<font color="#339933">++</font>&nbsp;<font>concat</font>&nbsp;<font>&#40;</font><font>concat</font>&nbsp;xs<font>&#41;</font>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font color="#5d478b">--&nbsp;по&nbsp;определению&nbsp;(.)</font><br/>
+<font color="#5d478b">--&nbsp;Верно,&nbsp;что&nbsp;и&nbsp;требовалось&nbsp;доказать.</font></blockquote>
+</blockquote></blockquote>
 
 Я надеюсь, теперь у вас нет сомнений, что монада списка по-настоящему монада. ;-)
 
 И самый интересный вопрос здесь, конечно, такой: а что мы можем <i>сделать такого</i> с монадой-списком, что было бы сложно без монады? Вот вам простой пример: найти все пары чисел между 1 и 6, чья сумма равняется 7 (числа - это, например, игральные кости). С помощью монады списка решить задачу элементарно:
 
--- Используем <font color=blue>do</font>-нотацию:
-do n1 <- [1..6]
-   n2 <- [1..6]
-   if n1 + n2 == 7 then return (n1, n2) else []
--- Результат: [(1,6),(2,5),(3,4),(4,3),(5,2),(6,1)]
+<blockquote><font color="#5d478b">--&nbsp;Используем&nbsp;&lt;font&nbsp;color=blue&gt;do&lt;/font&gt;-нотацию:</font><br/>
+<font>do</font>&nbsp;n1&nbsp;<font color="#339933">&lt;-</font>&nbsp;<font>&#91;</font>1<font color="#339933">..</font>6<font>&#93;</font><br/>
+&nbsp;&nbsp;&nbsp;n2&nbsp;<font color="#339933">&lt;-</font>&nbsp;<font>&#91;</font>1<font color="#339933">..</font>6<font>&#93;</font><br/>
+&nbsp;&nbsp;&nbsp;<font>if</font>&nbsp;n1&nbsp;<font color="#339933">+</font>&nbsp;n2&nbsp;<font color="#339933">==</font>&nbsp;<font>7</font>&nbsp;<font>then</font>&nbsp;<font>return</font>&nbsp;<font>&#40;</font>n1<font color="#339933">,</font>&nbsp;n2<font>&#41;</font>&nbsp;<font>else</font>&nbsp;<font>&#91;</font><font>&#93;</font><br/>
+<font color="#5d478b">--&nbsp;Результат:&nbsp;[(1,6),(2,5),(3,4),(4,3),(5,2),(6,1)]</font></blockquote>
 
 А еще можно переписать без <font color=blue>do</font>-нотации, только получится непонятно:
 
-[1..6] >>= \n1 ->
-  [1..6] >>= \n2 ->
-    if n1 + n2 == 7 then return (n1, n2) else []
+<blockquote><font>&#91;</font>1<font color="#339933">..</font>6<font>&#93;</font>&nbsp;<font color="#339933">&gt;&gt;=</font>&nbsp;\n1&nbsp;<font color="#339933">-&gt;</font><br/>
+&nbsp;&nbsp;<font>&#91;</font>1<font color="#339933">..</font>6<font>&#93;</font>&nbsp;<font color="#339933">&gt;&gt;=</font>&nbsp;\n2&nbsp;<font color="#339933">-&gt;</font><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<font>if</font>&nbsp;n1&nbsp;<font color="#339933">+</font>&nbsp;n2&nbsp;<font color="#339933">==</font>&nbsp;<font>7</font>&nbsp;<font>then</font>&nbsp;<font>return</font>&nbsp;<font>&#40;</font>n1<font color="#339933">,</font>&nbsp;n2<font>&#41;</font>&nbsp;<font>else</font>&nbsp;<font>&#91;</font><font>&#93;</font></blockquote>
 
 Как это работает? Вам стоило бы самим сесть и проследить все вычисления, связанные с <font color=blue>>>=</font> и <font color=blue>return</font> для списков, но вот объяснение на пальцах. Итак: <font color=blue>[1..6]</font> - это монадическое значение в монаде списка, и <font color=blue>n1</font> пробегает <i>всех их</i> за раз. <font color=blue>n2</font> - точно также. И возвращаются все пары <font color=blue>(n1, n2)</font>, чья сумма корректна. Вот так мы вычисляем функцию над всеми элементами, как если бы они были одним элементом. В этом суть монады списка.
 
 Если вы значительно поднаторели в программировании на Haskell, у вас в голове, наверно, завыла сирена. "Как же так!" - слышу я ваше возмущение. "А почему бы просто не воспользоваться генераторами списков (<font color=blue>list comprehensions</font>)?" И действительно:
 
-[(n1, n2) | n1 <- [1..6], n2 <- [1..6], n1 + n2 == 7]
+<blockquote><font>&#91;</font><font>&#40;</font>n1<font color="#339933">,</font>&nbsp;n2<font>&#41;</font>&nbsp;<font color="#339933">|</font>&nbsp;n1&nbsp;<font color="#339933">&lt;-</font>&nbsp;<font>&#91;</font>1<font color="#339933">..</font>6<font>&#93;</font><font color="#339933">,</font>&nbsp;n2&nbsp;<font color="#339933">&lt;-</font>&nbsp;<font>&#91;</font>1<font color="#339933">..</font>6<font>&#93;</font><font color="#339933">,</font>&nbsp;n1&nbsp;<font color="#339933">+</font>&nbsp;n2&nbsp;<font color="#339933">==</font>&nbsp;<font>7</font><font>&#93;</font></blockquote>
 
 Возможности монады списка и генераторов списка идентичны. Выбор того или иного синтаксиса зависит от предпочтений, а также он может определяться задачей. В своей статье <font color=blue>"Comprehending Monads"</font> <font color=blue>Phil Walder</font> (в названии есть игра слов, как и во многих его статьях) даже предлагал распространить синтаксис генераторов списков на произвольные монады. Это предложение было все-таки отклонено в пользу текущей записи.
 

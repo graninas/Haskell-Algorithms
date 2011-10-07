@@ -5,9 +5,10 @@ import Process
 italic = ["__", "<i>", "</i>"]
 blue   = ["@@", "<font color=blue>", "</font>"]
 bold   = ["**", "<b>", "</b>"]
+doubleBlockQuote = ["<>", "<blockquote><blockquote>", "</blockquote></blockquote>"]
 
 formatters :: [[String]]
-formatters = [italic, blue, bold]
+formatters = [italic, blue, bold, doubleBlockQuote]
 
 format :: [String] -> String -> String
 format (border : openTag : closeTag : _) s = process s border (openTag, closeTag) True
