@@ -109,6 +109,6 @@ main = do
 		if (null keys) 
 			then putStrLn (L.intercalate "\n" (titleMessage ++ helpMessage))
 			else do
-				mapM_ (processKey conn) keys
+				mapM_ (processKey conn) (filter (\x -> not (x `elem` nonProcessableSubscriberIDs)) keys)
 				putStrLn "Done."
 				putStrLn (L.intercalate "\n" titleMessage)

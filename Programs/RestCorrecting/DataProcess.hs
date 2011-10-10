@@ -24,14 +24,14 @@ module DataProcess where
 
 import Types
 
-chargeTemplate = "SELECT ID_NACH, ID_USL, SUMMA, OST_NACH FROM NACH WHERE NACH_PRZ <> 2 AND ID_USL NOT IN (74, 1) AND ID_OBSH = %s ID_OBSH NOT IN (6941, 8465, 6077, 7608, 10087) ORDER BY DATA_NACH;"
-paymentTemplate = "SELECT ID_OPL, ID_USL, SUMMA, OST_OPL FROM OPL WHERE OPL_PRZ <> 2 AND ID_USL NOT IN (74, 1) AND ID_OBSH = %s ID_OBSH NOT IN (6941, 8465, 6077, 7608, 10087) ORDER BY DATA_OPL;"
+nonDistributableServiceIDs = [76, 66]
+nonProcessableSubscriberIDs = ["6941", "8465", "6077", "7608", "10087"]
+
+chargeTemplate = "SELECT ID_NACH, ID_USL, SUMMA, OST_NACH FROM NACH WHERE NACH_PRZ <> 2 AND ID_USL NOT IN (74, 1) AND ID_OBSH = %s ID_OBSH NOT IN (" ++ unwords nonProcessableSubscriberIDs ++ ") ORDER BY DATA_NACH;"
+paymentTemplate = "SELECT ID_OPL, ID_USL, SUMMA, OST_OPL FROM OPL WHERE OPL_PRZ <> 2 AND ID_USL NOT IN (74, 1) AND ID_OBSH = %s ID_OBSH NOT IN (" ++ unwords nonProcessableSubscriberIDs ++ ") ORDER BY DATA_OPL;"
 
 chargeUpdateTemplate  = "UPDATE NACH SET OST_NACH = ROUND(%f, 2) WHERE ID_NACH = %d AND ID_OBSH = %s"
 paymentUpdateTemplate = "UPDATE OPL SET OST_OPL = ROUND(%f, 2) WHERE ID_OPL = %d AND ID_OBSH = %s"
-
-nonDistributableServiceIDs = [76, 66]
-
 
 fromRawRow :: RawRow -> Record
 fromRawRow ( Int32Val id
