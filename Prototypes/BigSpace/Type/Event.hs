@@ -1,33 +1,16 @@
 module Type.Event where
 
 import Type.Types
+import Type.Universe
+
 import qualified Data.Foldable as F
 import qualified Data.Monoid as M
 
-data Event evtype = Event evtype
+data UniverseObject o => Event o = Event Position o
 	deriving (Show)
 
-class ComposableEvent
 
 
-
-
-instance Functor Event where
-	fmap f (Event evtype) = Event (f evtype)
-
-instance F.Foldable Event where
-	foldMap f (Event evtype) = f evtype
-
-
-data EventMeasure evtype
-						= EmptyEvent
-						| EventMeasure evtype
-
-instance ComposableEvent evtype => M.Monoid (EventMeasure evtype) where
-	mempty = EmptyEvent
-	x `mappend` EmptyEvent = x
-	EmptyEvent `mappend` y = y
-	(EventMeasure ev1) `mappend` (EventMeasure ev2) = EventMeasure (composeEvents ev1 ev2)
 
 
 {-
