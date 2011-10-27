@@ -33,9 +33,19 @@ convertSqlRow = map convertSqlValue
 convertSqlData :: [[SqlValue]] -> RawData
 convertSqlData = map convertSqlRow
 
+-- Из-за особого отношения T_SQL сервера к формату числа с плавающей точкой приходится его парсить отдельно.
+-- Корень зла - числа с нулем целых с точкой впереди (".0"), которые не могут быть распарсены функцией reads.
+-- На данный момент функция неоптимальна, потому что нет желания с ней возиться.
 convertSqlValue :: SqlValue -> RawValue
-convertSqlValue (SqlByteString s) = case reads (BS.unpack s) of
-								[(x, _)] -> DoubleVal x
-								[] -> DoubleVal 0.0
+convertSqlValue (SqlByteString s) = convertSqlDoubleValue $ BS.unpack s
 convertSqlValue s@(SqlInt32 _) = Int32Val (fromSql s)
 convertSqlValue s@(SqlInt64 _) = Int32Val (fromSql s)
+
+convertSqlDoubleValue :: String -> RawValue
+convertSqlDoubleValue ('.':rest) = case reads rest of
+								[(f, _)] -> let divider = 10.0 ^ (fromIntegral . length $ rest) in
+											DoubleVal $ f / divider
+								[] -> undefined
+convertSqlDoubleValue x = case reads x of
+							[(f, _)] -> DoubleVal f
+							_ -> undefined

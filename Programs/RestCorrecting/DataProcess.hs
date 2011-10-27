@@ -23,15 +23,21 @@
 module DataProcess where
 
 import Types
+import qualified Text.Printf as PF
+import qualified Data.List as L
 
 nonDistributableServiceIDs = [76, 66]
+nonSelectableServiceIDs = [74, 1]
 nonProcessableSubscriberIDs = ["6941", "8465", "6077", "7608", "10087"]
 
-chargeTemplate = "SELECT ID_NACH, ID_USL, SUMMA, OST_NACH FROM NACH WHERE NACH_PRZ <> 2 AND ID_USL NOT IN (74, 1) AND ID_OBSH = %s ID_OBSH NOT IN (" ++ unwords nonProcessableSubscriberIDs ++ ") ORDER BY DATA_NACH;"
-paymentTemplate = "SELECT ID_OPL, ID_USL, SUMMA, OST_OPL FROM OPL WHERE OPL_PRZ <> 2 AND ID_USL NOT IN (74, 1) AND ID_OBSH = %s ID_OBSH NOT IN (" ++ unwords nonProcessableSubscriberIDs ++ ") ORDER BY DATA_OPL;"
+chargeTemplate = "SELECT n.ID_NACH, n.ID_USL, CAST(n.SUMMA as varchar), CAST(n.OST_NACH as varchar), n.NACH_PRZ FROM NACH n LEFT JOIN TEH_GLAV tg ON tg.ID_TEH = n.ID_TEH WHERE n.NACH_PRZ <> 2 AND n.ID_OBSH = %s AND tg.TEH_PRZ <> 2 AND n.ID_OBSH NOT IN (%s) AND n.ID_USL NOT IN (%s) ORDER BY DATA_NACH;"
+paymentTemplate = "SELECT ID_OPL, ID_USL, SUMMA, OST_OPL, OPL_PRZ FROM OPL WHERE OPL_PRZ <> 2 AND ID_OBSH = %s AND ID_OBSH NOT IN (%s) AND ID_USL NOT IN (%s) ORDER BY DATA_OPL;"
 
 chargeUpdateTemplate  = "UPDATE NACH SET OST_NACH = ROUND(%f, 2) WHERE ID_NACH = %d AND ID_OBSH = %s"
 paymentUpdateTemplate = "UPDATE OPL SET OST_OPL = ROUND(%f, 2) WHERE ID_OPL = %d AND ID_OBSH = %s"
+
+chargeSelectQuery  key = PF.printf chargeTemplate  key (L.intercalate "," nonProcessableSubscriberIDs) (L.intercalate "," . map show $ nonSelectableServiceIDs)
+paymentSelectQuery key = PF.printf paymentTemplate key (L.intercalate "," nonProcessableSubscriberIDs) (L.intercalate "," . map show $ nonSelectableServiceIDs)
 
 fromRawRow :: RawRow -> Record
 fromRawRow ( Int32Val id
@@ -78,13 +84,13 @@ distributeSumP s (payment@(a, servID, f, _):cs) | s > f && f > 0 && not (servID 
 											| (s > f && f < 0) || servID `elem` nonDistributableServiceIDs = payment : distributeSumP s cs
 											| otherwise = (a, servID, f, s) : cs
 
-process :: (Charges, Payments) -> (Charges, Payments)
-process ([], _) = ([], [])
-process (_, []) = ([], [])
+process :: (Charges, Payments) -> (Charges, Payments, (Double, Double, Double, Double, Double))
+process ([], _) = ([], [], (0,0,0,0,0))
+process (_, []) = ([], [], (0,0,0,0,0))
 process (charges, payments) =
 		case sumDiff > 0 of
-			True ->  (reverse distibutedCharges, nulledPayments)
-			False -> (nulledCharges, reverse distributedPayments)
+			True ->  (reverse distibutedCharges, nulledPayments, (cs, cr, ps, pr, sumDiff))
+			False -> (nulledCharges, reverse distributedPayments, (cs, cr, ps, pr, sumDiff))
 	where
 		(cs, cr) = sumChargeVals charges
 		(ps, pr) = sumPaymentVals payments

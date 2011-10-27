@@ -61,12 +61,13 @@ processData chargeVals paymentVals key = do
 		let convertedPayments = convertSqlData paymentVals
 		let rawCharges = fromRawData convertedCharges
 		let rawPayments = fromRawData convertedPayments
-		let (c, p) = process (rawCharges, rawPayments)
+		let (c, p, (cs, cr, ps, pr, sumDiff)) = process (rawCharges, rawPayments)
 		let (strC, strP) = (map show c, map show p)
 		let chargeDiffs = diff c rawCharges
 		let paymentDiffs = diff p rawPayments
 
 		appendFile testResult ("\n\nSubscriber: " ++  key)
+		appendFile testResult (PF.printf "\nChargeSum: %f\nChargeRest: %f\nPaymentSum: %f\nPaymentRest: %f\nSummDiff: %f" cs cr ps pr sumDiff)
 		appendFile testResult "\n_____________________________________________________________________________________________"
 		appendFile testResult "\nProcesed charges:\n"
 		appendFile testResult . unlines $ strC
@@ -86,12 +87,11 @@ processData chargeVals paymentVals key = do
 processKey :: IConnection conn => conn -> String -> IO ()
 processKey _ [] = return ()
 processKey conn key = do
-		chargeVals <- quickQuery conn (PF.printf "SELECT n.ID_NACH, n.ID_USL, n.SUMMA, n.OST_NACH, n.NACH_PRZ FROM NACH  n LEFT JOIN TEH_GLAV tg ON tg.ID_TEH = n.ID_TEH WHERE n.NACH_PRZ <> 2 AND n.ID_USL <> 74 AND n.ID_OBSH = %s AND tg.TEH_PRZ <> 2 ORDER BY DATA_NACH;" key) []
+		chargeVals <- quickQuery conn (chargeSelectQuery key) []
 		putStrLn $ show chargeVals
-		paymentVals <- quickQuery conn (PF.printf "SELECT ID_OPL, ID_USL, SUMMA, OST_OPL, OPL_PRZ FROM OPL WHERE OPL_PRZ <> 2 AND ID_USL <> 74 AND ID_OBSH = %s ORDER BY DATA_OPL;" key) []
+		paymentVals <- quickQuery conn (paymentSelectQuery key) []
 		putStrLn $ show paymentVals
 		processData chargeVals paymentVals key
-
 
 main = do
 		let connectionString =  "Driver={SQL Server};Server=192.168.4.14;Database=LTC_2011;Trusted_Connection=yes;"
