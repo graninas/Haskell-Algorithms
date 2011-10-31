@@ -24,7 +24,7 @@ module DataProcess where
 
 import Types
 import qualified Data.ByteString.Char8 as C
-import qualified Data.List as L (lookup)
+import qualified Data.List as L (lookup, foldl')
 
 import Constants
 
@@ -33,27 +33,52 @@ checkPredicate :: Predicate -> C.ByteString -> Bool
 checkPredicate (NotInList l) str = (not . elem str) l
 checkPredicate (InList l) str = elem str l
 
+{-
 examineFields :: Int -> PredicateMap -> Fields -> Bool
 examineFields _ _ [] = True
 examineFields idx preds (s:ss) = case L.lookup idx preds of
 									Just pred -> (checkPredicate pred s) && (examineFields (idx+1) preds ss)
 									Nothing -> examineFields (idx+1) preds ss
+-}
 
+examineFields :: PredicateMap -> Int -> Fields -> Bool
+examineFields _ _ [] = False
+examineFields ps maxF fs | maxF > length fs = False
+						 | otherwise = let
+											checkPred b (idx, pred) = b && checkPredicate pred (fs !! idx)
+									   in L.foldl' checkPred True ps
 
+{-
 collectFields :: Int -> FieldIndexes -> Fields -> Fields
 collectFields _ _ [] = []
 collectFields idx fis (s:ss) | idx `elem` fis = s : collectFields (idx+1) fis ss
 collectFields idx fis (s:ss) | otherwise = collectFields (idx+1) fis ss
+-}
 
-processFields :: FieldIndexes -> PredicateMap -> Fields -> Fields
-processFields fis preds fs = case examineFields 0 preds fs of
-									True -> collectFields 0 fis fs
+{-
+-- Этот вариант:
+collectFields :: FieldIndexes -> Fields -> Fields
+collectFields [] _ = []
+collectFields (idx:xs) ss = [ss !! idx] ++ collectFields xs ss
+-- работает лучше, чем правая свертка:
+-- foldr (\x list -> ss !! x : list) [] xs
+-- но левая свертка работает лучше всего, хотя поля получаются в обратном порядке:
+-- foldl (\list x -> ss !! x : list) [] xs
+-}
+
+collectFields :: FieldIndexes -> Fields -> Fields
+collectFields [] _ = []
+collectFields xs ss = reverse $ L.foldl' (\list x -> ss !! x : list) [] xs
+
+processFields :: FieldIndexes -> PredicateMap -> Int -> Fields -> Fields
+processFields fis preds maxF fs = case examineFields preds maxF fs of
+									True -> collectFields fis fs
 									False -> []
 
-processLine :: FieldIndexes -> PredicateMap -> C.ByteString -> C.ByteString
-processLine fis preds = C.intercalate (C.pack [fieldDelimiter]) . processFields fis preds . (C.split fieldDelimiter)
+processLine :: FieldIndexes -> PredicateMap -> Int -> C.ByteString -> C.ByteString
+processLine fis preds maxF = C.intercalate bsFieldDelimiter . processFields fis preds maxF . (C.split fieldDelimiter)
 
 -- | Обрабатывает сырые данные и возвращает данные в нужном формате.
 processData :: FieldIndexes -> PredicateMap -> C.ByteString -> C.ByteString
-processData fis preds = (C.unlines . filter (/= C.empty) . map (processLine fis preds) . C.lines)
+processData fis preds = (C.unlines . filter (/= C.empty) . map (processLine fis preds maxPredicateField) . C.lines)
 

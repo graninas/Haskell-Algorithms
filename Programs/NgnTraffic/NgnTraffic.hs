@@ -39,11 +39,14 @@ import Options
 helpArg1 = "-h"
 helpArg2 = "--help"
 
-helpMessage = [
+copyrightMessage = [
+	"",
 	"NgnTrafficParser 2.0",
 	"Copyright (C) 2011 Granin A.S.",
 	"graninas@gmail.com",
-	"",
+	""]
+
+helpMessage = [
 	"Options:",
 	"-f [<Field index list>] - fields to take.",
 	"-ym (Year, Month) - month wich will be taken.",
@@ -62,7 +65,7 @@ process' resFile fis targetFile = do
 			C.appendFile resFile processResult
 
 process :: ResFilePath -> [FilePath] -> FieldIndexes -> IO String
-process _ [] _ = return "No files to process."
+process _ [] _ = return ("No files to process.\n" ++ (intercalate "\n" copyrightMessage))
 process resFile fs fieldIndexes = do
 	C.writeFile resFile C.empty
 	mapM_ (process' resFile fieldIndexes) fs
@@ -82,7 +85,7 @@ main = do
 
 	let concated = concat args
 	if (helpArg1 `isInfixOf` concated || helpArg1 `isInfixOf` concated)
-		then putStrLn (intercalate "\n" helpMessage)
+		then putStrLn (intercalate "\n" (copyrightMessage ++ helpMessage))
 		else do
 			let cmdLineOptions = optionsFromArgs args
 			let defaultYearMonth = toYearMonth targetYearMonthTime
