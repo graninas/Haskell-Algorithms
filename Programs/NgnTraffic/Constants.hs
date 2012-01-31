@@ -38,7 +38,10 @@ defaultFieldIndexes :: FieldIndexes
 defaultFieldIndexes = sort [7, 8, 9, 12, 14, 36, 112, 122]
 
 predicates :: PredicateMap
-predicates = [(1,  InList [C.pack "R200"]),
+predicates = [--(1,  InList [C.pack "R200"]),
+			  (7,  NotInList (map C.pack ["3022", "3012"])),
+			  --(8,  Like   [C.pack "44", C.pack "45"]),
+			  --(9,  LengthLess 7),
 			  (36, NotInList (map C.pack ["1800", "3600", "5400", "7200", "9000", "10800", "12600", "14400", "16200", "18000", "19800", "21600", "23400"]) )]
 
 maxPredicateField = foldr (\(idx, _) y -> if idx > y then idx else y) 0 predicates

@@ -36,7 +36,9 @@ type FieldDelimiter = Char
 type Fields = [C.ByteString]
 
 data Predicate =  NotInList [C.ByteString]
-				| InList [C.ByteString]
+				| InList    [C.ByteString]
+				| Like      [C.ByteString]
+				| LengthLess Int
 type PredicateMap = [(FieldIndex, Predicate)]
 
 

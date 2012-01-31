@@ -24,14 +24,16 @@ module DataProcess where
 
 import Types
 import qualified Data.ByteString.Char8 as C
-import qualified Data.List as L (lookup, foldl')
+import qualified Data.List as L (lookup, foldl', isPrefixOf)
 
 import Constants
 
 
 checkPredicate :: Predicate -> C.ByteString -> Bool
-checkPredicate (NotInList l) str = (not . elem str) l
-checkPredicate (InList l) str = elem str l
+checkPredicate (NotInList l)  str = (not . elem str) l
+checkPredicate (InList    l)  str = elem str l
+checkPredicate (Like     ls)  str = any (\x -> C.isPrefixOf x str) ls
+checkPredicate (LengthLess n) str = (C.length str) < n
 
 {-
 examineFields :: Int -> PredicateMap -> Fields -> Bool
