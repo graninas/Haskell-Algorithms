@@ -5,13 +5,23 @@ module Main where
 --   Из модуля Control.Monad берется только функция guard.
 import qualified Data.List as L
 import qualified Control.Monad as M (guard)
+import qualified Data.Map as Map
 
 -- | Используемые в программе типы данных.
-type DeviceData      = (Char, Float)   -- | Данные по устройству: символ и вероятность выхода из строя.
-type DevicesData     = [DeviceData]    -- | Список данных по устройствам.
-type FailureCostData = [Float]         -- | Суммы убытков каждого из отказов.
-type ProblemData     = (DevicesData, FailureCostData) -- | Данные задачи.
-type Damages         = [Float]                        -- | Убыточность устройств.
+type DeviceData         = (Char, Float)   -- | Данные по устройству: символ и вероятность выхода из строя.
+type DevicesData        = [DeviceData]    -- | Список данных по устройствам.
+type FailureCostData    = [Float]         -- | Суммы убытков каждого из отказов.
+type ProblemData        = (DevicesData, FailureCostData) -- | Данные задачи.
+type Damages            = [Float]                        -- | Убыточность устройств.
+type VariantProbability = (String, Float)
+
+type MapKey = (Char, Int)
+type ProbabilityMap = Map.Map MapKey Float
+
+
+emptyProbMap :: ProbabilityMap
+emptyProbMap = Map.empty
+
 
 -- | Данные по устройствам.
 devices1, devices2 :: DevicesData
@@ -55,23 +65,99 @@ deviceNames :: DevicesData -> [Char]
 deviceNames = map fst
 
 -- | Возвращает сумму вероятностей устройств.
-sums [] = 0
-sums ((_,pa):aas) = pa + sums aas
+probabilitySum [] = 0
+probabilitySum ((_,pa):aas) = pa + probabilitySum aas
 
 -- | Высчитывает вероятность для варианта перестановки.
---   Например, вероятность варианта "BAC", если есть всего 3 устройства.
-variantProbability xs = f xs (sums xs)
-  where
-    f [] _ = ("", 1)
-    f ((dev, p):xs) sum = let
-        (devs, probs) = f xs (sum - p)
-        prob          = (p / sum)
+--   Например, вероятность варианта "BACD", если есть всего 4 устройства.
+variantProbability _ []                 = ([],    1)
+variantProbability _ ((dev,_):[])       = ([dev], 1)
+variantProbability varSum ((dev, p):xs) = let
+        (devs, probs) = variantProbability (varSum - p) xs
+        prob          = (p / varSum)
         in (dev : devs, prob * probs)
 
--- | Высчитывает вероятности всех вариантов перестановки.
---   Это самая затратная функция, так как она содержит функцию перестановок -
---   permutations, которая работает со сложностью O(n!).
-variantProbabilities = map variantProbability . L.permutations
+variantProbabilities :: DevicesData -> [VariantProbability]
+variantProbabilities devices = let
+    varSum = probabilitySum devices
+    perms  = L.permutations devices
+    in map (variantProbability varSum) perms
+
+probabilityTable :: [VariantProbability] -> ProbabilityMap
+probabilityTable varProbs = foldr f emptyProbMap varProbs
+  where
+    f :: VariantProbability -> ProbabilityMap -> ProbabilityMap
+    f (varString, prob) dataMap = snd $ foldl (f' prob) (0, dataMap) varString
+    f' :: Float -> (Int, ProbabilityMap) -> Char -> (Int, ProbabilityMap)
+    f' prob (idx, dataMap) dev = let
+        key = (dev, idx)
+        in case Map.lookup key dataMap of
+            Just x  -> (idx + 1, Map.insert key (prob + x) dataMap)
+            Nothing -> (idx + 1, Map.insert key prob dataMap)
+
+{-
+foldr :: (a -> b -> b) -> b -> [a] -> b
+
+foldr, applied to a binary operator, a starting value (typically the right-identity of the operator), and a list, reduces the list using the binary operator, from right to left:
+
+ foldr f z [x1, x2, ..., xn] == x1 `f` (x2 `f` ... (xn `f` z)...)
+
+insert :: Ord k => k -> a -> Map k a -> Map k a	Source
+
+O(log n). Insert a new key and value in the map. If the key is already present in the map, the associated value is replaced with the supplied value. insert is equivalent to insertWith const.
+
+ insert 5 'x' (fromList [(5,'a'), (3,'b')]) == fromList [(3, 'b'), (5, 'x')]
+ insert 7 'x' (fromList [(5,'a'), (3,'b')]) == fromList [(3, 'b'), (5, 'a'), (7, 'x')]
+ insert 5 'x' empty                         == singleton 5 'x'
+
+ 
+update :: Ord k => (a -> Maybe a) -> k -> Map k a -> Map k a	Source
+
+O(log n). The expression (update f k map) updates the value x at k (if it is in the map). If (f x) is Nothing, the element is deleted. If it is (Just y), the key k is bound to the new value y.
+
+ let f x = if x == "a" then Just "new a" else Nothing
+ update f 5 (fromList [(5,"a"), (3,"b")]) == fromList [(3, "b"), (5, "new a")]
+ update f 7 (fromList [(5,"a"), (3,"b")]) == fromList [(3, "b"), (5, "a")]
+ update f 3 (fromList [(5,"a"), (3,"b")]) == singleton 5 "a"
+
+
+
+
+
+lookup :: Ord k => k -> Map k a -> Maybe a	Source
+
+O(log n). Lookup the value at a key in the map.
+
+The function will return the corresponding value as (Just value), or Nothing if the key isn't in the map.
+
+An example of using lookup:
+
+ import Prelude hiding (lookup)
+ import Data.Map
+
+ employeeDept = fromList([("John","Sales"), ("Bob","IT")])
+ deptCountry = fromList([("IT","USA"), ("Sales","France")])
+ countryCurrency = fromList([("USA", "Dollar"), ("France", "Euro")])
+
+ employeeCurrency :: String -> Maybe String
+ employeeCurrency name = do
+     dept <- lookup name employeeDept
+     country <- lookup dept deptCountry
+     lookup country countryCurrency
+
+ main = do
+     putStrLn $ "John's currency: " ++ (show (employeeCurrency "John"))
+     putStrLn $ "Pete's currency: " ++ (show (employeeCurrency "Pete"))
+
+The output of this program:
+
+   John's currency: Just "Euro"
+   Pete's currency: Nothing
+
+   
+   
+   
+
 
 -- | Вычисляет значение ячейки на позиции (dev, pos) в результирующей таблице.
 cell xs c@(dev, pos) = (c, sum devProbs)
@@ -107,15 +193,19 @@ damages :: ProblemData -> Damages
 damages problemData = do
     devName <- deviceNames (fst problemData)
     return (damage problemData devName)
+-}
 
 -- | Точка входа в программу.
 main = do
-    let results = damages problem3
-    putStrLn . show $ results
+    let (devices, failureCost) = problem1
+    let varProbs = variantProbabilities devices
+    let probTable = probabilityTable varProbs
+    
+    putStrLn . show $ probTable
 
+    putStrLn "Ok."
 
-
-
+{-
 -- Другие варианты тех же функций.
 
 sums' = foldr (\(_, p) -> (p +)) 0
@@ -135,3 +225,4 @@ variantProbability'' ((dev, p):xs) = let
 cell' xs c@(dev, pos) = let
     devProbs = [snd varProb | varProb <- xs, pos `elem` (L.elemIndices dev . fst $ varProb)]
     in (c, sum devProbs)
+-}
