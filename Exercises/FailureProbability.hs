@@ -54,9 +54,12 @@ problem3 = (devices3, failureCost3)
 deviceNames :: DevicesData -> [Char]
 deviceNames = map fst
 
+-- | Возвращает сумму вероятностей устройств.
 sums [] = 0
 sums ((_,pa):aas) = pa + sums aas
 
+-- | Высчитывает вероятность для варианта перестановки.
+--   Например, вероятность варианта "BAC", если есть всего 3 устройства.
 variantProbability xs = f xs (sums xs)
   where
     f [] _ = ("", 1)
@@ -65,8 +68,12 @@ variantProbability xs = f xs (sums xs)
         prob          = (p / sum)
         in (dev : devs, prob * probs)
 
+-- | Высчитывает вероятности всех вариантов перестановки.
+--   Это самая затратная функция, так как она содержит функцию перестановок -
+--   permutations, которая работает со сложностью O(n!).
 variantProbabilities = map variantProbability . L.permutations
 
+-- | Вычисляет значение ячейки на позиции (dev, pos) в результирующей таблице.
 cell xs c@(dev, pos) = (c, sum devProbs)
   where
     devProbs = do
@@ -74,31 +81,42 @@ cell xs c@(dev, pos) = (c, sum devProbs)
         M.guard (pos `elem` (L.elemIndices dev . fst $ varProb))
         return (snd varProb)
 
+-- | Вычисляет вероятность выхода из строя устройства на всех позициях (фактически - строка результирующей таблицы).
+--   Функция работает неэффективно, так как вызывает функцию variantProbabilities, возможно, много раз.
 devicePositionProb devices colsCount devName = do
     col <- [0..colsCount - 1]
     return (cell (variantProbabilities devices) (devName, col))
 
+-- | Вычисляет ущерб из-за выхода из строя определенного устройства.
+--   Функция работает очень неэффективно.
 damage (devices, failCosts) devName = let
     colsCount            = length failCosts
     devPosProbs          = devicePositionProb devices colsCount devName
     producted            = zipWith (\x y -> snd x * y) devPosProbs failCosts
     in sum producted
 
+-- | Вычисляет результирующую таблицу вероятностей.
+--   Функция работает очень неэффективно.
 probabilityTable (devices, failCosts)  = do
     devName <- deviceNames devices
     let colsCount = (length failCosts) - 1
     return (devicePositionProb devices colsCount devName)
 
+-- | Вычисляет ущерб выхода из строя для каждого устройства.
 damages :: ProblemData -> Damages
 damages problemData = do
     devName <- deviceNames (fst problemData)
     return (damage problemData devName)
 
-
+-- | Точка входа в программу.
 main = do
     let results = damages problem3
     putStrLn . show $ results
 
+
+
+
+-- Другие варианты тех же функций.
 
 sums' = foldr (\(_, p) -> (p +)) 0
 
