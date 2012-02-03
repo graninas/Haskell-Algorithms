@@ -109,10 +109,10 @@ deviceCosts failureCost dataMap = result
 
 -- | Точка входа в программу.
 main = do
-    let (devices, failureCost) = problem1
+    let (devices, failureCost) = problem2
     let !varProbs  = variantProbabilities devices
     let probTable  = probabilityTable varProbs
     let devCosts   = deviceCosts failureCost probTable
-    
+
     putStrLn . show $ devCosts
     putStrLn "Ok."
