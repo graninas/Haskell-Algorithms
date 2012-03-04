@@ -1,10 +1,14 @@
 module Main where
 
 import Language.Haskell.Parser
-
+import System
 
 main = do
-    s <- readFile "Fact.hs"
-    let parsed = parseModule s
-    putStrLn . show $ parsed
-    writeFile "fact_parsed.txt" (show parsed)
+    args <- getArgs
+    case args of
+        (a:_) -> do
+            s <- readFile a
+            let parsed = parseModule s
+            putStrLn . show $ parsed
+            writeFile (a ++ ".parsed.txt") (show parsed)
+        _ -> putStrLn "Please, select a file."
