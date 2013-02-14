@@ -1,0 +1,398 @@
+Еще Одно Руководство по Монадам (часть 2: функции >>= и return)
+Mike Vanier
+http://mvanier.livejournal.com
+
+Перевод: Гранин А. С.
+graninas@gmail.com
+
+By Mike Vanier
+
+<h4>Две фундаментальные монадические операции</h4>
+Помните, я говорил, что монады обобщают композицию и применение функций? Вот об этом здесь и поговорим. Наберитесь терпения, нам потребуется какое-то время.
+
+К этому моменту, я надеюсь, у вас сложилось хотя бы смутное ощущение монад, что они такое и для чего используются. Я уже упоминал одну из особенностей функционального программирования - композицию функций, благодаря которой мы создаем новые функции, объединяя старые. Функциональные программисты постоянно говорят о "комбинируемости" {1}, подразумевая, что если что-то в языке программирования не комбинируется, значит, оно немногого стоит. Аналогично, наши новоявленные монадические функции не были столь же полезны, если бы они не компоновались так, как это есть на самом деле. Но мы еще увидим, для их композиции нельзя использовать стандартную функцию "точка" (.) языка Haskell. Мы придем к выводу, что тут нужно что-то большее, и определим две фундаментальные монадические операции (или, для начала, их типы).
+<habracut />
+Пусть у нас есть такие монадические функции:
+
+<blockquote>f&nbsp;<font color="#339933">::</font>&nbsp;a&nbsp;<font color="#339933">-&gt;</font>&nbsp;m&nbsp;b<br/>
+g&nbsp;<font color="#339933">::</font>&nbsp;b&nbsp;<font color="#339933">-&gt;</font>&nbsp;m&nbsp;c</blockquote>
+
+для некоторой монады <font color=blue>m</font>. Если вы хотите более конкретный пример, можете представить себе, что <font color=blue>f</font> и <font color=blue>g</font> - это функции в монаде <font color=blue>IO</font>:
+
+<blockquote>f&nbsp;<font color="#339933">::</font>&nbsp;a&nbsp;<font color="#339933">-&gt;</font>&nbsp;<font color="#cccc00">IO</font>&nbsp;b<br/>
+g&nbsp;<font color="#339933">::</font>&nbsp;b&nbsp;<font color="#339933">-&gt;</font>&nbsp;<font color="#cccc00">IO</font>&nbsp;c</blockquote>
+
+Однако то же самое справедливо и для других монад. Вспомним (для случая с <font color=blue>IO</font>), что функция <font color=blue>f</font> принимает значение типа <font color=blue>a</font> и выводит значение типа <font color=blue>b</font>, а в процессе, может быть, взаимодействует с вводом/выводом (<font color=blue>IO</font>). Функция <font color=blue>g</font>, в свою очередь, берет значение типа <font color=blue>b</font> и выводит значение типа <font color=blue>c</font>, а в процессе, может быть, работает с вводом/выводом. С помощью композиции этих функций мы надеемся получить функцию <font color=blue>h</font>:
+
+<blockquote>h&nbsp;<font color="#339933">::</font>&nbsp;a&nbsp;<font color="#339933">-&gt;</font>&nbsp;<font color="#cccc00">IO</font>&nbsp;c</blockquote>
+
+то есть, результат - это функция, которая берет значение типа <font color=blue>a</font>, выводит значение типа <font color=blue>c</font> и в процессе работает с вводом/выводом (где ввод/вывод - это комбинация того, что делают <font color=blue>f</font> и <font color=blue>g</font>). На псевдоязыке мы могли бы записать это так:
+
+<blockquote>соединить&nbsp;функцию:<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<font>&#40;</font>f&nbsp;<font color="#339933">::</font>&nbsp;a&nbsp;<font color="#339933">-&gt;</font>&nbsp;<font color="#cccc00">IO</font>&nbsp;b<font>&#41;</font>&nbsp;<br/>
+с&nbsp;функцией:<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<font>&#40;</font>g&nbsp;<font color="#339933">::</font>&nbsp;b&nbsp;<font color="#339933">-&gt;</font>&nbsp;<font color="#cccc00">IO</font>&nbsp;c<font>&#41;</font>&nbsp;<br/>
+чтобы&nbsp;получить:<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<font>&#40;</font>h&nbsp;<font color="#339933">::</font>&nbsp;a&nbsp;<font color="#339933">-&gt;</font>&nbsp;<font color="#cccc00">IO</font>&nbsp;c<font>&#41;</font></blockquote>
+
+Однако в Haskell оператор композиции (точка) ничего не знает про тип <font color=blue>IO</font>, поэтому не станет работать с нашими функциями <font color=blue>f</font> и <font color=blue>g</font>. Для сравнения посмотрим на чистые функции с обычными типами <font color=blue>p</font>, <font color=blue>q</font>, <font color=blue>r</font> без всяких <font color=blue>IO</font>:
+
+<blockquote>p&nbsp;<font color="#339933">::</font>&nbsp;a&nbsp;<font color="#339933">-&gt;</font>&nbsp;b<br/>
+q&nbsp;<font color="#339933">::</font>&nbsp;b&nbsp;<font color="#339933">-&gt;</font>&nbsp;c<br/>
+r&nbsp;<font color="#339933">::</font>&nbsp;a&nbsp;<font color="#339933">-&gt;</font>&nbsp;c</blockquote>
+
+Операторы (.) и (>.>) тут подходят:
+
+<blockquote><font>&#40;</font><font color="#339933">.</font><font>&#41;</font>&nbsp;<font color="#339933">::</font>&nbsp;<font>&#40;</font>b&nbsp;<font color="#339933">-&gt;</font>&nbsp;c<font>&#41;</font>&nbsp;<font color="#339933">-&gt;</font>&nbsp;<font>&#40;</font>a&nbsp;<font color="#339933">-&gt;</font>&nbsp;b<font>&#41;</font>&nbsp;<font color="#339933">-&gt;</font>&nbsp;<font>&#40;</font>a&nbsp;<font color="#339933">-&gt;</font>&nbsp;c<font>&#41;</font><br/>
+r&nbsp;<font color="#339933">=</font>&nbsp;q&nbsp;<font color="#339933">.</font>&nbsp;p<br/>
+<font>&#40;</font><font color="#339933">&gt;.&gt;</font><font>&#41;</font>&nbsp;<font color="#339933">::</font>&nbsp;<font>&#40;</font>a&nbsp;<font color="#339933">-&gt;</font>&nbsp;b<font>&#41;</font>&nbsp;<font color="#339933">-&gt;</font>&nbsp;<font>&#40;</font>b&nbsp;<font color="#339933">-&gt;</font>&nbsp;c<font>&#41;</font>&nbsp;<font color="#339933">-&gt;</font>&nbsp;<font>&#40;</font>a&nbsp;<font color="#339933">-&gt;</font>&nbsp;c<font>&#41;</font><br/>
+r&nbsp;<font color="#339933">=</font>&nbsp;p&nbsp;<font color="#339933">&gt;.&gt;</font>&nbsp;q</blockquote>
+
+Но ни один из них не будет работать с монадическими функциями:
+
+<blockquote>f&nbsp;<font color="#339933">::</font>&nbsp;a&nbsp;<font color="#339933">-&gt;</font>&nbsp;<font color="#cccc00">IO</font>&nbsp;b<br/>
+g&nbsp;<font color="#339933">::</font>&nbsp;b&nbsp;<font color="#339933">-&gt;</font>&nbsp;<font color="#cccc00">IO</font>&nbsp;c<br/>
+h&nbsp;<font color="#339933">::</font>&nbsp;a&nbsp;<font color="#339933">-&gt;</font>&nbsp;<font color="#cccc00">IO</font>&nbsp;c<br/>
+g&nbsp;<font color="#339933">.</font>&nbsp;f&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font color="#339933">--&gt;</font>&nbsp;ошибка&nbsp;типизации<font color="#339933">!</font>&nbsp;Несоответствие&nbsp;между&nbsp;<font color="#cccc00">IO</font>&nbsp;b&nbsp;и&nbsp;b<br/>
+f&nbsp;<font color="#339933">&gt;.&gt;</font>&nbsp;g&nbsp;&nbsp;&nbsp;<font color="#339933">--&gt;</font>&nbsp;ошибка&nbsp;типизации<font color="#339933">!</font>&nbsp;Несоответствие&nbsp;между&nbsp;<font color="#cccc00">IO</font>&nbsp;b&nbsp;и&nbsp;b</blockquote>
+
+Нельзя использовать монадическое значение типа <font color=blue>IO b</font>, если требуется тип <font color=blue>b</font>. (Это наиболее частая ошибка монадических программ на Haskell.) Нам нужна специальная функция монадической композиции, которую я зову <font color=blue>mcompose</font> (от "monadic compose"). У нее следующий тип:
+
+<blockquote>mcompose&nbsp;<font color="#339933">::</font>&nbsp;<font>&#40;</font>a&nbsp;<font color="#339933">-&gt;</font>&nbsp;m&nbsp;b<font>&#41;</font>&nbsp;<font color="#339933">-&gt;</font>&nbsp;<font>&#40;</font>b&nbsp;<font color="#339933">-&gt;</font>&nbsp;m&nbsp;c<font>&#41;</font>&nbsp;<font color="#339933">-&gt;</font>&nbsp;<font>&#40;</font>a&nbsp;<font color="#339933">-&gt;</font>&nbsp;m&nbsp;c<font>&#41;</font></blockquote>
+
+Она работает для любой монады, в том числе для монады <font color=blue>IO</font>. Подставляя <font color=blue>IO</font>, мы получим соответствующее определение функции:
+
+<blockquote>mcompose&nbsp;<font color="#339933">::</font>&nbsp;<font>&#40;</font>a&nbsp;<font color="#339933">-&gt;</font>&nbsp;<font color="#cccc00">IO</font>&nbsp;b<font>&#41;</font>&nbsp;<font color="#339933">-&gt;</font>&nbsp;<font>&#40;</font>b&nbsp;<font color="#339933">-&gt;</font>&nbsp;<font color="#cccc00">IO</font>&nbsp;c<font>&#41;</font>&nbsp;<font color="#339933">-&gt;</font>&nbsp;<font>&#40;</font>a&nbsp;<font color="#339933">-&gt;</font>&nbsp;<font color="#cccc00">IO</font>&nbsp;c<font>&#41;</font></blockquote>
+
+Мы могли бы ее использовать для композиции монадических функций <font color=blue>f</font> и <font color=blue>g</font>. Тип функции <font color=blue>h</font> был бы корректным:
+
+<blockquote>f&nbsp;<font color="#339933">::</font>&nbsp;a&nbsp;<font color="#339933">-&gt;</font>&nbsp;<font color="#cccc00">IO</font>&nbsp;b<br/>
+g&nbsp;<font color="#339933">::</font>&nbsp;b&nbsp;<font color="#339933">-&gt;</font>&nbsp;<font color="#cccc00">IO</font>&nbsp;c<br/>
+h&nbsp;<font color="#339933">::</font>&nbsp;a&nbsp;<font color="#339933">-&gt;</font>&nbsp;<font color="#cccc00">IO</font>&nbsp;c<br/>
+h&nbsp;<font color="#339933">=</font>&nbsp;f&nbsp;`mcompose`&nbsp;g</blockquote>
+
+(Здесь функция <font color=blue>mcompose</font> окружена обратными апострофами. Это элегантный синтаксический сахар, который позволяет сделать из двухаргументной функции инфиксный оператор. Не забывайте, что операторы в Haskell - это просто функции, помещенные между своими операндами.) Каким-то мистическим образом (пока еще мистическим), функция <font color=blue>mcompose</font> (или оператор, если хотите) способна:
+
+<ol>
+	<li>принять исходное значение типа <font color=blue>a</font>;</li>
+	<li>применить функцию <font color=blue>f</font> к нему (обычное применение функций) и получить результат типа <font color=blue>IO b</font>;</li>
+	<li>взять значение типа <font color=blue>IO b</font> от функции <font color=blue>f</font> и извлечь значение типа <font color=blue>b</font> (это то, что у нас не получается);</li>
+	<li>взять значение типа <font color=blue>b</font> и применить функцию <font color=blue>g</font> к нему (опять обычное применение функций), чтобы получить значение типа <font color=blue>IO c</font>, которое и есть искомый результат.</li>
+</ol>
+
+Единственное, что мы не можем еще сделать, это шаг (3), - получить значение типа <font color=blue>b</font> из значения типа <font color=blue>IO b</font>. Давайте придумаем функцию <font color=blue>extract</font>, которую бы мы могли использовать для извлечения. Вот ее тип:
+
+<blockquote>extract&nbsp;<font color="#339933">::</font>&nbsp;<font color="#cccc00">IO</font>&nbsp;b&nbsp;<font color="#339933">-&gt;</font>&nbsp;b</blockquote>
+
+А если обобщить на все монады, получим:
+
+<blockquote>extract&nbsp;<font color="#339933">::</font>&nbsp;m&nbsp;b&nbsp;<font color="#339933">-&gt;</font>&nbsp;b</blockquote>
+
+Оказывается, что если бы такая функция существовала, она бы нивелировала все преимущества монад и чистого функционального программирования! Есть причина, по которой нам нужны монады. Мы хотим хранить специальные понятия вычислений (монадические функции) отдельно от чистых функций, потому что иначе не было бы никаких гарантий, что чистые функции - чистые. Это важный момент, и я собираюсь потратить на него немного времени, а потом мы вернемся к монадической композиции.
+
+<blockquote>*Заметка на полях.* На самом деле, для некоторых монад есть эквивалент функции <font color=blue>extract</font>, что не влечет за собой никаких проблем. Однако я должен сказать, что обобщенная на все монады функция <font color=blue>extract</font> запрещена.</blockquote>
+
+Нам бы хотелось точно знать, что функции без монадических типов являются чистыми. Хотя вообще-то в Haskell монадические функции являются чистыми, потому что они сделаны как чистые функции, возвращающие монадическое значение. Но мы хотим гарантировать, что немонадические (чистые) функции даже пытаться не будут работать с монадическими значениями. Тогда они точно будут чистыми. Например, чистая функция <font color=blue>hh</font> типа
+
+<blockquote>hh&nbsp;<font color="#339933">::</font>&nbsp;a&nbsp;<font color="#339933">-&gt;</font>&nbsp;c</blockquote>
+
+никогда не вызовет операцию чтения/записи (с файлом или консолью), потому что иначе у нее должен был быть тип
+
+<blockquote>hh&nbsp;<font color="#339933">::</font>&nbsp;a&nbsp;<font color="#339933">-&gt;</font>&nbsp;<font color="#cccc00">IO</font>&nbsp;c</blockquote>
+
+Подобные гарантии, подкрепленные системой типов, - это одна из главных сильных сторон Haskell. Они позволяют нам по одному взгляду на определение функции быть на 100% уверенными, что она не взаимодействует с вводом/выводом (например).
+
+Однако, если бы у нас была функция <font color=blue>extract</font>, мы могли бы составить <font color=blue>hh</font> - якобы чистую функцию из нечистых, оперирующих I/O:
+
+<blockquote>ff&nbsp;<font color="#339933">::</font>&nbsp;a&nbsp;<font color="#339933">-&gt;</font>&nbsp;<font color="#cccc00">IO</font>&nbsp;b<br/>
+gg&nbsp;<font color="#339933">::</font>&nbsp;b&nbsp;<font color="#339933">-&gt;</font>&nbsp;c<br/>
+hh&nbsp;<font color="#339933">=</font>&nbsp;ff&nbsp;<font color="#339933">&gt;.&gt;</font>&nbsp;extract&nbsp;<font color="#339933">&gt;.&gt;</font>&nbsp;gg&nbsp;&nbsp;<font color="#5d478b">--&nbsp;или&nbsp;то&nbsp;же&nbsp;самое:&nbsp;hh&nbsp;=&nbsp;gg&nbsp;.&nbsp;extract&nbsp;.&nbsp;ff</font></blockquote>
+
+Даже если никогда не предполагалось, что функция <font color=blue>hh</font> будет делать ввод/вывод, вы могли бы ее создать с помощью extract и обычного оператора композиции, а тип <font color=blue>hh</font> был бы чистым, - но внутри все равно выполнялись бы операции ввода/вывода. И не получилось бы отделения <font color=blue>IO</font> (а так же других монадических вычислений) от чистых вычислений. (А ведь это одна из главных причин введения монад.) Заметим, кстати, что в точности эта ситуация и творится с большинством обычных языков программирования, из-за чего их системы типов не гарантируют, что функции чистые. В отличие от Haskell, - нам нравится его механизм чистых функций, его система типов, которая обязывает чистые функции быть чистыми, и потому-то в Haskell нет функции <font color=blue>extract</font>.
+
+Есть одна небольшая проблемка с тем, что я сейчас сказал: вообще-то это ложь. Существует функция unsafePerformIO с типом <font color=blue>IO a -> a</font>, то есть, это версия <font color=blue>extract</font> для монады <font color=blue>IO</font>. Слово "unsafe" ("небезопасный") намекает на то, что вы должны избегать этой функции, если не знаете, что в точности хотите сделать, или не готовы к странным сбоям. Мне никогда не приходилось использовать <font color=blue>unsafePerformIO</font>, но легальные случаи есть, например, глубоко в реализации компиляторов Haskell. Просто забудьте, что я вам это сказал, хорошо? Мне неловко из-за этого. Извините. {3}
+
+Но - продолжим. К этому моменту мы установили: (а) - композиция монадических функций нужна; (б) - обычный оператор композиции для этого не подходит, потому что мы не можем свести монадические типы к обычным; и (в) - нельзя задать функцию <font color=blue>extract</font>, ибо она испортит чистоту всего языка. Так что же нам делать?
+
+Ну, прежде всего, попробуем придумать что-нибудь попроще, чем <font color=blue>mcompose</font>. Скажем, некую функцию <font color=blue>mapply</font> (монадическое применение), у которой следующий тип:
+
+<blockquote>mapply&nbsp;<font color="#339933">::</font>&nbsp;m&nbsp;b&nbsp;<font color="#339933">-&gt;</font>&nbsp;<font>&#40;</font>b&nbsp;<font color="#339933">-&gt;</font>&nbsp;m&nbsp;c<font>&#41;</font>&nbsp;<font color="#339933">-&gt;</font>&nbsp;m&nbsp;c</blockquote>
+
+А если спуститься от общих монад к <font color=blue>IO</font>, то получим:
+
+<blockquote>mapply&nbsp;<font color="#339933">::</font>&nbsp;<font color="#cccc00">IO</font>&nbsp;b&nbsp;<font color="#339933">-&gt;</font>&nbsp;<font>&#40;</font>b&nbsp;<font color="#339933">-&gt;</font>&nbsp;<font color="#cccc00">IO</font>&nbsp;c<font>&#41;</font>&nbsp;<font color="#339933">-&gt;</font>&nbsp;<font color="#cccc00">IO</font>&nbsp;c</blockquote>
+
+Она названа <font color=blue>mapply</font> из-за своей схожести с обычным оператором применением функций. Вспомним, например, оператор <font color=blue>>$></font>, ранее определенный подобным образом:
+
+<blockquote><font>&#40;</font><font color="#339933">&gt;$&gt;</font><font>&#41;</font>&nbsp;<font color="#339933">::</font>&nbsp;b&nbsp;<font color="#339933">-&gt;</font>&nbsp;<font>&#40;</font>b&nbsp;<font color="#339933">-&gt;</font>&nbsp;c<font>&#41;</font>&nbsp;<font color="#339933">-&gt;</font>&nbsp;c</blockquote>
+
+То же самое, что и <font color=blue>mapply</font>, только нет никаких "m" (типы не монадические). <font color=blue>mcompose</font> тривиально выражается через <font color=blue>mapply</font>:
+
+<blockquote>mcompose&nbsp;<font color="#339933">::</font>&nbsp;<font>&#40;</font>a&nbsp;<font color="#339933">-&gt;</font>&nbsp;m&nbsp;b<font>&#41;</font>&nbsp;<font color="#339933">-&gt;</font>&nbsp;<font>&#40;</font>b&nbsp;<font color="#339933">-&gt;</font>&nbsp;m&nbsp;c<font>&#41;</font>&nbsp;<font color="#339933">-&gt;</font>&nbsp;<font>&#40;</font>a&nbsp;<font color="#339933">-&gt;</font>&nbsp;m&nbsp;c<font>&#41;</font><br/>
+mcompose&nbsp;f&nbsp;g&nbsp;x&nbsp;<font color="#339933">=</font>&nbsp;<font>&#40;</font>f&nbsp;x<font>&#41;</font>&nbsp;`mapply`&nbsp;g&nbsp;&nbsp;<font color="#5d478b">--&nbsp;или:&nbsp;mapply&nbsp;(f&nbsp;x)&nbsp;g</font></blockquote>
+
+Так как стрелка (<font color=blue>-></font>) в определении типов правоассоциативная, мы можем опустить скобки у последнего элемента:
+
+<blockquote>mcompose&nbsp;<font color="#339933">::</font>&nbsp;<font>&#40;</font>a&nbsp;<font color="#339933">-&gt;</font>&nbsp;m&nbsp;b<font>&#41;</font>&nbsp;<font color="#339933">-&gt;</font>&nbsp;<font>&#40;</font>b&nbsp;<font color="#339933">-&gt;</font>&nbsp;m&nbsp;c<font>&#41;</font>&nbsp;<font color="#339933">-&gt;</font>&nbsp;a&nbsp;<font color="#339933">-&gt;</font>&nbsp;m&nbsp;c<br/>
+mcompose&nbsp;f&nbsp;g&nbsp;x&nbsp;<font color="#339933">=</font>&nbsp;<font>&#40;</font>f&nbsp;x<font>&#41;</font>&nbsp;`mapply`&nbsp;g</blockquote>
+
+Может быть, эту версию <font color=blue>mcompose</font> понять проще, чем предыдущую, но они - одно и то же. Стоит отметить, что <font color=blue>x</font> имеет тип <font color=blue>a</font>, а тип результата - <font color=blue>m c</font>. Вот что мы делаем здесь: мы применяем функцию <font color=blue>f</font> к <font color=blue>x</font>, чтобы получить значение типа <font color=blue>m b</font>; потом передаем в <font color=blue>mapply</font> это значение (типа <font color=blue>m b</font>) и функцию <font color=blue>g</font>, получая таким образом интересующее нас значение типа <font color=blue>m c</font>. Получается, что нам ненужно, чтобы где-то была функция <font color=blue>mcompose</font>; если у нас уже есть <font color=blue>mapply</font>, через нее мы и сами можем написать <font color=blue>mcompose</font>. И, на самом деле, <font color=blue>mapply</font> - одна из двух фундаментальных монадических операций. Она обычно называется "bind" ("связать") и записывается как символьный инфиксный оператор <font color=blue>>>=</font>:
+
+<blockquote><font>&#40;</font><font color="#339933">&gt;&gt;=</font><font>&#41;</font>&nbsp;<font color="#339933">::</font>&nbsp;m&nbsp;a&nbsp;<font color="#339933">-&gt;</font>&nbsp;<font>&#40;</font>a&nbsp;<font color="#339933">-&gt;</font>&nbsp;m&nbsp;b<font>&#41;</font>&nbsp;<font color="#339933">-&gt;</font>&nbsp;m&nbsp;b</blockquote>
+
+Стоит заметить, что я слегка изменил определение типа: заменил <font color=blue>b</font> на <font color=blue>a</font> и <font color=blue>c</font> на <font color=blue>b</font>. Но это и не важно, поскольку <font color=blue>a</font>, <font color=blue>b</font>, <font color=blue>c</font> - переменные типов, они работают с любыми типами.
+
+Я бы хотел подчеркнуть, что оператор <font color=blue>>>=</font> в высшей степени абстрактен. Его первый аргумент - это значение типа <font color=blue>m a</font>, где <font color=blue>a</font> может быть вообще любым типом, а <font color=blue>m</font> - любым монадическим конструктором типа. Вторым аргументом следует функция <font color=blue>a -> m b</font>, где <font color=blue>a</font> и <font color=blue>b</font> - это тоже любые типы, и <font color=blue>m</font> - это, опять же, любой монадический конструктор типа. Наконец, у возвращаемого значения тип <font color=blue>m b</font>, где <font color=blue>b</font> может быть любым типом и <font color=blue>m</font> может быть любым монадическим конструктором типа. (Для бывалых программистов на Haskell подобные определения типов становятся второй натурой, но для новичков это может быть сложным.) Можете специализировать определение до монады <font color=blue>IO</font>, и получите монадический оператор применения на монаде <font color=blue>IO</font>:
+
+<blockquote><font>&#40;</font><font color="#339933">&gt;&gt;=</font><font>&#41;</font>&nbsp;<font color="#339933">::</font>&nbsp;<font color="#cccc00">IO</font>&nbsp;a&nbsp;<font color="#339933">-&gt;</font>&nbsp;<font>&#40;</font>a&nbsp;<font color="#339933">-&gt;</font>&nbsp;<font color="#cccc00">IO</font>&nbsp;b<font>&#41;</font>&nbsp;<font color="#339933">-&gt;</font>&nbsp;<font color="#cccc00">IO</font>&nbsp;b</blockquote>
+
+Мы скоро увидим, что система типов Haskell позволяет использовать обобщенный оператор <font color=blue>>>=</font> для самых разных монад (это круто, да?).
+
+Предположим, что у нас есть оператор <font color=blue>>>=</font>, с ним мы можем соединить <font color=blue>f</font> и <font color=blue>g</font>, чтобы получить <font color=blue>h</font>:
+
+<blockquote><font color="#5d478b">--&nbsp;предположим,&nbsp;нам&nbsp;дано:</font><br/>
+f&nbsp;<font color="#339933">::</font>&nbsp;a&nbsp;<font color="#339933">-&gt;</font>&nbsp;m&nbsp;b<br/>
+g&nbsp;<font color="#339933">::</font>&nbsp;b&nbsp;<font color="#339933">-&gt;</font>&nbsp;m&nbsp;c<br/>
+&nbsp;<br/>
+<font color="#5d478b">--&nbsp;определение&nbsp;h:</font><br/>
+h&nbsp;<font color="#339933">::</font>&nbsp;a&nbsp;<font color="#339933">-&gt;</font>&nbsp;m&nbsp;c<br/>
+h&nbsp;x&nbsp;<font color="#339933">=</font>&nbsp;f&nbsp;x&nbsp;<font color="#339933">&gt;&gt;=</font>&nbsp;g</blockquote>
+
+Мы также можем переписать <font color=blue>h</font> по-другому:
+
+<blockquote>h&nbsp;<font color="#339933">=</font>&nbsp;\x&nbsp;<font color="#339933">-&gt;</font>&nbsp;f&nbsp;x&nbsp;<font color="#339933">&gt;&gt;=</font>&nbsp;g</blockquote>
+
+где <font color=blue>\x -> ...</font> - это, как было сказано ранее, обозначение анонимных функций в Haskell {4} (в этом случае с одним аргументом <font color=blue>x</font>); обе версии функции <font color=blue>h</font> значат одно и то же. Используя <font color=blue>mcompose</font>, мы можем записать такое уравнение:
+
+<blockquote>h&nbsp;<font color="#339933">=</font>&nbsp;f&nbsp;`mcompose`&nbsp;g&nbsp;<font color="#339933">=</font>&nbsp;mcompose&nbsp;f&nbsp;g&nbsp;<font color="#339933">=</font>&nbsp;\x&nbsp;<font color="#339933">-&gt;</font>&nbsp;<font>&#40;</font>f&nbsp;x&nbsp;<font color="#339933">&gt;&gt;=</font>&nbsp;g<font>&#41;</font></blockquote>
+
+То есть, наша <font color=blue>mcompose</font> определяется как
+
+<blockquote>mcompose&nbsp;f&nbsp;g&nbsp;<font color="#339933">=</font>&nbsp;\x&nbsp;<font color="#339933">-&gt;</font>&nbsp;<font>&#40;</font>f&nbsp;x&nbsp;<font color="#339933">&gt;&gt;=</font>&nbsp;g<font>&#41;</font></blockquote>
+ 
+На самом деле в Haskell уже есть стандартный монадический оператор композиции <font color=blue>>=></font>:
+
+<blockquote>f&nbsp;<font color="#339933">&gt;=&gt;</font>&nbsp;g&nbsp;<font color="#339933">=</font>&nbsp;\x&nbsp;<font color="#339933">-&gt;</font>&nbsp;<font>&#40;</font>f&nbsp;x&nbsp;<font color="#339933">&gt;&gt;=</font>&nbsp;g<font>&#41;</font>&nbsp;&nbsp;<font color="#5d478b">--&nbsp;то&nbsp;же&nbsp;самое,&nbsp;что&nbsp;и&nbsp;(f&nbsp;`mcompose`&nbsp;g)&nbsp;но&nbsp;более&nbsp;краткое.</font></blockquote>
+
+Предположив, что у нас есть монадический оператор применения <font color=blue>>>=</font>, мы смогли легко задать монадический оператор композиции <font color=blue>>=></font>. Значит, монадический оператор применения (bind-оператор) концептуально важен. Далее мы увидим, что для каждой монады определен свой специфический оператор <font color=blue>>>=</font>, отличающийся от всех остальных; эту задачу очень хорошо решают классы типов Haskell. Кстати, в компиляторе GHC оператор <font color=blue>>=></font> определен в модуле <font color=blue>Control.Monad</font>.
+
+Теперь давайте вспомним, что обычный оператор применения мы записывали двумя способами:
+
+<blockquote><font>&#40;</font><font color="#339933">$</font><font>&#41;</font>&nbsp;<font color="#339933">::</font>&nbsp;<font>&#40;</font>a&nbsp;<font color="#339933">-&gt;</font>&nbsp;b<font>&#41;</font>&nbsp;<font color="#339933">-&gt;</font>&nbsp;a&nbsp;<font color="#339933">-&gt;</font>&nbsp;b</blockquote>
+
+и
+
+<blockquote><font>&#40;</font><font color="#339933">&gt;$&gt;</font><font>&#41;</font>&nbsp;<font color="#339933">::</font>&nbsp;a&nbsp;<font color="#339933">-&gt;</font>&nbsp;<font>&#40;</font>a&nbsp;<font color="#339933">-&gt;</font>&nbsp;b<font>&#41;</font>&nbsp;<font color="#339933">-&gt;</font>&nbsp;b</blockquote>
+
+Какой из этих операторов применять, зависит от того, в каком порядке мы хотели передавать аргументы. (Замечательно определить оба оператора, чтобы ими пользоваться тогда, когда это удобно.) Монадический оператор применения мы тоже можем записать двумя способами. Первый способ - это bind-оператор <font color=blue>>>=</font> с типом
+
+<blockquote><font>&#40;</font><font color="#339933">&gt;&gt;=</font><font>&#41;</font>&nbsp;<font color="#339933">::</font>&nbsp;m&nbsp;a&nbsp;<font color="#339933">-&gt;</font>&nbsp;<font>&#40;</font>a&nbsp;<font color="#339933">-&gt;</font>&nbsp;m&nbsp;b<font>&#41;</font>&nbsp;<font color="#339933">-&gt;</font>&nbsp;m&nbsp;b</blockquote>
+
+который является аналогом обычного оператора применения <font color=blue>>$></font>. Тривиально задается монадический оператор применения, принимающий аргументы в обратом порядке:
+
+<blockquote><font>&#40;</font><font color="#339933">=&lt;&lt;</font><font>&#41;</font>&nbsp;<font color="#339933">::</font>&nbsp;<font>&#40;</font>a&nbsp;<font color="#339933">-&gt;</font>&nbsp;m&nbsp;b<font>&#41;</font>&nbsp;<font color="#339933">-&gt;</font>&nbsp;m&nbsp;a&nbsp;<font color="#339933">-&gt;</font>&nbsp;m&nbsp;b<br/>
+f&nbsp;<font color="#339933">=&lt;&lt;</font>&nbsp;x&nbsp;&nbsp;<font color="#339933">=</font>&nbsp;&nbsp;x&nbsp;<font color="#339933">&gt;&gt;=</font>&nbsp;f</blockquote>
+
+Еще вы можете взять функцию <font color=blue>flip</font>, которая берет функцию двух аргументов и возвращает ту же функцию, но с обратным порядком аргументов:
+
+<blockquote><font>flip</font>&nbsp;<font color="#339933">::</font>&nbsp;<font>&#40;</font>a&nbsp;<font color="#339933">-&gt;</font>&nbsp;b&nbsp;<font color="#339933">-&gt;</font>&nbsp;c<font>&#41;</font>&nbsp;<font color="#339933">-&gt;</font>&nbsp;<font>&#40;</font>b&nbsp;<font color="#339933">-&gt;</font>&nbsp;a&nbsp;<font color="#339933">-&gt;</font>&nbsp;c<font>&#41;</font><br/>
+<font>flip</font>&nbsp;f&nbsp;<font color="#339933">=</font>&nbsp;\x&nbsp;y&nbsp;<font color="#339933">-&gt;</font>&nbsp;f&nbsp;y&nbsp;x</blockquote>
+
+Оператор <font color=blue>=<<</font> через нее определяется так:
+
+<blockquote><font>&#40;</font><font color="#339933">=&lt;&lt;</font><font>&#41;</font>&nbsp;<font color="#339933">=</font>&nbsp;<font>flip</font>&nbsp;<font>&#40;</font><font color="#339933">&gt;&gt;=</font><font>&#41;</font></blockquote>
+
+Вы получите дополнительные очки функциональной крутизны {5}, если ваши определения будут такими краткими, как это.
+
+И опять: мы можем задать монадический оператор композиции для обратного порядка операндов:
+
+<blockquote><font>&#40;</font><font color="#339933">&gt;=&gt;</font><font>&#41;</font>&nbsp;<font color="#339933">::</font>&nbsp;<font>&#40;</font>a&nbsp;<font color="#339933">-&gt;</font>&nbsp;m&nbsp;b<font>&#41;</font>&nbsp;<font color="#339933">-&gt;</font>&nbsp;<font>&#40;</font>b&nbsp;<font color="#339933">-&gt;</font>&nbsp;m&nbsp;c<font>&#41;</font>&nbsp;<font color="#339933">-&gt;</font>&nbsp;<font>&#40;</font>a&nbsp;<font color="#339933">-&gt;</font>&nbsp;m&nbsp;c<font>&#41;</font>&nbsp;&nbsp;<font color="#5d478b">--&nbsp;уже&nbsp;есть</font><br/>
+&nbsp;<br/>
+<font>&#40;</font><font color="#339933">&lt;=&lt;</font><font>&#41;</font>&nbsp;<font color="#339933">::</font>&nbsp;<font>&#40;</font>b&nbsp;<font color="#339933">-&gt;</font>&nbsp;m&nbsp;c<font>&#41;</font>&nbsp;<font color="#339933">-&gt;</font>&nbsp;<font>&#40;</font>a&nbsp;<font color="#339933">-&gt;</font>&nbsp;m&nbsp;b<font>&#41;</font>&nbsp;<font color="#339933">-&gt;</font>&nbsp;<font>&#40;</font>a&nbsp;<font color="#339933">-&gt;</font>&nbsp;m&nbsp;c<font>&#41;</font><br/>
+<font>&#40;</font><font color="#339933">&lt;=&lt;</font><font>&#41;</font>&nbsp;<font color="#339933">=</font>&nbsp;<font>flip</font>&nbsp;<font>&#40;</font><font color="#339933">&gt;=&gt;</font><font>&#41;</font></blockquote>
+
+Итак, мы определили монадические операторы применения и композиции для любого порядка операндов, как мы это делали с обычными (немонадическими) операторами. На практике, однако, Haskell-программисты более всего используют оператор <font color=blue>>>=</font> (или, по крайней мере, я его использую больше всего).
+
+Если вы поняли все это, мои поздравления! Все самое трудное позади. Надеюсь. {6}
+
+Есть еще одна фундаментальная монадическая операция, о которой я собираюсь рассказать. Для затравки рассмотрим следующий сценарий. Пусть вам потребовалось соединить монадическую функцию с немонадической. Иными словами, у вас есть такие функции:
+
+<blockquote>f&nbsp;<font color="#339933">::</font>&nbsp;a&nbsp;<font color="#339933">-&gt;</font>&nbsp;m&nbsp;b&nbsp;&nbsp;&nbsp;<font color="#5d478b">--&nbsp;монадическая</font><br/>
+g&nbsp;<font color="#339933">::</font>&nbsp;b&nbsp;<font color="#339933">-&gt;</font>&nbsp;c&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font color="#5d478b">--&nbsp;немонадическая</font></blockquote>
+
+Проблема в следующем. Вы не можете использовать обычную функцию композиции для <font color=blue>f</font> и <font color=blue>g</font>, потому что <font color=blue>m b</font> - не то же самое, что <font color=blue>b</font>. И монадическая композиция тоже не подходит, - она ничего не знает о типе <font color=blue>b -> c</font>, ей нужен монадический тип <font color=blue>b -> m c</font>. Что вы будете делать?
+
+Если бы у вас была функция <font color=blue>extract</font>, разобранная ранее, вы бы могли соединить две функции таким вот образом:
+
+<blockquote>h&nbsp;<font color="#339933">::</font>&nbsp;a&nbsp;<font color="#339933">-&gt;</font>&nbsp;c<br/>
+h&nbsp;<font color="#339933">=</font>&nbsp;f&nbsp;<font color="#339933">&gt;.&gt;</font>&nbsp;extract&nbsp;<font color="#339933">&gt;.&gt;</font>&nbsp;g</blockquote>
+
+но мы уже выяснили, что это невозможно. То есть, нам запрещено комбинировать немонадическую функцию и монадическую, чтобы получить немонадическую (потому что это нарушило бы чистоту всего языка). А <i>разрешено</i> нам комбинировать монадическую и немонадическую, если в результате снова получится монадическая функция. Примерно вот так:
+
+<blockquote>h&nbsp;<font color="#339933">::</font>&nbsp;a&nbsp;<font color="#339933">-&gt;</font>&nbsp;m&nbsp;c<br/>
+h&nbsp;<font color="#339933">=</font>&nbsp;f&nbsp;<font>&#91;</font>как<font color="#339933">-</font>то&nbsp;комбинируем&nbsp;с<font>&#93;</font>&nbsp;g</blockquote>
+
+Ну, мы знаем, что монадическая композиция не годится, потому что у <font color=blue>g</font> неправильный тип (который должен быть <font color=blue>b -> m c</font>). Однако она <i>пригодилась</i> бы, сумей мы преобразовать обычную функцию в монадическую. Пусть функция, выполняющая такое преобразование, называется <font color=blue>functionToMonadicFunction</font>.
+
+<blockquote>functionToMonadicFunction&nbsp;<font color="#339933">::</font>&nbsp;<font>&#40;</font>b&nbsp;<font color="#339933">-&gt;</font>&nbsp;c<font>&#41;</font>&nbsp;<font color="#339933">-&gt;</font>&nbsp;<font>&#40;</font>b&nbsp;<font color="#339933">-&gt;</font>&nbsp;m&nbsp;c<font>&#41;</font></blockquote>
+
+Функцию <font color=blue>h</font> теперь можно записать иначе:
+
+<blockquote>h&nbsp;<font color="#339933">::</font>&nbsp;a&nbsp;<font color="#339933">-&gt;</font>&nbsp;m&nbsp;c<br/>
+h&nbsp;<font color="#339933">=</font>&nbsp;f&nbsp;<font color="#339933">&gt;=&gt;</font>&nbsp;<font>&#40;</font>functionToMonadicFunction&nbsp;g<font>&#41;</font></blockquote>
+
+Оказывается, все что нужно - это определить функцию <font color=blue>functionToMonadicFunction</font>, а это очень просто, потому что уже существует монадическая функция с именем (возможно, сбивающим с толку) <font color=blue>return</font>. У нее следующий тип:
+
+<blockquote><font>return</font>&nbsp;<font color="#339933">::</font>&nbsp;a&nbsp;<font color="#339933">-&gt;</font>&nbsp;m&nbsp;a</blockquote>
+
+где <font color=blue>a</font> - любой тип, и <font color=blue>m</font> - любой монадический конструктор типа. Функция <font color=blue>return</font> конвертирует обычное значение в соответствующее монадическое значение для любой монады <font color=blue>m</font>, - и это все, что она делает. Вот мы ее сейчас и задействуем.
+
+Если у вас есть <font color=blue>return</font>, то <font color=blue>functionToMonadicFunction</font> выражается через нее просто:
+
+<blockquote>functionToMonadicFunction&nbsp;<font color="#339933">::</font>&nbsp;<font>&#40;</font>a&nbsp;<font color="#339933">-&gt;</font>&nbsp;b<font>&#41;</font>&nbsp;<font color="#339933">-&gt;</font>&nbsp;<font>&#40;</font>a&nbsp;<font color="#339933">-&gt;</font>&nbsp;m&nbsp;b<font>&#41;</font><br/>
+functionToMonadicFunction&nbsp;f&nbsp;<font color="#339933">=</font>&nbsp;\x&nbsp;<font color="#339933">-&gt;</font>&nbsp;<font>return</font>&nbsp;<font>&#40;</font>f&nbsp;x<font>&#41;</font></blockquote>
+
+Или, если пожелаете быть крутыми, можете воспользоваться композицией функций:
+
+<blockquote>functionToMonadicFunction&nbsp;<font color="#339933">::</font>&nbsp;<font>&#40;</font>a&nbsp;<font color="#339933">-&gt;</font>&nbsp;b<font>&#41;</font>&nbsp;<font color="#339933">-&gt;</font>&nbsp;<font>&#40;</font>a&nbsp;<font color="#339933">-&gt;</font>&nbsp;m&nbsp;b<font>&#41;</font><br/>
+functionToMonadicFunction&nbsp;f&nbsp;<font color="#339933">=</font>&nbsp;<font>return</font>&nbsp;<font color="#339933">.</font>&nbsp;f</blockquote>
+
+Или даже:
+
+<blockquote>functionToMonadicFunction&nbsp;<font color="#339933">::</font>&nbsp;<font>&#40;</font>a&nbsp;<font color="#339933">-&gt;</font>&nbsp;b<font>&#41;</font>&nbsp;<font color="#339933">-&gt;</font>&nbsp;<font>&#40;</font>a&nbsp;<font color="#339933">-&gt;</font>&nbsp;m&nbsp;b<font>&#41;</font><br/>
+functionToMonadicFunction&nbsp;<font color="#339933">=</font>&nbsp;<font>&#40;</font><font>return</font>&nbsp;<font color="#339933">.</font><font>&#41;</font></blockquote>
+
+В последнем примере задействована замечательная возможность Haskell под названием "сечения". Все три варианта эквивалентны.
+
+Заметьте, что я снова заменил буквы типов: <font color=blue>b</font> на <font color=blue>a</font> и <font color=blue>c</font> на <font color=blue>b</font>; какая буква будет в типе - не имеет значения. Главная мысль сказанного в том, что с помощью <font color=blue>return</font> мы можем соединять монадические и немонадические функции, получая снова монадические. <font color=blue>return</font> - вторая фундаментальная монадическая операция.
+
+<blockquote>*Заметка на полях.* Если вы программируете в основном в императивном стиле, слово <font color=blue>return</font> может показаться вам несколько раздражительным. Просто запомните, что это <i>не</i> ключевое слово в Haskell, и тут <i>ничего</i> не возвращается из функции. Постарайтесь не думать о <font color=blue>return</font> как о <font color=blue>return</font> в императивном языке программирования.</blockquote>
+
+Название "return" на самом деле пришло из понимания монадических значений как "действий". В этом смысле функция <font color=blue>return</font> берет простое значение и производит монадическое значение. Этим монадическим значением уже "что-то делается", а результатом будет оригинальное значение. Стоит заметить также, что фактически <font color=blue>return</font> - монадическая функция. Сложив эти две мысли, вы можете сделать вывод (или хотя бы догадаться), что <font color=blue>return</font> - монадическая версия единичной (identity) функции (эта функция отображает значение в само себя, то есть <font color=blue>\x -> x</font>). Мы к этому вернемся, когда будем говорить о монадных законах.
+
+Давайте возьмем return в оборот, соединив нашу монадическую функцию <font color=blue>f</font> с немонадической функцией <font color=blue>g</font>, чтобы получить монадическую <font color=blue>h</font>.
+
+<blockquote>h&nbsp;<font color="#339933">=</font>&nbsp;f&nbsp;<font color="#339933">&gt;=&gt;</font>&nbsp;<font>&#40;</font><font>return</font>&nbsp;<font color="#339933">.</font>&nbsp;g<font>&#41;</font></blockquote>
+
+И это правильная запись, поскольку <font color=blue>return . g</font> преобразует <font color=blue>g</font> в монадическую функцию.
+
+После всего сказанного вы, наверное, задаетесь вопросом, сколько еще монадических операций нам придется перепахать, прежде чем мы определим их все. Как обычно говаривал профессор Фарнсворт: "Хорошие новости!" Их всего две! Мы для удобства задали еще несколько не столь важных операций, но из них только <font color=blue>>>=</font> и <font color=blue>return</font> обязательно должны быть.
+
+Есть еще один довольно своеобразный момент с <font color=blue>return</font>. Сказано, что тип <font color=blue>return</font> выглядит как <font color=blue>a -> m a</font>. Когда мы говорим, например, <font color=blue>return 10</font>, какой будет тип этого выражения? Он может быть <font color=blue>IO Int</font>, <font color=blue>Maybe Int</font> или еще какой-нибудь монадический <font color=blue>Int</font>. Откуда нам знать, что за монада тут стоит? Ведь монадическое значение <font color=blue>IO Int</font> - совсем не то же самое, что и <font color=blue>Maybe Int</font>; так что мы не просто интересуемся о верном типе, мы хотим понимать, <i>что</i> это за значение такое - <font color=blue>return 10</font>!
+
+В Haskell смысл <font color=blue>return 10</font> определяется контекстом. Валидатор типов (type checker) должен убедиться, что функции получают аргументы с нужными типами, так что если <font color=blue>return 10</font> передан в функцию, где ожидается значение <font color=blue>IO Int</font>, то <font color=blue>return 10</font> будет трактоваться как <font color=blue>IO Int</font>. (Это же правило справедливо и для других монад.) Иначе говоря, значение выражения <font color=blue>return 10</font> зависит от типа, в контексте которого оно используется. Если пожелаете, вы можете явно задать тип выражения <font color=blue>return 10</font> с помощью, например, записи (<font color=blue>return 10 :: IO Int</font>), но это редко бывает нужно.
+
+Подведем итог сказанного.
+
+<ul>
+	<li>Существуют две фундаментальные монадические операции: "bind" (оператор <font color=blue>>>=</font>) и <font color=blue>return</font>.</li>
+	<li>Bind-оператор - это монадический оператор применения. Через него можно задать монадический оператор композиции, который выглядит так: <font color=blue>>=></font>.</li>
+	<li>Оператор <font color=blue>return</font> преобразует обычные значения в монадические. С его помощью определяется функция преобразования обычных функций в монадические.</li>
+</ul>
+
+<h4>А что же на самом деле <i>значат</i> монадическое применение и монадическая композиция?</h4>
+К этому моменту вы должны уже понимать механизмы монадической композиции и монадического применения, но это не то же самое, что интуитивно понимать их смысл. Давайте попробуем прояснить ситуацию.
+
+Итак, мы сказали, что нельзя задать функцию <font color=blue>extract</font>, которая из монадического значения делала бы обычное. Однако, если нам требуется комбинировать две монадические функции в третью, каким-то образом все равно придется извлечь обычные значения из монадических.
+
+<blockquote><font>&#40;</font><font color="#339933">&gt;=&gt;</font><font>&#41;</font>&nbsp;<font color="#339933">::</font>&nbsp;<font>&#40;</font>a&nbsp;<font color="#339933">-&gt;</font>&nbsp;m&nbsp;b<font>&#41;</font>&nbsp;<font color="#339933">-&gt;</font>&nbsp;<font>&#40;</font>b&nbsp;<font color="#339933">-&gt;</font>&nbsp;m&nbsp;c<font>&#41;</font>&nbsp;<font color="#339933">-&gt;</font>&nbsp;<font>&#40;</font>a&nbsp;<font color="#339933">-&gt;</font>&nbsp;m&nbsp;c<font>&#41;</font><br/>
+f&nbsp;<font color="#339933">&gt;=&gt;</font>&nbsp;g&nbsp;<font color="#339933">=</font>&nbsp;<font color="#5d478b">{-&nbsp;что-нибудь&nbsp;-}</font></blockquote>
+
+Здесь показано: функция <font color=blue>f</font> берет значение типа <font color=blue>a</font> и возвращает монадическое значение типа <font color=blue>m b</font>; функция <font color=blue>g</font> берет значение типа <font color=blue>b</font> и возвращает значение типа <font color=blue>m c</font>. И это, конечно, <i>выглядит</i> так, как будто где-то внутри обычное значение "распаковывается" из монадического. Еще мы обсудили, что можем определить монадическую композицию <font color=blue>>=></font> в терминах монадического применения (<font color=blue>>>=</font>). Взглянем снова на <font color=blue>>>=</font>:
+
+<blockquote><font>&#40;</font><font color="#339933">&gt;&gt;=</font><font>&#41;</font>&nbsp;<font color="#339933">::</font>&nbsp;m&nbsp;b&nbsp;<font color="#339933">-&gt;</font>&nbsp;<font>&#40;</font>b&nbsp;<font color="#339933">-&gt;</font>&nbsp;m&nbsp;c<font>&#41;</font>&nbsp;<font color="#339933">-&gt;</font>&nbsp;m&nbsp;c<br/>
+mv&nbsp;<font color="#339933">&gt;&gt;=</font>&nbsp;g</blockquote>
+
+где <font color=blue>mv</font> является некоторым монадическим значением типа <font color=blue>m b</font>. И ведь тоже - без всякой <font color=blue>extract</font>, - как так получается значение типа <font color=blue>b</font> из значения типа <font color=blue>m b</font>, чтобы его передать в функцию <font color=blue>g</font>?
+
+Ответ для всех монад разный. У каждой монады свой способ "распаковать" монадическое значение, чтобы передать его как обычное в другую монадическую функцию. Иначе говоря, оператор <font color=blue>>>=</font> специфичен для всех монад, и в его реализации скрыто, как монадическое значение распаковывается и передается дальше. Также у каждой монады свой оператор <font color=blue>return</font>.
+
+С этого момента я буду использовать несколько иную терминологию в отношении произвольных монад. Оператор <font color=blue>>>=</font> принимает входное монадическое значение (также известное как "действие"), "распаковывает" его в обычное (немонадическое) значение (распаковка для всех монад выглядит по-разному), и затем передает это обычное значение в монадическую функцию. В ней уже производится монадическое значение ("действие") и возвращается финальный результат.
+
+Теперь, когда мы все это изучили, давайте поговорим о классе типов "<font color=blue>Monad</font>". Позже мы рассмотрим определение оператора <font color=blue>>>=</font> для некоторых монад, и вы узнаете, как там делается распаковка.
+
+<h4>Класс типов <font color=blue>Monad</font></h4>
+<font color=blue>>>=</font> - <i>это и есть</i> монадический оператор применения, а <font color=blue>return</font> - <i>это и есть</i> функция преобразования обычного значения в любое монадическое. Так я говорил выше. Однако эта терминология неаккуратна, поскольку было также сказано, что у каждой монады должны быть определены собственные версии этих операторов/функций, отличающиеся от других. С другой стороны совсем нехорошо по-разному называть операторы <font color=blue>>>=</font> и <font color=blue>return</font>. Мы получили бы неприятные вещи вроде этой:
+
+<blockquote>IO<font color="#339933">&gt;&gt;=</font>&nbsp;<font color="#339933">::</font>&nbsp;<font color="#cccc00">IO</font>&nbsp;a&nbsp;<font color="#339933">-&gt;</font>&nbsp;<font>&#40;</font>a&nbsp;<font color="#339933">-&gt;</font>&nbsp;<font color="#cccc00">IO</font>&nbsp;b<font>&#41;</font>&nbsp;<font color="#339933">-&gt;</font>&nbsp;<font color="#cccc00">IO</font>&nbsp;b<br/>
+IOreturn&nbsp;<font color="#339933">::</font>&nbsp;a&nbsp;<font color="#339933">-&gt;</font>&nbsp;<font color="#cccc00">IO</font>&nbsp;a<br/>
+&nbsp;<br/>
+Maybe<font color="#339933">&gt;&gt;=</font>&nbsp;<font color="#339933">::</font>&nbsp;<font color="#cccc00">Maybe</font>&nbsp;a&nbsp;<font color="#339933">-&gt;</font>&nbsp;<font>&#40;</font>a&nbsp;<font color="#339933">-&gt;</font>&nbsp;<font color="#cccc00">Maybe</font>&nbsp;b<font>&#41;</font>&nbsp;<font color="#339933">-&gt;</font>&nbsp;<font color="#cccc00">Maybe</font>&nbsp;b<br/>
+Maybereturn&nbsp;<font color="#339933">::</font>&nbsp;a&nbsp;<font color="#339933">-&gt;</font>&nbsp;<font color="#cccc00">Maybe</font>&nbsp;a</blockquote>
+
+То, что я написал, в Haskell не пройдет проверку синтаксиса. Нельзя смешивать буквенные и небуквенные символы в идентификаторах, а также нельзя делать первую букву функции заглавной.
+
+Проблема красиво решается "классами типов" языка Haskell. (Помните, я говорил, что руководство будет проще, если вы уже знакомы с классами типов? Классы типов не имеют ничего общего с классами из ООП, это абсолютно разные вещи. Классы типов Haskell больше похожи на интерфейсы времени компиляции). Класс типов - это способ сказать, что для кучи разных типов есть разные воплощения одноименных функций (или операторов). Так, например, в классе типов <font color=blue>Eq</font> содержится оператор <font color=blue>==</font> с типом <font color=blue>a -> a -> Bool</font> (где все <font color=blue>a</font> - один и тот же тип). Чтобы тип <font color=blue>a</font> относился к классу типов <font color=blue>Eq</font>, для него должен существовать подходящий оператор <font color=blue>==</font> (сравнение на равенство). Числовые типы <font color=blue>Int</font> и <font color=blue>Float</font> принадлежат классу типов <font color=blue>Eq</font> (еще можно сказать - они являются экземплярами класса <font color=blue>Eq</font>), значит, у каждого из них есть свой осмысленный оператор <font color=blue>==</font>. На Haskell это записывается следующим образом:
+
+<blockquote><font>class</font>&nbsp;<font color="#cccc00">Eq</font>&nbsp;a&nbsp;<font>where</font><br/>
+&nbsp;&nbsp;<font>&#40;</font><font color="#339933">==</font><font>&#41;</font>&nbsp;<font color="#339933">::</font>&nbsp;a&nbsp;<font color="#339933">-&gt;</font>&nbsp;a&nbsp;<font color="#339933">-&gt;</font>&nbsp;<font color="#cccc00">Bool</font><br/>
+&nbsp;<br/>
+<font>instance</font>&nbsp;<font color="#cccc00">Eq</font>&nbsp;<font color="#cccc00">Int</font>&nbsp;<font>where</font><br/>
+&nbsp;&nbsp;<font>&#40;</font><font color="#339933">==</font><font>&#41;</font>&nbsp;<font color="#339933">=</font>&nbsp;intEquals&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font color="#5d478b">--&nbsp;тип&nbsp;intEquals&nbsp;такой:&nbsp;(Int&nbsp;-&gt;&nbsp;Int&nbsp;-&gt;&nbsp;Bool)</font><br/>
+&nbsp;<br/>
+<font>instance</font>&nbsp;<font color="#cccc00">Eq</font>&nbsp;<font color="#cccc00">Float</font>&nbsp;<font>where</font><br/>
+&nbsp;&nbsp;<font>&#40;</font><font color="#339933">==</font><font>&#41;</font>&nbsp;<font color="#339933">=</font>&nbsp;floatEquals&nbsp;&nbsp;&nbsp;<font color="#5d478b">--&nbsp;тип&nbsp;floatEquals&nbsp;такой:&nbsp;(Float&nbsp;-&gt;&nbsp;Float&nbsp;-&gt;&nbsp;Bool)</font></blockquote>
+
+Считается, что <font color=blue>intEquals</font> - это функция сравнения для <font color=blue>Int</font>, а <font color=blue>floatEquals</font> - для <font color=blue>Float</font>. (Я еще не сказал про оператор неравенства; там такая же идея.) Вот и все. Теперь мы можем использовать оператор <font color=blue>==</font> для сравнения целых и вещественных чисел между собой. Или для сравнения любых объектов, лишь бы был соответствующий экземпляр класса типов <font color=blue>Eq</font>. И это очень удобно. Между тем, заметьте, что <font color=blue>==</font> требует, чтобы у сравниваемых элементов был один и тот же тип; нельзя сравнить, скажем, <font color=blue>Int</font> и <font color=blue>Float</font>.
+
+Идем далее. Повторю, что уже говорил: все монады в Haskell являются конструкторами типов, и мы показали, что все монады предоставляют независимую реализацию оператора <font color=blue>>>=</font> и функции <font color=blue>return</font>. Из этих двух тезисов можно сделать вывод, что существует класс типов под названием (вы правильно догадались) <font color=blue>Monad</font>, который изначально определен так:
+
+<blockquote><font>class</font>&nbsp;<font color="#cccc00">Monad</font>&nbsp;m&nbsp;<font>where</font><br/>
+&nbsp;&nbsp;<font>&#40;</font><font color="#339933">&gt;&gt;=</font><font>&#41;</font>&nbsp;&nbsp;<font color="#339933">::</font>&nbsp;m&nbsp;a&nbsp;<font color="#339933">-&gt;</font>&nbsp;<font>&#40;</font>a&nbsp;<font color="#339933">-&gt;</font>&nbsp;m&nbsp;b<font>&#41;</font>&nbsp;<font color="#339933">-&gt;</font>&nbsp;m&nbsp;b<br/>
+&nbsp;&nbsp;<font>return</font>&nbsp;<font color="#339933">::</font>&nbsp;a&nbsp;<font color="#339933">-&gt;</font>&nbsp;m&nbsp;a</blockquote>
+
+Класс типов <font color=blue>Monad</font> не сильно сложнее, чем <font color=blue>Eq</font>. Нужно определить всего две функции/оператора, - не такое уж и большое дело, потому что мы уже это знаем. Типы двух функций/операторов те же, которые мы обсуждали выше.
+
+Странность с классом типов <font color=blue>Monad</font> в том, что он не таков, как <font color=blue>Eq</font>. <font color=blue>Monad</font> является "конструктором класса", для которого экземпляры (обозначенные как <font color=blue>m</font>) не типы, но конструкторы типов; мы как раз уже убедились, что все монады должны быть конструкторами типов. Вот так мы задаем экземпляр конструктора класса (для примера взята монада <font color=blue>Maybe</font>):
+
+<blockquote><font>instance</font>&nbsp;<font color="#cccc00">Monad</font>&nbsp;<font color="#cccc00">Maybe</font>&nbsp;<font>where</font><br/>
+&nbsp;&nbsp;<font>&#40;</font><font color="#339933">&gt;&gt;=</font><font>&#41;</font>&nbsp;&nbsp;<font color="#339933">=</font>&nbsp;<font color="#5d478b">{-&nbsp;версия&nbsp;(&gt;&gt;=)&nbsp;для&nbsp;Maybe&nbsp;-}</font><br/>
+&nbsp;&nbsp;<font>return</font>&nbsp;<font color="#339933">=</font>&nbsp;<font color="#5d478b">{-&nbsp;версия&nbsp;return&nbsp;для&nbsp;Maybe-}</font></blockquote>
+
+Для обычных классов и для конструкторов классов выбрана одна и та же запись, что может вас немного запутать, но немного практики, - и все встанет на свои места. Возможно, было бы лучше, если бы Haskell использовал такую нотацию:
+
+<blockquote>constructorClass&nbsp;<font color="#cccc00">Monad</font>&nbsp;m&nbsp;<font>where</font><br/>
+&nbsp;&nbsp;<font>&#40;</font><font color="#339933">&gt;&gt;=</font><font>&#41;</font>&nbsp;<font color="#339933">::</font>&nbsp;m&nbsp;a&nbsp;<font color="#339933">-&gt;</font>&nbsp;<font>&#40;</font>a&nbsp;<font color="#339933">-&gt;</font>&nbsp;m&nbsp;b<font>&#41;</font>&nbsp;<font color="#339933">-&gt;</font>&nbsp;m&nbsp;b<br/>
+&nbsp;&nbsp;<font>return</font>&nbsp;<font color="#339933">::</font>&nbsp;a&nbsp;<font color="#339933">-&gt;</font>&nbsp;m&nbsp;a<br/>
+&nbsp;<br/>
+constructorInstance&nbsp;<font color="#cccc00">Monad</font>&nbsp;<font color="#cccc00">Maybe</font>&nbsp;<font>where</font><br/>
+&nbsp;&nbsp;<font>&#40;</font><font color="#339933">&gt;&gt;=</font><font>&#41;</font>&nbsp;&nbsp;<font color="#339933">=</font>&nbsp;<font color="#5d478b">{-&nbsp;the&nbsp;Maybe&nbsp;version&nbsp;of&nbsp;(&gt;&gt;=)&nbsp;-}</font><br/>
+&nbsp;&nbsp;<font>return</font>&nbsp;<font color="#339933">=</font>&nbsp;<font color="#5d478b">{-&nbsp;the&nbsp;Maybe&nbsp;version&nbsp;of&nbsp;return&nbsp;-}</font></blockquote>
+
+Но это слишком подробно. Обычно хватает контекста, чтобы понять, что происходит.
+
+А теперь давайте разберем простой пример, и потом уже поговорим о классе типов <font color=blue>Monad</font>.
+
+<h4>Пример</h4>
+Одна из самых простых программ с монадой <font color=blue>IO</font> читает текст с терминала и печатает его назад (с новой строкой в конце). Естественным образом для этого используются <font color=blue>getLine</font> и <font color=blue>putStrLn</font>. Вспомним их типы:
+
+<blockquote><font>getLine</font>&nbsp;&nbsp;<font color="#339933">::</font>&nbsp;<font color="#cccc00">IO</font>&nbsp;<font color="#cccc00">String</font><br/>
+<font>putStrLn</font>&nbsp;<font color="#339933">::</font>&nbsp;<font color="#cccc00">String</font>&nbsp;<font color="#339933">-&gt;</font>&nbsp;<font color="#cccc00">IO</font>&nbsp;<font>&#40;</font><font>&#41;</font></blockquote>
+
+Для них нельзя использовать монадический оператор композиции <font color=blue>>=></font>, потому что <font color=blue>getLine</font> имеет вид монадического значения, а не монадической функции. Но мы <i>можем</i> взять оператор <font color=blue>>>=</font>:
+
+<blockquote>readAndPrintLine&nbsp;<font color="#339933">=</font>&nbsp;<font>getLine</font>&nbsp;<font color="#339933">&gt;&gt;=</font>&nbsp;<font>putStrLn</font></blockquote>
+
+Мы здесь выполняем (монадическое) применение монадической функции <font color=blue>putStrLn</font> к монадическому значению <font color=blue>getLine</font>. В терминах "действий", о которых мы говорили ранее, мы можем думать так: <font color=blue>getLine</font> - это "действие", которое читает строку текста с терминала и "возвращает" ее монадическое значение; оператор <font color=blue>>>=</font> "распаковывает" введенную строку из монадического значения, передавая ее в <font color=blue>putStrLn</font>; <font color=blue>putStrLn</font> в свою очередь печатает ее в терминал и ничего не возвращает (вообще-то возвращает пустое <font color=blue>()</font> как монадическое значение).
+
+Мы могли бы написать это явно:
+
+<blockquote>readAndPrintLine&nbsp;<font color="#339933">=</font>&nbsp;<font>getLine</font>&nbsp;<font color="#339933">&gt;&gt;=</font>&nbsp;<font>&#40;</font>\s&nbsp;<font color="#339933">-&gt;</font>&nbsp;<font>putStrLn</font>&nbsp;s<font>&#41;</font></blockquote>
+
+Обратите внимение, что запись <font color=blue>(\s -> putStrLn s)</font> в точности то же самое, что и просто функция <font color=blue>putStrLn</font>, по аналогии с записью <font color=blue>(\x -> cos x)</font>, которая ничто иное как просто <font color=blue>cos</font>. Так что мы ничего важного здесь не изменили. Но становится более понятным, как <i>что-то</i> (строка текста), будучи возвращенной из <font color=blue>getLine</font>, передается в <font color=blue>putStrLn</font> и печатается в терминале.
+
+Мы подробнее остановимся на этом простом примере и его вариациях в следующей статье серии, как только изучим другие функции класса <font color=blue>Monad</font>.
+
+<h5>Содержание</h5>
+
+<a href="http://habrahabr.ru/blogs/Haskell/127556/">Часть 1: основы</a>
+<a href="http://habrahabr.ru/blogs/Haskell/128070/">Часть 2: функции &gt;&gt;= и return</a>
+<a href="http://habrahabr.ru/blogs/Haskell/128521/">Часть 3: Монадные Законы</a>
+
+<h5>Примечания</h5>
+
+{1} В оригинале - "composability".
+{3} В оригинале - "Excuse me while I go wash my hands." - практически непереводимое устойчивое выражение, выражающее конфузию автора, его отстранение от сказанного и самообвинение. Здесь, думаю, была бы неуместна близкая по словам русская фраза "Я умываю руки." В начале следующего абзаца стоит предложение "OK, I'm back.", - имеется в виду, что автор вернулся после мытья рук. Заменено для поддержания смысла.
+{4} Еще одно название анонимнх функций: лямбда-функции.
+{5} В оригинале - "extra points for functional coolness"
+{6} В оригинале - устойчивое выражение "It's all downhill from here". У него иронический смысл, сочетающий в себе две противоположности: 1. Забрались на высоту, спуск будет проще; 2. Дальше будет только хуже.
