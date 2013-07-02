@@ -47,10 +47,10 @@ moveKiki (kx, ky) 'l' = (kx, normalize $ ky - 1)
 moveKiki (kx, ky) 'r' = (kx, normalize $ ky + 1)
 
 move :: Dislocation -> Position -> Dislocation
-move (tink, kiki) (tx, ty) = let
+move (tink, kiki) newTink@(tx, ty) = let
     kikiAction = (field !! tx) !! ty
     newKiki = moveKiki kiki kikiAction
-    in (tink, newKiki)
+    in (newTink, newKiki)
 
 possibleMoves :: Position -> Positions
 possibleMoves (x, y) = filter validCoords cross
@@ -77,19 +77,31 @@ solve ttl d@(tink, kiki) | tink == kiki = SL d
 type Path = [Dislocation]
 type Paths = [Path]
 
-foldSuccesses :: SolutionTree -> Paths
-foldSuccesses (SL d) = [[d]]
-foldSuccesses (L _) = []
-foldSuccesses (B d branches) = case folded branches of
+foldSuccesses' :: SolutionTree -> Paths
+foldSuccesses' (SL d) = [[d]]
+foldSuccesses' (L _) = []
+foldSuccesses' (B d branches) = case folded branches of
     [] -> []
     sucPaths -> map (d:) sucPaths
   where
     folded :: [SolutionTree] -> Paths
     folded [] = []
-    folded bs = concat $ filter (not . null) (map foldSuccesses bs)
+    folded bs = concat $ map foldSuccesses' bs
 
-try n = let ss = foldSuccesses (solve n startPositions)
+foldSuccesses :: SolutionTree -> Paths
+foldSuccesses t = let reversedPs = foldSuccesses' t
+                  in map reverse reversedPs
+
+trueSuccesses = foldSuccesses'
+
+-- ѕоказать статистику решений дл€ глубины n
+try n = let ss = trueSuccesses (solve n startPositions)
             pathLengths = map length ss
             groupedPathLengths = group . sort $ pathLengths
             pathLengthStats = map (\gpls -> (head gpls, length gpls)) groupedPathLengths
         in (length ss, pathLengthStats)
+
+-- ѕоказать решени€ длиной k дл€ глубины n
+solutions k n = let ss = trueSuccesses (solve n startPositions)
+                    kLengths = filter ((== k) . length) ss
+                in kLengths
