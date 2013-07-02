@@ -1,3 +1,12 @@
+{- Дано конечное ограниченное поле 5х5, в каждой ячейке которого имеется одна стрелка: вверх, вниз, вправо или влево.
+   На позицию (x1, y1) помещается робот Тинк.
+   На позицию (x2, y2) помещается роботиха Кики.
+   Тинк движется по полю. Стрелка, на которую он зашел, указывает Кики, куда ей двигаться.
+   Если движение невозможно (за край поля выйти нельзя), Кики остается на месте.
+   
+   Задача: найти все решения для n шагов, когда Кики встречается с Тинком.
+-}
+
 module Main where
 
 import Data.List (nub, partition, sort, group)
@@ -19,7 +28,7 @@ type Dislocation = (Position, Position)
 
 tinkStart, kikiStart :: Position
 tinkStart = (0, 0)
-kikiStart = (3, 3)
+kikiStart = (4, 4)
 startPositions :: Dislocation
 startPositions = (tinkStart, kikiStart)
 
@@ -58,7 +67,7 @@ data SolutionTree = SL Dislocation
 
 solve :: Int -> Dislocation -> SolutionTree
 solve 1 d@(tink, kiki) | tink == kiki = SL d
-                     | otherwise = L d
+                       | otherwise = L d
 solve ttl d@(tink, kiki) | tink == kiki = SL d
                          | otherwise = B d $ map (solve newTtl) nextDislocations
   where
