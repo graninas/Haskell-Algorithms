@@ -19,9 +19,15 @@ notPerson = "#%@%#%@#%#@%"
 
 parseInt :: GenParser Char st Int
 parseInt = do
-    spaces
-    res <- many1 digit
-    return (read res)
+   spaces
+   res <- many1 digit
+   return (read res)
+
+test1 :: Either ParseError Int
+test1 = parse parseInt [] "   10"
+
+test2 :: Either ParseError Int
+test2 = parse parseInt [] "AAA"
 
 data Person = Person
             { name :: String
