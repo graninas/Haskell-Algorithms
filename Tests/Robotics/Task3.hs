@@ -5,6 +5,7 @@ import qualified Data.Map as Map
 import Data.Maybe (fromJust)
 
 type Command = Char
+type Commands = [Command]
 type Field = [[Command]]
 type Manipulator = [[Command]]
 
@@ -77,12 +78,12 @@ getCommand m (tx, ty) = (m !! tx) !! ty
 getLine :: Manipulator -> Position -> Line
 getLine m (tx, ty) = line
   where
-    instruction = (m !! tx) !! ty
-    line = fromJust . elemIndex instruction $ programLines
+    command = (m !! tx) !! ty
+    line = fromJust . elemIndex command $ programLines
 
     
 isProgramValid :: Program -> Bool
-isProgramValid = (programSize ==) . Map.size
+isProgramValid prog = all (== True) $ map (\k -> Map.member k prog) [1..programSize]
 
 moveBounded :: Position -> Command -> Position
 moveBounded (dx, dy) command | command == u = (normalize $ dx - 1, dy)
@@ -90,17 +91,35 @@ moveBounded (dx, dy) command | command == u = (normalize $ dx - 1, dy)
                              | command == l = (dx, normalize $ dy - 1)
                              | command == r = (dx, normalize $ dy + 1)
 
-evalCommand :: Command -> (Position, Positions) -> (Position, Positions)
-evalCommand command (pos, ps) = let newPos = moveBounded pos command
-                                in (newPos, newPos : ps)
+type Path = [Position]
 
-evalProgram :: Position -> Program -> Maybe Positions
+evalCommand :: Line -> Command -> (Position, Path) -> (Position, Path)
+evalCommand _ command (pos, ps) = let newPos = moveBounded pos command
+                                  in (newPos, ps ++ [newPos])
+
+data Result = Result
+                { resultPath :: Path
+                , reversedPath :: Path }
+            | Error
+  deriving (Show, Read, Eq)
+
+evalProgram :: Position -> Program -> Result
 evalProgram robotPos prog | isProgramValid prog = let
-    (newPos, path) = Map.fold evalCommand (robotPos, []) prog
-    in Just path
-evalProgram _ _ = Nothing
+    (newPos, path) = Map.foldWithKey evalCommand (robotPos, []) prog
+    in path
+evalProgram _ _ = []
+
+compile :: Commands -> Program
+compile = Map.fromList . zip [1..]
 
 
+checkPath :: Field -> Path -> Bool
+checkPath _ [] = False
+checkPath f path = 
+
+
+testingProgram :: Program
+testingProgram = compile [u, u, r, r, u, l, u]
 
 {-
 solve :: Field -> Int -> Dislocation -> SolutionTree
