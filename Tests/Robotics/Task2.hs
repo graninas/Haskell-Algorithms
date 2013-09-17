@@ -1,9 +1,7 @@
-{- 
--}
-
 module Main where
 
 import Data.List (nub, partition, sort, group)
+import Data.Word
 
 type Field = [[Char]]
 
@@ -66,14 +64,15 @@ data SolutionTree = SL Dislocation
                   | B Dislocation [SolutionTree]
   deriving (Show, Read, Eq)
 
+type Deep = Word
 
-solve :: Field -> Int -> Dislocation -> SolutionTree
+solve :: Field -> Deep -> Dislocation -> SolutionTree
 solve f 1 d@(tink, kiki) | tink == kiki = SL d
                          | otherwise = L d
-solve f ttl d@(tink, kiki) | tink == kiki = SL d
-                           | otherwise = B d $ map (solve f newTtl) nextDislocations
+solve f deep d@(tink, kiki) | tink == kiki = SL d
+                            | otherwise = B d $ map (solve f newDeep) nextDislocations
   where
-    newTtl = ttl - 1
+    newDeep = deep - 1
     nextDislocations = map (move f d) (possibleMoves tink)
 
 type Path = [Dislocation]
