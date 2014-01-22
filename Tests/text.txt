@@ -1,0 +1,2882 @@
+!@##%#^$^&#%&%&*%*^%*^&*&%#^@%%!%#$^#$&%$*%^&$#%@#%$$@
+Click here to Skip to main content 
+
+
+? 
+Not quite what you are looking for? You may want to try:•Detect Encoding for In- and Outgoing Text
+•Reading Barcodes from an Image - III
+
+highlights off 
+
+  Home 
+
+10,015,116 members (49,904 online)     
+
+   Sign in 
+.
+
+--------------------------------------------------------------------------------
+.   
+  
+ 
+   
+Click here to Skip to main content 
+
+
+home
+articlesChapters and Sections>
+loading 
+
+
+Search
+Latest Articles
+Latest Tips/Tricks
+Top Articles
+Beginner Articles
+Technical Blogs
+Posting/Update Guidelines
+Article Help Forum
+Article Competition
+ Submit an article or tip 
+ Post your Blog 
+
+
+quick answers Ask a Question about this article
+ Ask a Question
+View Unanswered Questions
+View All Questions...
+C# questions
+ASP.NET questions
+VB.NET questions
+C#4.0 questions
+C++ questions
+
+
+discussionsAll Message Boards...
+Application Lifecycle>Running a Business
+Sales / Marketing
+Collaboration / Beta Testing
+Work & Training Issues
+
+Design and Architecture
+ASP.NET
+JavaScript
+C / C++ / MFC>ATL / WTL / STL
+Managed C++/CLI
+
+Adobe Technologies
+C#
+Free Tools
+Objective-C
+Ruby On Rails
+Database
+Hardware & Devices>System Admin
+
+Hosting and Servers
+Java
+.NET Framework
+Mobile
+VS 2012 & .NET 4.5
+Sharepoint
+Silverlight / WPF
+Visual Basic
+Web Development
+Site Bugs / Suggestions
+
+
+featuresComponent & Service Catalog
+Competitions
+News
+The Insider Newsletter
+Newsletter archive
+Surveys
+Product Showcase
+Research Library
+CodeProject Stuff
+
+
+communityThe Insider News
+The Lounge  
+The Weird & The Wonderful
+The Soapbox
+Press Releases
+Who's Who
+Most Valuable Professionals
+Company Listings
+Non-English Language >General Indian Topics
+General Chinese Topics
+
+
+
+helpWhat is 'CodeProject'?
+General FAQ
+Ask a Question
+Bugs and Suggestions
+Article Help Forum
+Site Map
+Advertise with us
+Employment Opportunities
+About Us
+
+
+. 
+
+
+  
+
+
+
+
+
+
+
+
+
+ 
+
+
+
+
+
+
+Articles » General Programming » Algorithms & Recipes » General
+
+  
+
+
+Next  
+
+
+.
+
+
+
+
+Article
+
+Browse Code
+
+Stats
+
+Revisions (2)
+
+Alternatives
+ 
+Comments & Discussions (55) 
+ 
+
+
+  
+
+Detect a written text's language
+
+By Carsten Zeumer,  21 Oct 2009 
+ 
+
+
+  
+
+ 
+
+ 
+     5.00 (60 votes)  
+
+
+
+
+1 vote, 1.7%
+ 
+ 2 votes, 3.3%
+ 
+ 57 votes, 95.0%
+ 
+
+
+
+
+
+
+
+
+    
+
+
+ 
+
+ 
+
+Download demo application - 516 KB
+Download source - 531 KB
+
+
+
+Introduction
+
+Quite some time ago, I published an article on how to detect the encoding of an given text. In this article, I describe the next step on the long way to text classification: the detection of language.
+
+The given solution is based on n-gram and word occurrence comparison.
+
+It is suitable for any language that uses words (this is actually not true for all languages).
+
+Depending on the model and the length of the input text, the accuracy is between 70% (only short Norwegian, Swedisch and Danisch classified by the "all" model) and 99.8%, using the "default" model.
+
+Background
+
+The language detection of a written text is probably one of the most basic tasks in natural language processing (NLP). For any language depending processing of an unknown text, the first thing to know is which language the text is written in. Luckily, it is one of the easier challenges that NLP has to offer. The approach I have chosen to implement is widely known and pretty straightforward. The idea is that any language has a unique set of character (co-)occurrences.
+
+The first step is to collect those statistics for all languages that should be detectable. This is not as easy as it may sound in the first place. The problem is to collect a large set of test data (plain text) that contains only one language and that is not domain specific. (Only newspaper articles may lack the use of the word “I” and direct speech. Using Shakespeare plays will not be the best approach to detect contemporary texts. Medical articles tend to contain too many domain specific terms which are not even language specific (major, minor, arteria etc…).) And if that would not be hard enough, the texts should not be copyrighted. (I am not sure if this is a true requirement. Are the results of statistical analytics of copyrighted texts also copyrighted?) I have chosen to use Wikipedia as my primary source. I had to do some filtering to "clean" the sources from the ever present English phrases that occur in almost any article – no matter what language they are written in (I actually used Babel itself to detect the English phrases). The clean up was in no way perfect. Wikipedia contains a lot of proper names (i.e., band names) that often contain a “the” or an “and”. This is why those words occur in many languages even if they are not part of the language. This must not necessarily be a disadvantage, because Anglicism is widely spread across many languages. I created three statistics for each language:
+•Character set
+
+Some languages have a very specific Character set (e.g., Chinese, Japanese, and Russian); for others, some characters give a good hint of what languages come in question (e.g., the German Umlauts).
+•N-Grams
+
+After tokenizing the text into words (where applicable), the occurrences of each 1, 2, and 3-grams were counted. Some n-grams are very language specific (e.g., the "TH" in English).
+•Word list
+
+The last source of disambiguation is the actually used words. Some languages (like Portuguese and Spanish) are almost identical in used characters and also the occurrences of the specific n-grams. Still, different words are used in different frequencies.
+
+A set of statistics is called a model. I have created some subsets of the "all" model that meet my needs the best (see table below). The "common" model contains the 10 most spoken languages in the world. The “small” and “default” are based on my usage scenarios. If you are from another part of the world, your preferences might be different. So please take no offence in my choice of what languages are contained in which model.
+
+All statistics are ordered and ranked by their occurrences. Within the demo application, all models can be studied in detail. Classification of an unknown text is straightforward. The text is tokenized and the three tables for the statistics are generated. The result table is compared to all tables in the model, and a distance is calculated. The comparison table from the model that has the smallest distance to the unknown text is most likely the language of the text.
+
+
+
+Sample model
+
+Using the code
+
+Quick word about the code
+
+Babel is part of a larger project. I wanted the Babel assembly to work stand-alone. Since some of the used classes originally were scattered across many assemblies, I used the define "_DIALOGUEMASTER" to indicate whether to use the DialogueMaster™ assemblies or implement (a probably simpler) version in place.
+
+Any impartand DialogueMaster™ class is remotable. The clients need only one assembly containing all the interface definitions. This is why Babel uses so many interfaces where they might seem to bloat the code in the first place. Additionally, DialogueMaster™ offers lots of PerformanceCounters. I chose to omit them for an easier usage of the assembly (no installation and no admin rights needed).
+
+What I actually want to say is: the code is not as readable and clean as it could (and should) be.
+
+Classify text
+
+Usage of the code is straightforward. First, you must chose (or create your own) model. The ClassifyText method returns a ICategoryList which is a list of ICateogry (name-score pairs) items sorted descending by their score.
+
+ Collapse | Copy Code
+using System;
+
+//
+// Most simple samlple
+//
+
+class Program
+{
+    static void Main(string[] args)
+    {
+        DialogueMaster.Babel.BabelModel model = DialogueMaster.Babel.BabelModel._AllModel;
+        String s = System.Console.ReadLine();
+        while (s.Length > 0)
+        {
+            DialogueMaster.Classification.ICategoryList result = model.ClassifyText(s, 10);
+            foreach (DialogueMaster.Classification.ICategory category in result)
+            {
+                System.Console.Out.WriteLine(" {0} : {1}", category.Name, category.Score);
+            }
+
+            s = System.Console.ReadLine();
+        }
+    }
+}
+
+Define your own model
+
+From existing set
+
+To define your own model from the existing set of languages, simply create a new BabelModel and add the required languages from the _AllModel.
+
+ Collapse | Copy Code
+class Program2
+{
+    static void Main(string[] args)
+    {
+        // Create a custom model 
+        DialogueMaster.Babel.BabelModel model = new DialogueMaster.Babel.BabelModel();
+        model.Add("de", DialogueMaster.Babel.BabelModel._AllModel["de"]);
+        model.Add("en", DialogueMaster.Babel.BabelModel._AllModel["en"]);
+        model.Add("sv", DialogueMaster.Babel.BabelModel._AllModel["sv"]);
+
+        // ask the user for some input
+        String s = System.Console.ReadLine();
+        while (s.Length > 0)
+        {
+            // classify it 
+            DialogueMaster.Classification.ICategoryList result = model.ClassifyText(s, 10);
+            // and dump the result
+            foreach (DialogueMaster.Classification.ICategory category in result)
+            {
+                System.Console.Out.WriteLine(" {0} : {1}", category.Name, category.Score);
+            }
+
+            s = System.Console.ReadLine();
+        }
+    }
+}
+
+Add new language
+
+To add a new language is pretty straightforward. All you need is some learn data text.
+
+ Collapse | Copy Code
+class Program3
+{
+    static void Main(string[] args)
+    {
+        // Create a custom model 
+        DialogueMaster.Babel.BabelModel model = new DialogueMaster.Babel.BabelModel();
+        TokenTable klingonTable = new TokenTable(new FileInfo("LearnData\\Klingon.txt"));
+        TokenTable vulcanTable = new TokenTable(new FileInfo("LearnData\\Vulcan.txt"));
+
+        model.Add("kling", klingonTable);
+        model.Add("vulcan", klingonTable);
+        model.Add("en", DialogueMaster.Babel.BabelModel._AllModel["en"]);
+
+
+        // ask the user for some input
+        String s = System.Console.ReadLine();
+        while (s.Length > 0)
+        {
+            // classify it 
+            DialogueMaster.Classification.ICategoryList result = model.ClassifyText(s, 10);
+            // and dump the result
+            foreach (DialogueMaster.Classification.ICategory category in result)
+            {
+                System.Console.Out.WriteLine(" {0} : {1}", category.Name, category.Score);
+            }
+
+            s = System.Console.ReadLine();
+        }
+    }
+}
+
+Points of interest
+
+Supported languages
+
+
+Language Code
+
+Language
+
+Quality
+
+Default
+
+Common
+
+Large
+
+Small
+
+
+nl Dutch 13 x   x   
+en English 13 x x x x 
+ca Catalan 13         
+fr French 13 x x x x 
+es Spanish 13 x x x x 
+no Norwegian 13 x   x   
+da Danish 13 x   x   
+it Italian 13     x x 
+sv Swedish 13 x   x   
+de German 13 x x x x 
+pt Portuguese 13 x x x   
+ro Romanian 13         
+vi Vietnamese 13         
+tr Turkish 13     x   
+fi Finnish 12     x   
+hu Hungarian 12     x   
+cs Czech 12     x   
+pl Polish 12     x   
+el Greek 12     x   
+fa Persian 12         
+he Hebrew 12         
+sr Serbian 12         
+sl Slovenian 12         
+ar Arabic 12   x     
+nn Norwegian, Nynorsk (Norway) 12         
+ru Russian 11   x x   
+et Estonian 11         
+ko Korean 10         
+hi Hindi 10   x     
+is Icelandic 10         
+th Thai 9         
+bn Bengali (Bangladesh) 9   x     
+ja Japanese 9   x     
+zh Chinese (Simplified) 8   x     
+se Sami (Northern) (Sweden) 5         
+
+References
+•NGram
+•Language Identification from Text Using N-gram Based Cumulative Frequency Addition
+
+History
+•10/10/2009: Initial version released.
+
+License
+
+
+This article, along with any associated source code and files, is licensed under The Code Project Open License (CPOL)
+
+
+
+
+About the Author
+
+
+ 
+
+Carsten Zeumer 
+Software Developer (Senior)  
+Germany Germany 
+
+Carsten started programming Basic and Assembler back in the 80’s when he got his first C64. After switching to a x86 based system he started programming in Pascal and C. He started Windows programming with the arrival of Windows 3.0. After working for various internet companies developing a linguistic text analysis and classification software for 25hours communications he is now working as a contractor.
+  
+ Carsten lives in Hamburg, Germany with his wife and five children. .
+.
+.
+
+
+Article Top
+
+ 
+
+
+
+
+
+
+
+
+
+
+ 
+
+
+  
+
+
+ loading...  
+Sign Up to vote    Poor     Excellent    
+ 
+
+
+
+
+.
+
+
+
+Comments and Discussions
+  
+You must Sign In to use this message board. 
+
+
+
+
+Search this forum   
+. 
+ 
+
+Profile popups    SpacingRelaxedCompactTight   NoiseVery HighHighMediumLowVery Low   LayoutNormalOpen TopicsOpen AllThread ViewNo JavascriptPreview   Per page102550     
+ 
+ 
+ 
+  First PrevNext 
+ 
+
+ 
+
+Question Adding a language member veterko 3-Jul-13 12:54  
+ 
+
+
+ 
+
+
+Hi, 
+ I tried to test Program3, to add a new language, but at Babel.cs i get array out of bounds error, at line maxScore = charsetVoters[0].Score;
+ I think my problem occurs at(in Babel.cs):
+ double score = catTable.CharsetTable.CharsetComparisonScore(tblTest.CharsetTable, threshold);
+ variable score is always NaN.
+ Do I do something wrong in the txt learn data files?
+ 
+Sign In·View Thread·Permalink  
+ 
+ 
+ 
+
+Question Slim Shady member Member 9323233 9-Jun-13 22:38  
+ 
+
+
+ 
+
+
+so nice but it's incorrect about "slim shady"!!!!
+ 
+Sign In·View Thread·Permalink  
+ 
+ 
+ 
+
+Question Model source exists on code project? member Zoltan Ludanyi 26-May-13 12:27  
+ 
+
+
+ 
+
+
+Hi Carsten!
+  
+ I can't find n-gramm modells for each languages.
+ Can you give me a link for that?
+ Is your code open-source licensed to port other languages?
+  
+ Thanks,
+ Zoltan
+ 
+Sign In·View Thread·Permalink  
+ 
+ 
+ 
+
+Answer Re: Model source exists on code project? member Carsten Zeumer 26-May-13 19:28  
+ 
+
+
+ 
+
+
+Hi Zoltan,
+  
+ the models are bundled in binary form with the source. They are generated from the corresponsding wikipedia corpora (which are a few GB to much to be uploaded to codeproject).
+ You are free to add ore replace any language as you like. 
+  
+ Cheers,
+ Carsten
+ 
+Sign In·View Thread·Permalink  
+ 
+ 
+ 
+
+Question my vote is 5 member Sumeet Kumar G 9-Apr-13 7:03  
+ 
+
+
+ 
+
+
+Really Good,
+ 
+Sign In·View Thread·Permalink  
+ 
+ 
+ 
+
+Question ?? member Mehrdad keshavarzi 4-Apr-13 1:48  
+ 
+
+
+ 
+
+
+Hi
+I am looking for a piece of software you'd like to add that when certain words are detected by the algorithm that the words I'm decoding?
+If you please tell me the code and place'm grateful.
+
+ 
+Sign In·View Thread·Permalink  
+ 
+ 
+ 
+
+General My vote of 5 member pistol350 18-Feb-13 21:20  
+ 
+
+
+ 
+
+
+Really impressive!
+ Thanks for sharing your work!
+ 
+Sign In·View Thread·Permalink  
+ 
+ 
+ 
+
+Answer how do you compare the values of n-gram table of the text with values in words table member mamooshi 11-Feb-13 2:56  
+ 
+
+
+ 
+
+
+thank you so much Smile | :) is there anyway for you to look at that code and see what is the relationship beetween the result of ngram and word tables! i saw your code but i don't understand well that what you have done ! i find the classify text function but i can't understand it well! and i am sorry again that my English is not well :(
+ 
+Sign In·View Thread·Permalink  
+ 
+ 
+ 
+
+Question how do you compare the values of n-gram table of the text with values in words table member mamooshi 11-Feb-13 1:54  
+ 
+
+
+  
+
+
+hi i have one question about the way you calculate the result.( in n-gram tables and in word tables)? do you add the result of ngram tables to the result of words tables or something like that? how do you compare the values of n-gram table of the text with values of the words table? thank you for your time
+ 
+Sign In·View Thread·Permalink  
+ 
+ 
+ 
+
+Answer Re: how do you compare the values of n-gram table of the text with values in words table member Carsten Zeumer 11-Feb-13 1:58  
+ 
+
+
+ 
+
+
+Hi Mamooshi,
+  
+ it is something like that Wink | ;) I actually don't have the code right here at hand... 
+ I remember, that the algorythm was a combination of the three tables for charset, NGram and words. But I do not rememeber how the weighting was actually done. I'd need a look at the code for that...
+
+/carsten
+  
+ 24 hours is not enough
+
+ 
+Sign In·View Thread·Permalink  
+ 
+ 
+ 
+ 
+ 
+
+Last Visit: 31-Dec-99 18:00     Last Update: 11-Aug-13 13:30 Refresh 123456 Next » 
+ 
+
+General General    News News    Suggestion Suggestion    Question Question    Bug Bug    Answer Answer    Joke Joke    Rant Rant    Admin Admin    
+ 
+
+About Article
+
+
+An article on how to detect the language of a written text.
+ 
+Type  Article 
+Licence  CPOL 
+First Posted  21 Oct 2009 
+Views  40,387 
+Downloads  3,423 
+Bookmarked  102 times 
+ 
+
+.NET2.0C#2.0.NET3.0
+C#3.0.NET3.5Dev, +  
+
+    
+
+
+
+
+
+Top News
+
+HTTPS Hackable In 30 Seconds: DHS Alert
+Get the Insider News free each morning. 
+
+Related Videos
+
+
+ 
+
+ 
+
+
+Related Articles
+
+
+Detect Encoding for In- and Outgoing Text 
+
+Reading Barcodes from an Image - III 
+
+Detect image skew angle and deskew image 
+
+Multiple face detection and recognition in real time 
+
+Google Translator API v2 Implementation 
+
+Detect if JavaScript is enabled in ASPX 
+
+Browser and Feature Detection: Make your Website look Great Everywhere 
+
+Read Barcodes from an Image 
+
+How to detect browser close when browser [X] is clicked ? 
+
+Brainnet 1 - A Neural Netwok Project - With Illustration And Code - Learn Neural Network Programming Step By Step And Develop a Simple Handwriting Detection System 
+
+Outline Text 
+
+Microsoft Office Version Detector 
+
+Fun with Google Text To Speech eBook reader using minimalistic approach 
+
+XEmphasisButton - bold and underlined text in a non-ownerdraw button 
+
+Static code analysis 
+
+WPF Data Binding - Part 1 
+
+Automatically hyperlink URL and Email in ASP.NET Pages with C# 
+
+POP3 Email Client with full MIME Support (.NET 2.0) 
+
+Using AvalonEdit (WPF Text Editor) 
+
+NotifyWindow: A different MSN Messenger style notification window 
+
+
+ ART OF EUROPE
+
+poetry | prints | cine | home 
+
+William Shakespeare - To be, or not to be (from Hamlet 3/1)
+To be, or not to be: that is the question:
+Whether 'tis nobler in the mind to suffer
+The slings and arrows of outrageous fortune,
+Or to take arms against a sea of troubles,
+And by opposing end them? To die: to sleep;
+No more; and by a sleep to say we end
+The heart-ache and the thousand natural shocks
+That flesh is heir to, 'tis a consummation
+Devoutly to be wish'd. To die, to sleep;
+To sleep: perchance to dream: ay, there's the rub;
+For in that sleep of death what dreams may come
+When we have shuffled off this mortal coil,
+Must give us pause: there's the respect
+That makes calamity of so long life;
+For who would bear the whips and scorns of time,
+The oppressor's wrong, the proud man's contumely,
+The pangs of despised love, the law's delay,
+The insolence of office and the spurns
+That patient merit of the unworthy takes,
+When he himself might his quietus make
+With a bare bodkin? who would fardels bear,
+To grunt and sweat under a weary life,
+But that the dread of something after death,
+The undiscover'd country from whose bourn
+No traveller returns, puzzles the will
+And makes us rather bear those ills we have
+Than fly to others that we know not of?
+Thus conscience does make cowards of us all;
+And thus the native hue of resolution
+Is sicklied o'er with the pale cast of thought,
+And enterprises of great pith and moment
+With this regard their currents turn awry,
+And lose the name of action. - Soft you now!
+The fair Ophelia! Nymph, in thy orisons
+Be all my sins remember'd.
+
+
+
+--------------------------------------------------------------------------------
+
+
+& kenneth branagh doing to be... 
+
+    
+
+
+--------------------------------------------------------------------------------
+
+
+& there's hamlet in the graveyard, here 
+ & there's ophelia, a little unwell, here 
+
+fine art prints | home 
+ 
+
+Apache Traffic Server 
+
+The Apache Software Foundation 
+
+
+Sample Source Code 
+ 
+
+Next Back Top 
+
+ 
+     
+ 
+
+
+
+This appendix provides several source code examples. In the online formats of this book, function calls are linked to their references in the previous chapters. The following sample plugins are provided:
+•blacklist-1.c
+
+blacklist-1.c
+
+The sample blacklisting plugin included in the Traffic Server SDK is blacklist-1.c. This plugin checks every incoming HTTP client request against a list of blacklisted web sites. If the client requests a blacklisted site, then the plugin returns an Access forbidden message to the client.
+
+This plugin illustrates:
+•
+An HTTP transaction extension
+
+•
+How to examine HTTP request headers
+
+•
+How to use the logging interface
+
+•
+How to use the plugin configuration management interface
+
+    /* blacklist-1.c:  An example program that denies client access
+     *                 to blacklisted sites. This plugin illustrates
+     *                 how to use configuration information from the
+     *                 blacklist.txt configuration file.
+     *
+     * Usage:
+     * (Solaris) : blacklist-1.so
+     *
+     *
+     */
+
+    #include 
+    #include 
+    #include 
+
+    #define MAX_NSITES 500
+
+    static char* sites[MAX_NSITES];
+    static int nsites;
+    static TSMutex sites_mutex;
+    static TSTextLogObject log;
+
+    static void
+    handle_dns (TSHttpTxn txnp, TSCont contp)
+    {
+        TSMBuffer bufp;
+        TSMLoc hdr_loc;
+        TSMLoc url_loc;
+        const char *host;
+        int i;
+        int host_length;
+
+        if (!TSHttpTxnClientReqGet (txnp, &bufp, &hdr_loc)) {
+            TSError ("couldn't retrieve client request header\n");
+            goto done;
+        }
+
+        url_loc = TSHttpHdrUrlGet (bufp, hdr_loc);
+        if (!url_loc) {
+            TSError ("couldn't retrieve request url\n");
+            TSHandleMLocRelease (bufp, TS_NULL_MLOC, hdr_loc);
+            goto done;
+        }
+
+        host = TSUrlHostGet (bufp, url_loc, &host_length);
+        if (!host) {
+            TSError ("couldn't retrieve request hostname\n");
+            TSHandleMLocRelease (bufp, hdr_loc, url_loc);
+            TSHandleMLocRelease (bufp, TS_NULL_MLOC, hdr_loc);
+            goto done;
+        }
+
+        TSMutexLock(sites_mutex);
+
+        for (i = 0; i < nsites; i++) {
+            if (strncmp (host, sites[i], host_length) == 0) {
+                if (log) {
+                    TSTextLogObjectWrite(log, "blacklisting site: %s", sites[i]);
+                } else {
+                    printf ("blacklisting site: %s\n", sites[i]);
+                }
+                TSHttpTxnHookAdd (txnp, TS_HTTP_SEND_RESPONSE_HDR_HOOK, contp);
+                TSHandleMLocRelease (bufp, hdr_loc, url_loc);
+                TSHandleMLocRelease (bufp, TS_NULL_MLOC, hdr_loc);
+                TSHttpTxnReenable (txnp, TS_EVENT_HTTP_ERROR);
+                TSMutexUnlock(sites_mutex);
+                return;
+            }
+        }
+
+        TSMutexUnlock(sites_mutex);
+        TSHandleMLocRelease (bufp, hdr_loc, url_loc);
+        TSHandleMLocRelease (bufp, TS_NULL_MLOC, hdr_loc);
+
+     done:
+        TSHttpTxnReenable (txnp, TS_EVENT_HTTP_CONTINUE);
+    }
+
+    static void
+    handle_response (TSHttpTxn txnp)
+    {
+        TSMBuffer bufp;
+        TSMLoc hdr_loc;
+        TSMLoc url_loc;
+        char *url_str;
+        char *buf;
+        int url_length;
+
+        if (!TSHttpTxnClientRespGet (txnp, &bufp, &hdr_loc)) {
+            TSError ("couldn't retrieve client response header\n");
+            goto done;
+        }
+
+        TSHttpHdrStatusSet (bufp, hdr_loc, TS_HTTP_STATUS_FORBIDDEN);
+        TSHttpHdrReasonSet (bufp, hdr_loc,
+            TSHttpHdrReasonLookup (TS_HTTP_STATUS_FORBIDDEN),
+            strlen (TSHttpHdrReasonLookup (TS_HTTP_STATUS_FORBIDDEN)) );
+
+        if (!TSHttpTxnClientReqGet (txnp, &bufp, &hdr_loc)) {
+            TSError ("couldn't retrieve client request header\n");
+            TSHandleMLocRelease (bufp, TS_NULL_MLOC, hdr_loc);
+            goto done;
+        }
+
+        url_loc = TSHttpHdrUrlGet (bufp, hdr_loc);
+        if (!url_loc) {
+            TSError ("couldn't retrieve request url\n");
+            TSHandleMLocRelease (bufp, TS_NULL_MLOC, hdr_loc);
+            goto done;
+        }
+
+        buf = (char *)TSmalloc (4096);
+
+        url_str = TSUrlStringGet (bufp, url_loc, &url_length);
+        sprintf (buf, "You are forbidden from accessing \"%s\"\n", url_str);
+        TSfree (url_str);
+        TSHandleMLocRelease (bufp, hdr_loc, url_loc);
+        TSHandleMLocRelease (bufp, TS_NULL_MLOC, hdr_loc);
+
+        TSHttpTxnErrorBodySet (txnp, buf, strlen (buf), NULL);
+
+     done:
+        TSHttpTxnReenable (txnp, TS_EVENT_HTTP_CONTINUE);
+    }
+
+    static void
+    read_blacklist (void)
+    {
+        char blacklist_file[1024];
+        TSFile file;
+
+        sprintf (blacklist_file, "%s/blacklist.txt", TSPluginDirGet());
+        file = TSfopen(blacklist_file, "r");
+
+        TSMutexLock (sites_mutex);
+        nsites = 0;
+
+        if (file != NULL) {
+            char buffer[1024];
+
+            while (TSfgets (file, buffer, sizeof(buffer)-1) != NULL && nsites < MAX_NSITES) {
+                char* eol;
+                if ((eol = strstr(buffer, "\r\n")) != NULL) {
+                    /* To handle newlines on Windows */
+                    *eol = '\0';
+                } else if ((eol = strchr(buffer, '\n')) != NULL) {
+                    *eol = '\0';
+                } else {
+                    /* Not a valid line, skip it */
+                    continue;
+               }
+               if (sites[nsites] != NULL) {
+                    TSfree (sites[nsites]);
+               }
+               sites[nsites] = TSstrdup (buffer);
+               nsites++;
+           }
+
+            TSfclose (file);
+        } else {
+           TSError ("unable to open %s\n", blacklist_file);
+           TSError ("all sites will be allowed\n", blacklist_file);
+        }
+
+        TSMutexUnlock (sites_mutex);
+    }
+
+    static int
+    blacklist_plugin (TSCont contp, TSEvent event, void *edata)
+    {
+        TSHttpTxn txnp = (TSHttpTxn) edata;
+
+        switch (event) {
+        case TS_EVENT_HTTP_OS_DNS:
+            handle_dns (txnp, contp);
+            return 0;
+        case TS_EVENT_HTTP_SEND_RESPONSE_HDR:
+            handle_response (txnp);
+            return 0;
+        case TS_EVENT_MGMT_UPDATE:
+            read_blacklist ();
+            return 0;
+        default:
+            break;
+        }
+        return 0;
+    }
+
+    int
+    check_ts_version()
+    {
+
+       const char *ts_version = TSTrafficServerVersionGet();
+       int result = 0;
+
+       if (ts_version) {
+           int major_ts_version = 0;
+           int minor_ts_version = 0;
+           int patch_ts_version = 0;
+
+           if (sscanf(ts_version, "%d.%d.%d", &major_ts_version, &minor_ts_version, &patch_ts_version) != 3) {
+                return 0;
+           }
+
+           /* Need at least TS 2.0 */
+           if (major_ts_version >= 2) {
+                result = 1;
+           }
+
+       }
+
+       return result;
+    }
+
+    void
+    TSPluginInit (int argc, const char *argv[])
+    {
+        int i;
+        TSCont contp;
+        TSPluginRegistrationInfo info;
+        int error;
+
+        info.plugin_name = "blacklist-1";
+        info.vendor_name = "DsCompany";
+        info.support_email = "ts-api-support@DsCompany.com";
+
+        if (!TSPluginRegister (TS_SDK_VERSION_2_0 , &info)) {
+            TSError ("Plugin registration failed.\n");
+        }
+
+        if (!check_ts_version()) {
+           TSError ("Plugin requires Traffic Server 2.0 or later\n");
+           return;
+        }
+
+        /* create an TSTextLogObject to log blacklisted requests to */
+        log = TSTextLogObjectCreate("blacklist", TS_LOG_MODE_ADD_TIMESTAMP,
+                 NULL, &error);
+        if (!log) {
+            printf("Blacklist plugin: error %d while creating log\n", error);
+        }
+
+        sites_mutex = TSMutexCreate ();
+
+        nsites = 0;
+        for (i = 0; i < MAX_NSITES; i++) {
+            sites[i] = NULL;
+        }
+
+        read_blacklist ();
+
+        contp = TSContCreate (blacklist_plugin, NULL);
+
+        TSHttpHookAdd (TS_HTTP_OS_DNS_HOOK, contp);
+
+        TSMgmtUpdateRegister (contp, "Super Blacklist Plugin", "blacklist.cgi");
+    }
+
+
+
+Programmers GuidePrefaceHow to Use This Book
+Typographical Conventions
+
+Getting StartedA Simple Plugin
+Plugin Registration and Version Checking
+Naming Conventions
+
+How to Create Traffic Server PluginsRoadmap for Creating Plugins
+
+Remap PluginExample: Query Remap Plugin
+
+Header-Based Plugin ExamplesThe Blacklist PluginSetting a Global Hook
+Accessing the Transaction Being Processed
+Setting Up a Transaction Hook
+Working with HTTP Header Functions
+
+The Basic Authorization PluginImplementing the Handler and Getting a Handle to the Transaction
+Working With HTTP Headers
+Setting a Transaction Hook
+
+
+HTTP Transformation PluginsThe Sample Null Transform Plugin
+The Append-Transform Plugin
+The Sample Buffered Null Transform Plugin
+
+New Protocol Plugins
+HTTP Hooks and TransactionsAdding Hooks
+HTTP Sessions
+HTTP Transactions
+Intercepting HTTP Transactions
+Initiate HTTP Connection
+HTTP Alternate Selection
+
+Miscellaneous Interface GuideThe TSfopen Family
+Memory Allocation
+Thread Functions
+
+HTTP HeadersGuide to Traffic Server HTTP Header SystemDuplicate MIME Fields Are Not Coalesced
+MIME Fields Always Belong to an Associated MIME Header
+Release Marshal Buffer Handles
+
+Marshal Buffers
+HTTP Headers
+URLs
+MIME Headers
+
+Mutex Guide
+ContinuationsHow to Activate Continuations
+Writing Handler Functions
+
+Plugin Configurations
+Actions GuideHosts Lookup API
+
+IO GuideNet Vconnections
+Transformations
+VIOs
+IO Buffers
+Guide to the Cache APIHow to Do a Cache Write
+How to Do a Cache Remove
+Errors
+Example
+
+
+Plugin ManagementReading Traffic Server Settings and Statistics
+Guide to the Logging API
+
+Adding StatisticsCoupled Statistics
+Viewing Statistics Using Traffic Line
+
+Sample Source Code
+Troubleshooting TipsUnable to Load Plugins
+Using Debug Tags
+Using a Debugger
+Debugging Memory Leaks
+
+
+
+
+
+
+ RSS   Log in / register
+
+
+No comments have been made so far.
+
+ 
+
+Copyright © 2013 The Apache Software Foundation. Licensed under the Apache License, Version 2.0. Apache Traffic Server, Apache, the Apache Traffic Server logo, and the Apache feather logo are trademarks of The Apache Software Foundation. 
+
+The Apache Software Foundation  
+
+
+
+
+    
+
+Гость 
+ 
+
+
+Сайт разработчика Александр Климова 
+ 
+
+/* Моя кошка замечательно разбирается в программировании. Стоит мне объяснить проблему ей - и все становится ясно. */
+John Robbins, Debugging Applications, Microsoft Press, 2000 
+ 
+
+ 
+  
+
+
+top.mail.ru 
+XML-комментарии в C#
+
+Вероятно вы слышали об особом виде комментариев в Visual Stuidio – XML-комментарии. Поговорим о них подробнее и разберемся, зачем они нужны программисту.
+
+Если коротко, то C# позволяет разработчикам встраивать XML-комментарии в исходный код, а затем с их помощью создавать документацию прямо из исходных файлов Visual Studio. Это очень полезная функциональность, особенно когда над проектом работают несколько программистов. Синтаксический анализатор (parser) C# может раскрывать такие XML-тэги, предоставляя дополнительную информацию, и экспортировать их во внешний документ для дальнейшей обработки.
+
+В этой статье мы рассмотрим применение XML-комментариев и дадим объяснения соответствующим тэгам. Мы увидим, как настроить проект на экспорт XML-комментариев в подходящую для других разработчиков документацию. Также демонстрируется, как использовать комментарии для генерации справочных файлов.
+
+Сама возможность хранить информацию о коде в самом коде – это очень удобно. Подобное решение облегчает изменение документации одновременно с исходным кодом. Ведь разбираться в чужом коде — задача неблагодарная даже для опытных программистов. Что уж говорить о тех, кто не слишком подкован в программировании.
+
+XML-комментарии помогают решить многие проблемы. Комментарии к коду, руководства пользователя, планы тестирования и множество другой документации можно генерировать из одного источника через XML-тэги. Мы увидим, как вставлять XML-комментарии и разрешать их экспорт в другой файл. Далее мы обсудим все доступные тэги и формат XML-файла, в который они помещаются, и на практике создадим справочные файлы на основе XML-комментариев и XSLT.
+
+Теория
+
+Каждый XML-комментарий начинается с трех символов «///». Первые два обозначают обычный комментарий и указывают компилятору игнорировать дальнейший текст, а третий сообщает синтаксическому анализатору, что это XML-комментарий, который следует обрабатывать по-особому.
+
+Когда разработчик набирает три символа «///» подряд, интегрированная среда разработки (IDE) Visual Studio проверяет, не предшествуют ли они распознаваемому типу или определению элемента типа. Если да, IDE автоматически вставляет некоторые тэги. После этого разработчик может добавить другие нужные ему тэги и значения.
+
+Давайте проверим это на практике. Создадим какую-нибудь функцию с параметром. Например, так.
+
+private void ShowMessage(string msg)
+{
+    MessageBox.Show(msg);
+}
+highlight: cs
+
+Незамысловатый код, который выводит обычное окно с сообщением. Теперь перейдите на строчку выше описанной функции и поставьте подряд три символа «///». У вас сразу сгенерируется заготовка, которая будет выглядеть следующим образом.
+
+/// <summary>
+/// 
+/// </summary>
+/// <param name="msg"></param>
+private void ShowMessage(string msg)
+{
+    MessageBox.Show(msg);
+}
+highlight: cs
+
+Как видите, у вас появились XML-тэги <summary> и <param>. Таких тэгов гораздо больше. Стоит заметить, что текущая реализация IntelliSense в Visual Studio распознает не все перечисленные в спецификации C# тэги, но недостающие тэги всегда можно вставить вручную.
+
+После того, как вы расставите все комментарии в своем коде, неплохо бы что-нибудь с ними сделать. Например, экспортировать во внешний файл всего текста, расположенного за тремя символами «///».
+
+Есть несколько предопределенных XML-тэгов, известных синтаксическому анализатору. Обнаруживая эти тэги (при условии, что разработчик правильно ими воспользовался), он форматирует их текст и выводит в текстовый файл. Если встречается тэг, отличный от предопределенного, он и его текст без изменений включаются во внешний файл. Благодаря этому вы можете создавать собственные тэги или даже использовать известные тэги из других источников (например, HTML).
+
+Когда экспорт настроен правильно, синтаксический анализатор C# извлекает XML-комментарии, форматирует их и помещает в выбранный XML-файл. Задать местонахождение и имя файла XML-документа, а также разрешить экспорт можно на страницах свойств проекта.
+
+Для этого откройте свойства проекта (Project | Имя проекта Properties) и в появившемся диалоговом окне выберите вкладку Build. В правой секции окна вы увидите поле XML Documentation File. Укажите в нем путь (относительно каталога проекта) и имя нужного файла.
+
+В данном случае в качестве имени документа использовалось имя, предложенное Visual Studio. Если вы не укажете здесь путь и имя файла (вариант по умолчанию), XML-комментарии не будут извлекаться в отдельный файл.
+ 
+Распознаваемые тэги
+
+Можно разделить тэги XML-комментариев на две категории. В первую входят первичные тэги (primary tags); с них всегда начинается какая-либо группа тэгов XML-комментариев. Первичные тэги никогда не вкладываются в другие тэги. Ко второй категории относятся тэги, используемые совместно с первичными в качестве модификаторов текста. Назовем их вспомогательными (support tags). Чтобы различать вспомогательные и HTML-тэги, первые набираются в нижнем регистре, вторые — в верхнем. Примеры первичных и вспомогательных тэгов, которые будут рассмотрены в статье, приведены в следующем листинге.
+
+Листинг 1. Фрагмент файла GiveHelpTransforms.cs
+
+namespace GiveHelp
+{
+/// <remarks>
+/// Class that contains functions to do transformations to help 
+/// files. The source XML is loaded into the <see cref="SourceXML"/> 
+/// property (e.g. <c><I>obj</I>.SourceXML = "<I>XML goes 
+/// here</I>"</c>). One of the associated member functions 
+/// (<see cref="GiveTypeListHTMLHelp"/>,
+/// <see cref="GiveMemberListHTMLHelp"/>,
+/// <see cref="GiveMemberHTMLHelp"/>)
+/// is called to initiate and then return the transformation.
+/// <para>
+/// <list type="table">
+/// <listheader>
+/// <term>Help Page</term>
+/// <description>Function to call</description>
+/// </listheader>
+/// <item><term>List of Types</term>
+/// <description>GiveTypeListHTMLHelp</description></item>
+/// <item><term>List of members</term>
+/// <description>GiveMemberListHTMLHelp</description></item>
+/// <item><term>Help for a single member</term>
+/// <description>GiveMemberHTMLHelp</description></item>
+/// </list>
+/// </para>
+/// </remarks>
+/// <permission cref="">public</permission>
+/// <example><code>
+/// // Создать класс, осуществляющий преобразования
+/// GiveHelpTransforms ght = new GiveHelpTransforms();
+/// // Загрузить XML в свойство SourceXML
+/// ght.LoadXMLFromFile(
+/// "E:\\Inetpub\\wwwroot\\GiveHelp\\GiveHelpDoc.xml");
+///
+/// // Выполнить преобразование и вывести строку
+/// Response.Write( ght.
+/// GiveMemberHTMLHelp(Request.QueryString.Get("Type"),
+/// Request.QueryString.Get("Member")) );
+/// </code></example>
+public class GiveHelpTransforms
+{
+...
+/// <summary>
+/// Calling this function will take the XML in <see
+/// cref="SourceXML"/>
+highlight: cs
+
+Существует 9 первичных тэгов: <remarks>, <summary>, <example>, <exception>, <param>, <permission>, <returns>, <seealso> и <include>. В этом контексте тэг <remarks> используется для описания какого-либо типа, например класса:
+
+/// <remarks>
+/// Класс, содержащий функции для преобразований в справочных файлах
+/// </remarks>
+highlight: cs
+
+В документации по языку C# рекомендуется применять тэг <remarks> для описания типа, а тэг <summary> — для описания элемента типа. Однако, если перед типом ввести комбинацию «///», Visual Studio IDE вставит тэг <summary>. Следовательно, тэг <remarks> надо вводить вручную.
+
+Тэг <summary>
+
+Из всех тэгов в файлах исходного кода на C# чаще всего встречается тэг <summary>. Он описывает элементы (члены) типа, включая методы, свойства и поля:
+
+/// <summary>
+/// Этот атрибут, основанный на XmlDocument, содержит
+/// XML-документацию по проекту
+/// </summary>
+highlight: cs
+
+С помощью тэга <summary> можно описывать и сами типы, но это не рекомендуется. Как уже говорилось выше для типов нужно использовать тэг <remarks>.
+
+Другие тэги
+
+Тэг <example> выделяет пример использования элемента. Примером может быть любой текст, в том числе фрагмент кода:
+
+/// <example>
+/// <code>
+/// // Создать класс для преобразований
+/// GiveHelpTransforms ght = new GiveHelpTransforms();
+/// // Загрузить XML в свойство SourceXML
+/// ght.LoadXMLFromFile(
+///    "E:\\Inetpub\\wwwroot\\GiveHelp\\GiveHelpDoc.xml");
+/// </code>
+/// </example>
+highlight: cs
+
+Код обычно помечается тэгом <code> (о нем — в разделе по вспомогательным тэгам).
+
+Тэг <exception> документирует исключения, которые может генерировать элемент. Для описания нескольких исключений можно использовать несколько таких тэгов. В отличие от большинства других тэгов, <exception> имеет один атрибут — cref. Его значение — имя возбуждаемого исключения.
+
+При этом вы должны указывать существующий класс, так как синтаксический анализатор C# проверяет его и извлекает из него контекстную информацию, помещаемую в XML-документацию.
+
+В коде, приведенном ниже, никакие исключения не генерируются, но я все же рассмотрим применение атрибута cref в тэге <exception>
+
+/// <exception cref="SampleException">
+/// Обычно здесь описывается исключение
+/// </exception>
+highlight: cs
+
+Тэг <param> описывает параметры метода или свойства. Он автоматически вставляется IDE, если перед методом указываются три символа «///». Тэг <param> имеет один атрибут — name — совпадающий с именем параметра:
+
+/// <param name="strFilePath">Путь к файлу, содержащему
+/// исходный XML</param>
+highlight: cs
+
+Тэг <permission>
+
+Разрешение на доступ к элементам указывается в тэге <permission>. Соответствующий ему текст содержит описание разрешения. К значению этого тэга не предъявляется никаких требований. Это может быть информация о виде разрешения на доступ: является ли элемент открытым (public), закрытым (private), защищенным (protected) и др. Но значением может быть и область видимости (scope) с информацией о том, статический ли это метод. В общем, можете включать туда все, что сочтете нужным.
+
+У тэга <permission> имеется единственный атрибут — cref. В документации атрибут cref в этом контексте описывается как «ссылка на элемент или поле, доступное из текущей среды компиляции». Его обычно устанавливают как System.Security.PermissionSet:
+
+/// <permission cref="System.Security.PermissionSet">Открытый
+/// доступ</permission>
+highlight: cs
+
+Тэг <returns>
+
+Тэг <returns> похож на тэг <param>, но описывает возвращаемое значение метода или свойства:
+
+/// <returns>HTMLкод, содержащий список типов из XML
+/// документации.</returns>
+highlight: cs
+
+Тэг <seealso>
+
+В тэге <seealso> указываются «прочие» ссылки по этому тематическому разделу (topic). Этот тэг обычно не содержит текстовое значение — только атрибут cref со ссылкой на нужный символ (тип, элемент, поле и т. д.).
+
+/// <seealso cref="GiveMemberListHTMLHelp"/>
+highlight: cs
+
+Компилятор XML определяет содержимое по указанному символу и соответственно использует его при компиляции XML-документации.
+
+Тэг <include>
+
+Когда компилятор извлекает XML-комментарии из кода, любой файл, указанный в тэге <include>, раскрывается, и содержащиеся в нем комментарии интерпретируются так, будто они находятся в самом исходном коде. Благодаря этому комментарии можно хранить во внешнем файле. Правда, тогда их не будет «под рукой», и лично я стараюсь не пользоваться тэгом <include>. Но если у вас очень длинные комментарии, такой вариант, вероятно, вас устроит.
+
+В тэге <include> должно присутствовать несколько атрибутов, характеризующих внешний файл. Атрибут file задает имя файла, причем путь может быть относительным или полным. Включаемый файл представляет собой XML-документ с XML-комментариями. Атрибут path — это выражение XPath, указывающее на родительский элемент XML-комментария во внешнем документе:
+
+/// <include file='MyXMLCommentFile.xml'
+/// path='doc/members/member[@name="T:MyExampleClass"]/*'/>
+public class MyExampleClass
+{
+    /// <include file='MyXMLCommentFile.xml'
+    /// path='doc/members/member[@name="M:MyExampleMethod"]/*'/>
+    public string MyExampleMethod(string strReturnThis)
+    {
+     return strReturnThis;
+    }
+}highlight: cs
+
+Ниже приведен текст файла MyXMLCommentFile.xml. Заметьте, что в этом примере я указал родительский элемент, содержащий XMLкомментарии, с помощью XPath. Реальный формат файла выбирается самим разработчиком. Я предпочел формат, аналогичный формату файлов XML-документов, генерируемых компилятором.
+
+<doc>
+
+<members>
+
+<member name="T:MyExampleClass">
+
+<remarks>
+
+This is my example class that does <b>nothing</b>.
+
+</remarks>
+
+</member>
+
+<member name="M:MyExampleMethod">
+
+<summary>
+
+This method just returns a string.
+
+</summary>
+
+<param name="strReturnThis">
+
+This is a string parameter that will just be returned.
+
+</param>
+
+<returns>
+
+Just returns the input parameter.
+
+</returns>
+
+</member>
+
+</members>
+
+</doc>
+highlight: cs
+
+Вспомогательные тэги
+
+Существует 11 вспомогательных тэгов: <c>, <code>, <list>, <listheader>, <item>, <term>, <description>, <para>, <paramref>, <see> и <value>.
+
+Тэг <c> определяет строку текста как код и часто встречается в текстах описаний:
+
+/// Исходный XML загружается в свойство <see cref="SourceXML"/>
+/// (например, <c><I>obj</I>.SourceXML = "<I>Сюда помещается 
+/// XML</I>"</c>)
+highlight: cs
+
+Тэг <code> определяет раздел текста как блок кода. Он часто используется внутри блока тэга <example> (вы уже видели это), указывая, что формат текста в комментариях должен быть сохранен:
+
+/// <code>
+/// // Создать класс, осуществляющий преобразования
+/// GiveHelpTransforms ght = new GiveHelpTransforms();
+/// // Загрузить XML в свойство SourceXML
+/// ght.LoadXMLFromFile(
+///    "E:\\Inetpub\\wwwroot\\GiveHelp\\GiveHelpDoc.xml");
+/// </code>
+highlight: cs
+
+Тэг <list> применяется внутри других тэгов комментариев и определяет специализированный список (specialized list). Тип списка задается атрибутом, значением которого может быть number (нумерованный), bullet (маркированный) или table (таблица). Внутри тэга <list> размещаются тэги, обозначающие компоненты списка, например:
+
+/// <list type="table">
+/// <listheader>
+/// <term>Help Page</term>
+/// <description>Function to call</description>
+/// </listheader>
+/// <item><term>List of types</term>
+/// <description>GiveTypeListHTMLHelp</description></item>
+/// <item><term>List of members</term>
+/// <description>GiveMemberListHTMLHelp</description></item>
+/// <item><term>Help for a single member</term>
+/// <description>GiveMemberHTMLHelp</description></item>
+/// </list>
+highlight: cs
+
+Тэг <listheader> содержит информацию о заголовке списка (см. предыдущий пример). Он обычно используется для списков табличного типа.
+
+Тэг <item>, как вы, наверное, уже догадались, обозначает элемент в списке. Он может включать в себя тэги <term> и <description>. Последние всегда являются дочерними по отношению к тэгу <listheader> или <item>, используются парно, и их назначение очевидно.
+
+Тэг <para> идентифицирует новый абзац и очень похож на тэг <p> в HTML. Понятно, что он предназначен для разбиения длинных комментариев на абзацы:
+
+/// <summary>Это аннотация.
+/// <para>Это новый абзац.</para>
+/// </summary>
+highlight: cs
+
+Если в тексте комментария надо выделить некий параметр, используется тэг <paramref>. Он помещается там, где в тексте должно выводиться имя параметра. Основное назначение этого тэга — особым образом выделять имя параметра. У него один атрибут — name, который представляет собой имя параметра, выводимого в тексте в особом формате:
+
+/// Загружает XML-документацию в файл, заданный
+/// <paramref>strFilePath</paramref>
+highlight: cs
+
+Тэг <see> употребляется в тексте других тэгов комментарииев для обозначения гиперссылки. Он вставляется как часть текста и обычно включает один атрибут, cref:
+
+/// Чтобы выполнить преобразование и вернуть результат,
+/// вызывается одна из функций-членов
+/// (<see cref="GiveTypeListHTMLHelp"/>,
+/// <see cref="GiveMemberListHTMLHelp"/>,
+/// <see cref="GiveMemberHTMLHelp"/>)
+highlight: cs
+
+Атрибут cref — ссылка на существующий символ. Более подробную информацию см. в описании тэга <description>.
+
+Тэг <value> определяет значение какого-либо свойства. Он аналогичен тэгу <remarks>, описывающему классы, и тэгу <summary>, описывающему остальные элементы.
+
+/// <value>
+/// Свойство SourceXML содержит XML, используемый
+/// функциямичленами этого класса при преобразованиях.
+/// </value>
+highlight: cs
+
+Файл XML-документа
+
+Выше уже говорилось, как настроить проект для экспорта XML-комментариев. В следующем листинге приведен фрагмент файла XML-документа, созданного после компиляции моего проекта-примера.
+
+Листинг 2. Фрагмент файла GiveHelpDoc.xml
+
+<?xml version="1.0"?>
+<doc>
+<assembly>
+<name>GiveHelp</name>
+</assembly>
+<members>
+<member name="T:GiveHelp.GiveHelpTransforms">
+<remarks>
+Class that contains functions to do transformations to help
+files. The source XML is loaded into the <see
+cref="P:GiveHelp.GiveHelpTransforms.SourceXML"/> property
+(e.g. <c><I>obj</I>.SourceXML = "<I>XML goes here</I>"
+</c>). One of the associated member functions (<see
+cref="M:GiveHelp.GiveHelpTransforms.
+GiveMemberListHTMLHelp(System.String)"/>, <see
+cref="M:GiveHelp.GiveHelpTransforms.GiveMemberHTMLHelp
+(System.String)"/>) is called to initiate and then return
+the transformation.
+<para>
+<list type="table">
+<listheader>
+<term>Help Page</term>
+<description>Function to call</description>
+</listheader>
+<item><term>List of types</term>
+<description>GiveTypeListHTMLHelp</description></item>
+<item><term>List of members</term>
+<description>GiveMemberListHTMLHelp</description>
+</item>
+<item><term>Help for a single member</term>
+<description>GiveMemberHTMLHelp</description></item>
+</list>
+</para>
+</remarks>
+<permission cref="!:">public</permission>
+<example><code>
+// Создать класс, осуществляющий преобразования
+GiveHelpTransforms ght = new GiveHelpTransforms();
+// Загрузить XML в свойство SourceXML
+ght.LoadXMLFromFile(
+"E:\\Inetpub\\wwwroot\\GiveHelp\\GiveHelpDoc.xml");
+// Выполнить преобразование и вывести строку
+Response.Write(
+ght.GiveMemberHTMLHelp(Request.QueryString.Get("Type"),
+Request.QueryString.Get("Member")) );
+</code></example>
+</member>
+... 
+<member name="P:GiveHelp.GiveHelpTransforms.SourceXML">
+<value>
+The SourceXML property contains the XML that will be used in
+the transformations by the member functions for this class.
+</value>
+<permission cref="!:">public</permission>
+</member>
+</members>
+</doc>
+highlight: cs
+
+Если вы сравните его с исходными XML-комментариями (Листинг 1), то заметите, что некоторые из экспортированных комментариев были отформатированы. Тэги, приведенные в таблице 1, требуют при обработке особого форматирования. Почти все эти тэги форматируются раскрытием атрибута cref. То есть синтаксический анализатор C# изменяет исходное значение атрибута cref: во-первых, определяет классификацию значения (например, является ли оно типом или свойством), во-вторых, раскрывает значение в полное имя. Атрибут cref со значением «MyMember» (т. е. cref=«MyMember») после раскрытия синтаксическим анализатором может выглядеть так:
+M:MyProject.MyType.MyMember  
+М: является классификатором. Компилятор, помещая в XML-документацию ссылки на элементы, классифицирует их одним из пяти способов. Допустимые классификаторы показаны в табл. 2.
+
+Таблица 1. Результаты обработки тэгов
+
+Тэг Результат 
+<exception> Раскрывается атрибут cref 
+<permision> Раскрывается атрибут cref 
+<seealso> Раскрывается атрибут cref 
+<include> Тэги ссылки на включаемые файлы копируются в файл документации 
+<see> Раскрывается атрибут cref 
+
+Таблица 2. Классификаторы
+
+Значение Применяется для: Префикс 
+Тип Классов, делегатов T: 
+Поле Переменных членов F: 
+Метод Процедур и функций M: 
+Свойство Свойств P: 
+Событие Событий E: 
+Неизвестное Ссылки, которую не удалось раскрыть !: 
+
+Другие части раскрытого имени из предыдущего примера тоже значимы. «MyNamespace.MyType.MyMember» — это полное имя (fully qualified name), определенное синтаксическим анализатором C#. Имя можно разбивать на части разделителем (точкой). Каждая часть имеет четкий смысл. MyNamespace представляет простанство имен. MyType - тип, а MyMember является именем элементоа (члена). Если раскрыть значение cref не удается, компилятор ставит перед исходным значением cref префикс ! (таблица 3):.
+
+Примеры cref
+
+Значение атрибута cref Раскрытое имя 
+cref="MyClass" "T:MyProject:MyClass" 
+cref="MyField" "F:MyProject:MyClass.MyField" 
+cref="MyMethod" "M:MyProject:MyClass.MyMethod" 
+cref="MyProperty" "E:MyProject:MyClass.MyProperty" 
+cref="MyEvent" "P:MyProject:MyClass.MyEvent" 
+cref="MyUnknown" "!:MyUnknown" 
+
+Такие классификаторы применяются не только при раскрытии атрибутов cref. Как вы вскоре убедитесь, в XML-документации этот формат используется и для имен элементов. Вот как выглядит базовая высокоуровневая структура XML-документа:
+
+<?xml version="1.0"?>
+<doc>
+<assembly>
+<name>Name</name>
+</assembly>
+<members>
+<member name="name">
+Сюда помещаются XML комментарии
+</member>
+... 
+</members>
+</doc>
+highlight: cs
+
+Первая строка — стандартный заголовок, за которым идет корневой элемент <doc>. Следующий тэг — <assembly>. Под ним находятся тэги <name>, идентифицирующие имена сборок, созданных из кода проекта. Таким образом, обычно встречается только один элемент — <name>. Значение, подставляемое в него компилятором C#, соответствует имени проекта, и егонельзя изменить с помощью XML в исходном коде. Далее размещается блок <members>, содержащий записи для всех элементов, с которыми сопоставлены XML-комментарии. Каждый элемент идентифицируется собственным тэгом <member>. У тэга <member> единственный атрибут — name. Синтаксический анализатор C# генерирует значение этого атрибута в зависимости от имени элемента, с которым связанны тэги комментария. Остальной XML, находящийся внутри тэга <member>, состоит из XML-комментариев.
+
+Генерация справочных файлов
+
+Трудно перечислить все, что можно сделать с документом, в котором содержатся XML-комментарии, но чаще всего на его основе генерируются (с помощью XSLT) страницы справки в формате HTML. Более подробно об этом процессе описано в статье журнала MSDN Magazine за июль 2002 года.
+
+Реклама
+
+каштаны из рыбы. 
+
+
+Главная
+Примеры
+Windows 7
+Windows 8
+Visual Studio 2010
+Элементы управления
+Графика
+Алгоритмы
+Вопрос-ответ
+Статьи
+Шутки
+Уголок хакера
+Книги
+Справочники
+Уроки
+Игры
+MS Office
+База знаний
+Ссылки
+Пятница
+
+
+Реклама
+   
+
+Рейтинг@Mail.ru  © 2009 А.Климов 
+
+
+
+Исходные коды программ и игр
+программируй и твори!  
+
+
+Первая страница
+--------------------------------------------------------------------------------
+
+Исходные коды
+--------------------------------------------------------------------------------
+?Исходники C++
+?Исходники C#
+Программы
+--------------------------------------------------------------------------------
+?Прикладные
+?Игры
+Статьи
+--------------------------------------------------------------------------------
+?История программирования
+?Среды программирования
+?Разное о программировании
+Лицензионный софт
+--------------------------------------------------------------------------------
+?Программирование
+?Сеть и интернет
+?Графика и дизайн
+?Антивирусы. Безопасность
+Книги
+--------------------------------------------------------------------------------
+ ?Программирование
+?Мультимедиа
+?Базы данных и СУБД
+Контакты
+--------------------------------------------------------------------------------
+
+  
+ 
+Исходный код калькулятора CalcK1.0 на C#
+исходные коды на языке программирования C# 
+исходник калькулятора на C#Исходник калькулятора максимально упрощен при довольно красивом графическом интерфейсе и является полностью работоспособным приложением для арифметических вычислений. А также базой для дальнейшего совершенствования приложения. 
+
+Исходный код приложения состоит из двух модулей:
+Calc2.cs - главная форма приложения. На форме располагается цифровое табло, состоящее из элемента Panel, содержащий на себе две текстовые метки Label. Одна метка высвечивает результаты расчета, другая число находящееся в памяти калькулятора. Далее на форме располагаются 30 кнопок для набора чисел и действиями над ними. 
+
+SetDlg.cs - диалоговое окно настроек калькулятора. Пользователь может изменить количество знаков после запятой, задать разделитель десятичных по своему усмотрению при копировании в буфер обмена, установить уровень прозрачности окна приложения при длительном простое между вычислениями. 
+
+Кнопки упорядочены по группам, имеющие каждая свой цвет, свой обработчик события Click на все кнопки группы. Для удобства определения кликнутой кнопки используется свойство Tag имеющее тип object, а стало быть этому свойству можно присвоить любой тип данных .NET. В дальнейшем используя оператор switch определяем рабочую кнопку и связанное с ней действие. 
+Алгоритм работы программы на уровне пользователя: 	I. Сброс всех регистров или включение программы;
+	II. Нажатие на цифровую клавишу:
+		1. Набор числа после п.0 - набираем число в верхний регистр, 
+		   переход к п.II или   п.I;
+		2. Набор числа после п.I.1 - сброс нижнего регистра в ноль и 
+		   заново набираем   число в нижний регистр, переход к п.II или п.I;
+	III. Нажатие на функциональную клавишу:
+		1. если нажаты +, -, *, / происходит запоминание последней 
+		   нажатой операционной   клавишы, перевод на возможность 
+		   набора в нижний регистр, переход к п.II или   п.I.2 или п.I;
+		2. если нажата клавиша Равно, после п.I.1, продолжаем набор числа;
+		3. если нажата клавиша Равно после п.I.1:
+			а. первое нажатие - нижнему регистру присваиваем
+			   значение верхнего и   высчитываем результат согласно
+			   нажатой операционной клавише, далее переход к п.II или п.I;
+			б. последующие нажатия - высчитываем результат согласно нажатой
+			   операционной   клавише, верхнему регистру присваивается 
+			   результат, нижний регистр не изменяется, далее переход к
+ 			   п.II или п.I;
+	IV. если нажата клавиша Равно после п.I.2 - высчитываем результат 
+	    согласно   нажатой операционной клавише, далее верхнему регистру 
+		присваиваем результат,   нижний регистр не изменяем, 
+		переход к п.II или п.I;
+	  
+
+Среды программирования Microsoft Visual Studio.NET 2008, Microsoft Visual Studio.NET 2008 Express Edition и выше, открытая среда программирования для C# SharpDevelop 3.0. и выше. 
+Microsoft .NET Framework SDK v2.0 и выше. Подробные комментарии важных строк исходного кода
+
+Файл исходника Количество загрузок Размер 
+calck.rar 9527 74 КБ 
+
+--------------------------------------------------------------------------------
+
+ << Исходный код программы-таймера рабочего времени на компьютере TimeWork1.0 вверх Исходный код игры мозаика MosaicK1.0 >>  
+  
+
+  
+Дополнительные источники
+
+
+CodingRUS.ru - 
+Delphi/C++/ Pascal/Basic/
+ Java/Assembler/ PHP/Perl
+
+CodeNet - все для
+ программиста 
+
+ Easylab - бесплатные лабораторные, иходники, литература по программированию на C#, C++, Java!  
+
+ Программирование на Паскаль, Delphi, HTML верстка  
+
+ 
+  
+ 
+
+
+© Copyright 2008-2012 InterestPrograms.ru
+При использовании материалов данного сайта прямая ссылка на InterestPrograms.ru обязательна.
+ 
+
+Яндекс цитирования  Rambler's Top100       HotLog    
+
+    
+
+ 
+
+
+
+ Россия (Pусский) 
+
+Вход 
+
+
+
+   
+
+
+
+Главная Новости Библиотека Обучение Скачать Мероприятия Форумы Поддержка 
+
+
+
+
+MSDN Library
+
+Средства разработки
+
+Visual Studio 2012
+
+Visual Basic и Visual C#
+
+Visual C#
+
+Руководство по программированию на C#
+
+Комментарии к XML-документации (Руководство по программированию на C#)
+
+Рекомендуемые теги для комментариев документации (Руководство по программированию на C#)
+
+Обработка XML-файла (Руководство по программированию на C#)
+
+Разделители для тегов в документации (Руководство по программированию на C#)
+
+Практическое руководство. Использование XML-документации (Руководство по программированию в C#)
+Развернуть Свернуть  
+
+
+
+Данная статья переведена автоматически. Наведите указатель мыши на предложения в статье, чтобы просмотреть перевод. Дополнительные сведения.
+ 
+Перевод 
+
+Текст оригинала 
+ 
+
+
+XML Documentation Comments (C# Programming Guide)
+
+
+ Visual Studio 2012  
+
+
+
+
+Другие версии  
+
+ 
+
+
+
+
+ 1 из 3 оценили этот материал как полезный - Оценить эту тему  
+
+
+
+
+
+
+
+In Visual C# you can create documentation for your code by including XML tags in special comment fields in the source code directly before the code block they refer to. For example: 
+
+
+
+
+
+
+Копировать
+
+
+/// <summary>
+///  This class performs an important function.
+/// </summary>
+public class MyClass{}
+
+
+When you compile with /doc the compiler will search for all XML tags in the source code and create an XML documentation file. To create the final documentation based on the compiler-generated file, you can create a custom tool, or use a tool such as Sandcastle. 
+
+
+
+NoteNote
+
+
+The XML doc comments are not metadata; they are not included in the compiled assembly and therefore they are not accessible through reflection.
+ 
+
+
+
+In This Section 
+
+--------------------------------------------------------------------------------
+
+
+ •
+Recommended Tags for Documentation Comments  
+
+•
+Processing the XML File  
+
+•
+Delimiters for Documentation Tags  
+
+•
+How to: Use the XML Documentation Features  
+
+
+
+
+Related Sections 
+
+--------------------------------------------------------------------------------
+
+
+ 
+For more information, see: 
+•
+/doc (Process Documentation Comments)  
+
+
+
+
+C# Language Specification 
+
+--------------------------------------------------------------------------------
+
+
+ 
+
+
+For more information, see the C# Language Specification. The language specification is the definitive source for C# syntax and usage.
+
+
+
+See Also 
+
+--------------------------------------------------------------------------------
+
+
+ 
+Concepts
+
+C# Programming Guide  
+
+
+ 
+
+ Была ли вам полезна эта информация? Да Нет 
+
+
+
+
+
+
+
+
+
+
+
+
+
+ 
+
+
+
+Добавления сообщества
+ДОБАВИТЬ  
+
+
+   
+
+
+
+
+
+
+
+© 2013 Microsoft. Все права защищены.
+
+
+
+
+
+
+
+Управление профилем 
+
+|
+Юридическая информация 
+
+|
+Бюллетень MSDN 
+
+|
+Условия использования 
+
+
+
+|
+
+
+Site Feedback  Обратная связь  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Товарные знаки 
+
+|
+Конфиденциальность 
+
+ 
+
+
+
+главная
+всё вместе
+подсайт судьбы
+
+
+science img movies story mind hahahahah politics android library cosmos historyporn games soap english auto kitchen facts guns sprosi math neuroscience diy sciencefiction kunst moscow nerd architecture animals photo announcements worldpolitics avia calligraphy sub 
+…   
+ 
+d3.ru 
+
+
+
+
+
+
+К сожалению, вы не можете сюда войти. И вот почему.
+
+ 
+
+
+
+
+ 
+  
+   
+  
+   
+  
+  
+
+
+
+
+
+
+
+ Сайты Мы 
+
+
+     
+
+
+
+ 
+  
+
+
+
+
+Популярное Новое Лучшее 
+ 
+
+
+
+
+
+
+
+ 
+03д 15ч 18м
+   
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+ 
+
+
+
+ 
+
+
+Посты недели
+
+Письмо г–ну Медведеву, Мирдверьмячу +1439  
+Dekabrist 
+
+У несовершеннолетней дочери Собянина нашлась квартира за 173 млн. рублей.  +748  
+weltbewegung 
+
+Тиньков, ты, наверное, забыл, что в отличие от президента в нашей стране банк еще можно сменить +664  
+ethaniel 
+
+А их сердца, в случае автомобильной катастрофы, зарывать в землю. Или сжигать, как непригодные для продолжения чьей–либо жизни!  +657  
+glavryba 
+
+Воронежец требует с банка 24 миллиона рублей компенсации за нарушение пунктов кредитного договора, заключенного на его условиях +654  
+lamo4ok 
+
+Мечеть и допустимый уровень шума +627  
+tabishev 
+
+Открытие +563  
+ob1 
+
+Банки +533  
+Doddy 
+
+Враги, кругом враги!  +526  
+GeRom 
+
+Уничтожение SEO–вируса в зародыше +497  
+ZorgeZorge 
+
+
+
+
+ 
+
+
+
+ 
+
+
+Самые комментируемые посты за неделю
+
+Тиньков, ты, наверное, забыл, что в отличие от президента в нашей стране банк еще можно сменить 
+ethaniel · 871 комментарий 
+
+А их сердца, в случае автомобильной катастрофы, зарывать в землю. Или сжигать, как непригодные для продолжения чьей–либо жизни! 
+glavryba · 840 комментариев 
+
+Розовые очки 
+Riska · 749 комментариев 
+
+Воронежец требует с банка 24 миллиона рублей компенсации за нарушение пунктов кредитного договора, заключенного на его условиях 
+lamo4ok · 724 комментария 
+
+Если Аллах не обновит Луну 
+weltbewegung · 705 комментариев 
+
+Письмо г–ну Медведеву, Мирдверьмячу 
+Dekabrist · 703 комментария 
+
+Павел Дуров объяснил, почему он не будет поддерживать Навального 
+kruml · 534 комментария 
+
+[Шеф–повар] Технолог пищевой промышленности. 
+Nave · 449 комментариев 
+
+Олимпийский бойкот 
+pfifer · 409 комментариев 
+
+Враги, кругом враги! 
+GeRom · 392 комментария 
+
+
+
+
+
+
+Открытие
+ 
+
+Открытие
+
+Написал ob1 , вчера в 14.32 на politota · 66 комментариев            
+563
+
+
+
+Кого везёт не знаю, но за рулем сам премьер–министр
+ 
+Кого везёт не знаю, но за рулем сам премьер–министр
+Премьер–министр Норвегии Йенс Столтенберг один день тайно работал водителем столичного такси. Настолько тайно, что об этом узнали лишь спустя два месяца.
+
+Написал Leshnevsky , сегодня в 02.25 на politota · 22 комментария         
+60
+
+
+
+Напоминание о войне
+ 
+
+Напоминание о войне	
+Это башня одного из грузинских танков (пять лет назад группу из трех танков подбили на одном из перекрестков Цхинвала), которую из–за взрыва боекомплекта унесло на несколько десятков метров. Она пробила козырек здания и застряла в крыльце. При реконструкции здания было принято решение оставить её на месте. Сильный памятник получился.
+
+Написал avialn , вчера в 20.47 на politics · 67 комментариев         
+157
+
+
+
+Пешеходный переход
+ 
+Пешеходный переход
+У посольства Российской федерации в Швеции (Стокгольм).
+
+Написал crea7or , вчера в 23.02 на politics · 94 комментария         
+93
+
+
+
+Суровая челябинская журналистика
+ 
+Суровая челябинская журналистика
+
+Написал aqua1 , вчера в 15.42 на kucha · 69 комментариев            
+247
+
+
+
+Недельный кинодайджест
+ 
+Недельный кинодайджест
+• Damon Lindelof, автор сценария кинофильмов Prometheus, Cowboys & Aliens, Star Trek Into Darkness и World War Z сетует на то, что летние блокбастеры, переходя за $100 миллионов в бюджете одновременно резко теряют в вариантах описываемых событий, т.к. ожидается, что масштаб столь крупного проекта тоже не подкачает. "в прошлом Супермену можно было унести Луис Лейн от землетрясения в Калифорнии, и все были довольны", сейчас же необходимо придумать "trailer moments", а спасти весь мир, не меньше. Деймон несколько раз повторяет, что и сам грешен, т.к. сложно идти против тренда, но в то же время отмечает, что устал от бесконечного потока "destruction porn".
+
+• Китайские партнёры задерживают выплаты голливудским студиям уже несколько месяцев. по прошлогоднему соглашению в рамках ВТО иностранные студии забирают домой 25% прибыли (revenue) (до этого было от 13 до 17%). китайские власти согласились, что никакие налоговые вычеты не будут трогать эти 25%, но прошлой осенью всё же решили, что купающийся в золоте Голливуд нельзя обойти двухпроцентным налогом на роскошь. с любой другой страной разговор был бы короткий, но Китай уже давно прочно держит первое место по международным сборам, и продюсеры вынуждены снова и снова пытаться решить дело миром.
+
+• не только в нашей стране есть издатели, считающие своего зрителя тупым скотом (глядя на иные локализованные названия и выбор фильмов для проката). корейский апокалиптический Snowpiercer (2013) уже хорошо стартовал на родине, и в ближайшие недели развернётся по всему миру, но в США произошла заминка. Харви Вайнштейн, выкупивший права на распространение фильма, считает, что из него нужно вырезать 20 минут развития персонажей, чтобы тот уложился в традионные каноны экшена, и его смогла понять аудитория Айовы и Оклахомы. остальным штатам, видимо, придётся подписаться на наши кинорелизы недели и ждать человеческой редакции.
+
+• Jeff Bewkes, Time Warner CEO (концерна, куда входит и HBO), на вопрос "не рассматриваете ли вы популярность Game of Thrones на трекерах как комплимент сериалу?" ответил: "Должен признать, вы правы. [...] если говорить о людях, которые смотрят [сериал] без подписки — это создаёт невероятный эффект из уст в уста. Мы уже 20–30 лет имеем дело с подобным — люди делятся друг с другом своим подключением, пробрасывают кабеля по стенам зданий. Наш опыт показывает, что [пиратство] ведёт к увеличению подписчиков. Мне кажется, вы правы в том, что Game of Thrones — самый популярный у пиратов сериал в мире. Это лучше, чем [премия] Эмми". до кучи — шизофренично подробная карта мира "Игры престолов".
+
+• Warner Bros. недавно распрощались со студией Legendary, с которой на протяжении пяти лет снимали прекрасные фильмы. теперь Legendary заключили соглашение с Universal, а WB скребёт по сусекам. долгострой "Акира" (см. п.5), похоже, снова ожил.
+
+• старые песни о главном: создатели и главные актёры провалившегося в прокате The Lone Ranger обвиняют в этом... злобную мафию кинокритиков. блогер /film с горькой улыбкой размышляет, чего можно было достичь, если бы у критиков и в самом деле была подобная власть.
+
+• "Космическая одиссея 2001" (1968) Стэнли Кубрика была последним фильмом, который показывал высадку людей на Луну до того как американские космонавты высадились там по–настоящему. сорок лет спустя сторонники теории заговора настаивают, что это не совпадение, а видеосъёмка Нила Армстронга — мистификация, срежиссированная Кубриком из оставшихся после съёмок фильма материалов и реквизита. плюс другие не столь известные факты о фильме.
+
+• любопытный список для апологетов всего оригинального: десять самых кассовых актёров, которые никогда (или пока ещё) не снимались в сиквелах (плюс Бен Аффлек).
+
+• для физиономии Аладдина за основу взяли лицо Тома Круза, на роль его штанов пригласили ЭмСи Хаммера, и другие иллюстрированные занимательные факты из истории лучшего фильма студии "Дисней" согласно редакции нашего уютного киножурнала.
+
+• в заголовке постер к шестому сезону "Сынов анархии".
+
+Написал Alpas , вчера в 19.42 на movies · 41 комментарий         
+91
+
+
+
+И если прокурор остроумно замечает что человек с фамилией Фарбер не может быть честным, а мы молчим, то завтра кого–нибудь посадят за то, что он еврей.
+ 
+
+угадайте автора фразы.
+
+Написал EnfantTerrible , вчера в 15.14 на politota · 138 комментариев            
+169
+
+
+
+Главный сжигатель сердец рассуждает о журналистике. 1999 год
+ 
+
+	
+Пророческие слова.
+
+Написал PaFinder , вчера в 11.30 на politota · 88 комментариев            
+236
+
+
+
+The Economist согласен с d3–юзером Otaqsun
+ 
+The Economist согласен с d3–юзером Otaqsun
+Как вчера заметил otaqsun, "С такими от Путина, диалог вести трудно. Это как в том примере игры в шахматы с голубем, раскидает фигуры, обосрет доску и улетит к своим рассказывая что он победит" (орфография и пунктуация автора сохранены). Похоже, что The Economist согласен c Otaqsun.
+
+Перевод: Эй, так себя не ведут!
+
+Написал nikolay_arefiev , вчера в 08.18 на politota · 13 комментариев         
+63
+
+
+
+И снова есть 100.000
+ 
+
+И снова есть 100.000	
+	+1 всем, кто проголосовал
+
+Написал kirgudu , 10 Августа 2013 в 21.46 на politota · 66 комментариев            
+322
+
+
+
+Трус
+ 
+
+Трус	
+Собянин отказался от участия в дебатах. Кто бы сомневался.
+
+Написал spoon , 10 Августа 2013 в 18.39 на politota · 191 комментарий            
+458
+
+
+
+А их сердца, в случае автомобильной катастрофы, зарывать в землю. Или сжигать, как непригодные для продолжения чьей–либо жизни!
+ 
+
+	
+Россия 1, тридцать секунд сладкого прямого эфира.
+
+Написал glavryba , 10 Августа 2013 в 16.12 на politota · 840 комментариев            
+657
+
+
+
+Паутина Шарлотты (18+)
+ 
+
+Паутина Шарлотты (18+)	
+Девочку на КДПВ зовут Шарлотта, она живет в Колорадо и ей шесть лет. Она очень любит, как и все дети, вместе с родителями кататься на велосипедах, лазить по скалам, смотреть мультики и есть мороженое. Одним словом, весело проводить то самое время, которое каждый из нас, я уверен, вспоминает как самое счастливое и беззаботное. Она уже практически без запинок читает и болтает без умолку.
+Когда в 2000 году избиратели штата Колорадо большинством голосов поддержали поправку, допускающую применение медицинской марихуаны, родители Шарлотты, Мэтт и Пэйдж Фиги, проголосовали против. Однако, жизнь заставила их поменять свое отношение к данному медицинскому препарату.
+В их семье появились близняшки. Однажды, когда Мэтт и Пэйдж купали их, у Шарлотты случился первый приступ. Перепуганные родители провели полное медицинское обследование малышки, но врачи сразу не смогли сказать, что это за заболевание. Приступы стали происходить все чаще и чаще. Лечение барбитуратами и бенздиазепинами не дало желаемого эффекта. Девочка стала отставать в развитии от близняшки. 
+Когда Шарлотте было два с половиной года, биохимический анализ подтвердил наличие у нее мутации гена SCN1A, который кодирует синтез белка Nav1.1, ответственного за правильную работу натриевых ионных каналов, и, соответственно, за передачу нервных импульсов. Эта мутация присутствует у подавляющего большинства пациентов, страдающих синдромом Драве.
+Назначенная позже кетогенная диета совместно с приемом экспериментальных лекарств помогли девочке, но ненадолго. В пять лет приступы возобновились с еще большей силой и уже практически не поддавались терапии. Ребенок потерял возможность ходить, говорить и есть. Поняв, что на данный момент все средства опробованы, родители Шарлотты стали искать нечто "неклассическое". После долгих сомнений, консультаций со специалистами, которые все–таки согласились с доводами родителей, они пошли, возможно, на самый большой и неоправданный риск — они решили добавлять в еду Шарлотте в очень малых дозах масло на основе медицинской марихуаны.
+В медицинской марихуане практически нет психоактивного тетрагиброканнабинола и очень велико содержание каннабидиола, который не влияет на психику человека. В штате Колорадо применение медицинской марихуаны разрешено, если пациент страдает от рака, глаукомы, ВИЧ/СПИДа, мышечных спазмов, эпилепсии, изнуряющих болей и тошноты, а также от мышечной атрофии. Но это относится ко взрослым пациентам, поэтому риск использования марихуаны при лечении ребенка очень высок.
+Но результаты были впечатляющими. Приступы не повторились через час, через два часа. Они не повторились в течение последующих семи дней.
+Сейчас Шарлотта — обычный ребенок, как я уже упомянул вначале поста. Приступы, очень слабые, случаются у нее теперь два–три раза в месяц. Выработать методику лечения и подобрать оптимальную дозировку масла на основе медицинской марихуаны — около 8 мг масла на килограмм веса — ей помогли братья Стэнли, которых прозвали "Робин Гуды марихуаны". Затем они организовали Realm of Caring Foundation, который сразу же получил неофициальное название Charlotte's Web ("Братство Шарлотты" — вольный перевод автора поста). Сейчас в центре проходят лечение практически бесплатно 41 пациент. Плата берется чисто символическая из–за того, что во всех остальных случаях братья Стэнли будут иметь проблемы с законом.
+P.S. — автор поста, работающий медицинским химиком и осознающий возможную опасность упомянутых веществ, предупреждает, что этот пост не является рекламой наркотиков и нетрадиционных способов лечения. В борьбе science и story победил science. Если администрация подсайта решит удалить пост, то автор отнесется с пониманием к такому развитию событий. Оригинал статьи тут (англ).
+Название поста изменено по просьбе автора.
+
+Написал BioSynth , 10 Августа 2013 в 18.10 на science · 191 комментарий            
+376
+
+
+
+13 отдел синедриона ЗАО "РПЦ"
+ 
+
+Я вот прям так и представил людей в черных латексных балахонах ( что бы кровь проще было смывать), с бледными лицами. Они приезжают на каждое ДТП со смертельным исходом. При их приближении весь шум и гам стихает, толпа зевак замирает. Казаки становятся серьезными, и начинают нервно сжимать нагайки, старушки начинают тихонько хныкать молитвы, девушки белеют лицами, и покрепче прижимают свои чад к подолам сарафанов. От поврежденных автомобилей смущенно отходят спасатели, сотрудники ГИБДД прекращают заполнять бумаги, и начинают раболепно суетиться за спинами и молчаливых людей в черном. Те, не обращая ни на кого внимания, молча подходят к трупам, достают из саквояжей странные приборы, в течении нескольких минут колдуют на телами. После чего, не спеша убирают свою электронику в чемоданчики, так же молча кладут на лбы жертв ДТП кусочки ткани, и удаляются. Самый нетерпеливый сотрудник ГАИ побегает к телам и вчитывается в надписи на клочках ткани — "Именем 13 отдела синедриона ЗАО "РПЦ" постановляю — Сей раб божий не был педерастом при жизне земной, и не будет им во веке веков, аминь." Тоже самое написано на лбах у других жертв ДТП. Гаишник, растеряв уже все остатки спеси и надменности, радостно выкрикивает в толпу — "Тут нет пидарасов, все нормальные люди!!!". По толпе проносится вздох облегчения, кто–то затягивает "Боже царя храни", старушки начинают осенять себя крестным знаменем, и бить поклоны, казаки улыбаться, и строить глазки девушкам, девушки же, в свою очередь, перестают нервно прижимать к подолам своих сарафанов детей, и робко отвечать на заигрывания казаков. Как из под земли появляются медики, оперативно грузят трупы в кареты скорой помощи, и уносятся в морг под занудный вой сирен. Сотрудники ГИБДД, и спасатели возвращаются к своим обязанностям, дело спорится, ибо все теперь знают, что эти люди не были геями, а значит их органы спасут в скором времени много ни в чем не повинных жизней. А над площадью разносится "Боже царя храни"
+
+Написал ortigr, сегодня в 18.12
+
+Написал ZumZum , 10 Августа 2013 в 19.42 на quotes · 39 комментариев         
+280
+
+
+
+ФАРпост №28. Мэрия или бал уродов?
+ 
+
+	
+Финал просто прекрасен.
+
+Написал Tr0n , 10 Августа 2013 в 14.19 на auto · 112 комментариев            
+465
+
+
+
+Джереми Бентам: гуманист, правовед и музейный экспонат
+ 
+Джереми Бентам: гуманист, правовед и музейный экспонат
+Джереми Бентам родился в 1748 году в семье лондонского юриста. Рос одаренным ребенком: с малых лет читал фолианты английской истории, в три года начал изучать латынь, а в 12 поступил в Оксфорд. 
+
+Получив юридическое образование Бентам был допущен к адвокатской практике, но предпочел науку. На этом поприще он преуспел, написав произведений на 70 томов, добившись внедрения в практику своих прогрессивных идей и вырастив плеяду выдающихся мыслителей. 
+
+Ученый доказывал, что любой человек стремится обеспечить в первую очередь собственные интересы. В основе этого лежит природное желание получить как можно больше удовольствия, избегая по возможности страданий. Развивая свою идею, Бентам полагал, что общественный интерес есть сумма индивидуальных интересов. Из этого вытекало общее правило управления государством: "Основа нравственности и законодательства заключается в наибольшем счастье наибольшего числа людей". Идея получила название "утилитаризма" от английского слова utility — "польза". 
+
+Бентам активно стремился влиять на практику. Убежденный, что всякий преступник совершает злодеяния для удовольствия, и что ответом на это может быть только та мера наказания, которая перевесит преступное удовольствие, он выступал за соразмерность наказаний. В итоге чрезмерно жесткая в ту эпоху система уголовных наказаний в Великобритании (вешали даже за мелкие кражи) стала смягчаться. Если в начале 19–го века существовало 250 преступлений, которые карались смертью, то к 1861 году их осталось всего четыре. 
+
+Ученый также разработал модель идеально обозримой тюрьмы, которая была названа "Паноптикум" (от греческих слов pan — "все" и optikos — "зрительный"), о чем здесь уже писали. Такая тюрьма представляла собой круглое здание, где в центре располагалась будка с невидимыми для заключенных надзирателями. В последующем модель использовали не только в Британии, но и в США, Мексике, на Кубе и других странах. 
+
+Интересно, что поглощенный наукой Бентам никогда не завел семьи и даже свою кончину использовал сугубо в научных целях. По завещанию тело ученого препарировали на анатомическом занятии. После этого на скелет надели одежду, а также прикрепили восковую голову, воспроизводившую черты лица Бентама. Этот экспонат до сих пор хранится в застекленной кабинке в лондонском Юниверсити Колледже — элитном учебном заведении, одним из основателей являлся Бентам. 
+
+Еще много всего полезного сделал Джереми Бентам. Но главной его заслугой считается популяризация принципа, в соответствии с которым каждый закон и государственное учреждение должны проходить испытание на соответствие общему благу. 
+
+Вот несколько хороших афоризмов, приписываемых ученому: 
+— "Деспотизм и анархия всегда рядом"; 
+— "Бесполезно рассуждать об интересах общества, не имея представления в чем заключаются интересы человека"; 
+— "Протягивая руки к звездам, мы слишком часто забываем о цветах под ногами". 
+
+А на картинке для привлечения внимания — то, что завещал Джереми Бентам.
+
+Написал Fergan_Trop , 10 Августа 2013 в 21.49 на science · 18 комментариев         
+79
+
+
+
+[Арборист] Работа и отдых на деревьях
+ 
+
+Примерно два года с перерывами занимаюсь арбористикой. Это ответвление промышленного альпинизма, связанное с высотной работой на деревьях. Бывает люди удивляются, потому что не знают что вообще такое бывает, что кто–то работает на деревьях. Вот какие бывают основные задачи:
+* Санитарная обрезка деревьев. Ножовкой или маленькой бензопилой удаляются сухие и сломанные ветки со ствола. Место среза иногда обрабатывается садовым варом или средством "РанНет" для лучшего заживления среза.
+* Обработка от короеда. Последние годы ели сильно страдают от короеда. Поэтому три раза в сезон (апрель, июнь, август) стволы обрабатываются из ручного распылителя средством "Клиппер".
+* Удаление мёртвых, аварийных деревьев. Когда дерево нельзя валить целиком, оно разбирается по частям сверзу вниз. Если условия позволяют, то фрагменты сбрасываются. Если условия не позволяют, то фрагменты спускаются на верёвке. Самая опасная и сложная работа в арбористике.
+* Спасение кошек с деревьев, которые сами не могут спуститься потому что залезли слишком высоко.
+* Монтаж разных конструкций на деревьях. Например, я вешал фонарь на растянутом тросе и работал на строительстве верёвочных парков.
+
+Кроме работы, на деревьях можно просто приятно проводить время. В разных странах довольно популярно рекреативное древолазание, в России пока нет. У меня есть сайт по этой теме, там есть некоторые материалы. Всё никак не соберусь, чтобы записать обучающее видео. Адрес сайта: http://drevolazanie.ru Например, можно повесить гамаки в кроне дерева на высоте 25 метров и переночевать в них. Так мы и делали.
+
+Написал alesha702 , 10 Августа 2013 в 19.11 на sprosi · 51 комментарий         
+90
+
+
+
+«Лунный заяц»
+ 
+
+«Лунный заяц»	
+Автор фото: Steve Adams.
+
+Написал ikocs , 10 Августа 2013 в 14.42 на img · 18 комментариев            
+197
+
+
+
+Украл всю социологию
+ 
+
+Профессор Кубанского госуниверситета Михаил Савва получил грант от правительства Краснодарского края на проведение социологического опроса. И провел его. Но расплатился с интервьюерами неправильными деньгами, не теми, которые он получил от государства, а какими–то другими. Так утверждает следствие. Профессор сидит уже 4 месяца, вчера суд, проходивший в закрытом режиме, продлил арест еще на 2. Дочери профессора, пытавшейся попасть на заседание, прямо в здании суда прилетело по лицу.
+
+Предыстория: в середине марта Управление ФСБ по Краснодарскому краю в рамках кампании по выявлению иностранных агентов проводило массовые проверки НКО. Савва, занимавший пост замглавы Совета по правам человека при губернаторе Краснодарского края, публично заявил о нарушениях, допущенных в ходе этих проверок.
+
+Профессору посоветовали меньше бренчать, ведь у самого рыло в пушку – гранты брал, и не только у Ткачева, но и у американских фондов. Савва не внял. 15 апреля он собрался выступить в Москве на заседании Совета при президенте РФ по развитию гражданского общества и правам человека с докладом о проверках НКО на Кубани. Но не успел – 12 апреля его арестовали. Следствие по делу о хищении 366 тыс. руб., выделенных на соцопрос, который Савва провел за какие–то другие, пока не установленные средства, ведет ФСБ. Все судебные заседания по мере пресечения проводятся в закрытом режиме. Еще подробности.
+
+Написал Passer , 10 Августа 2013 в 05.37 на politota · 28 комментариев            
+233
+
+
+
+[Больной антероградной амнезией]
+ 
+
+Мне 63 года. Болен уже больше 10 лет. Был период ремиссии, но недолговременный. Заболевание характеризуется нарушением работы кратковременной памяти. Долговременная работает нормально, я отлично помню, что было до 52 лет. Обычный срок хранения кратковременных воспоминаний — 10–15 минут. После этого я забываю, что было ранее. Тем не менее, кое–что остается, но очень мало. После 5–10 повторений могу запомнить несложную новую информацию. Время от времени забываю и её.
+
+Краткие биографические сведения: у меня есть три бывших жены, сын и дочь, по образованию я геолог и топограф. Профессионально играл в футбол и волейбол. Этнически странная смесь эстонцев и татар. Родился в Ленинграде. Работал всю жизнь в одном месте, НИИ, сначала в поле, потом на камиралке (От юзера: не знаю точно что это, записал на слух. Как я понял — работа "за столом").
+
+Вы можете задавать любые вопросы, отвечу на всё, что смогу.
+
+[Пост написан родственником, он же будет писать ответы со слов автора, со всеми разъяснениями, если таковые потребуются. Автор поста будет здесь часа 3–4. Также он попросил сохранить его анонимность и не задавать вопросы, которые могут раскрыть его личность. У юзера есть кое–какие данные, которые автор не помнит, я раскрою их с разрешения автора.]
+
+Написал cyberworm , 10 Августа 2013 в 00.48 на sprosi · 204 комментария            
+425
+
+
+
+РЖД — Самая поездатая забота о пассажирах!
+ 
+РЖД — Самая поездатая забота о пассажирах!
+И животным поезда!
+
+Написал glavryba , 10 Августа 2013 в 06.19 на youtube · 52 комментария            
+134
+
+
+
+И снова Мытищи
+ 
+И снова Мытищи
+Опора пешеходного моста через Яузу возле 10 школы.
+
+Написал bellabs , 10 Августа 2013 в 02.36 на img · 26 комментариев            
+191
+
+
+
+Житель Воронежа уезжает из страны после угроз Тинькова
+ 
+
+Житель Воронежа уезжает из страны после угроз Тинькова	
+«Вчера вечером приехал домой, до меня дозвонились адвокаты и рассказали о заявлениях Тинькова с угрозами. Это человек со своими связями, деньгами напрямую говорит, что я буду сидеть четыре года. И у меня вопрос: а почему четыре года, а не один, не два и не три? То есть человек уже с кем–то переговорил, кому–то что–то дал, и ему пообещали посадить меня на четыре года?.. Я извиняюсь, но с сегодняшнего дня меня в Российской Федерации больше не будет», – сказал Дмитрий Агарков.
+Полное интервью.
+
+Написал Underline , 10 Августа 2013 в 00.11 на politics · 152 комментария            
+270
+
+
+
+Карта Украины 1712 года [1676?1400]
+ 
+
+Карта Украины 1712 года [1676?1400]	
+Этот картографический шедевр создан в 1712 году знаменитым немецким картографом Иоганном Гоманном. Название, в переводе с латыни, звучит так: "Украина или казацкая земля с прилегающими провинциями Валахии, Молдавии и Малой Татарии".
+
+Самый первый её экземпляр появился в 1712 году, но в течении всего 18 века неоднократно переиздавался. Среди западных историков–любителей это одно из самых популярных изображений древней Украины.
+
+Ещё хочу обратить ваше внимание на западную часть карты. На ней четко видно [увеличенный фрагмент], что Львов принадлежит к украинской территории. Так как это очень спекулятивная тема, и часто распускаются слухи, что Львов стал частью Украины лишь благодаря Сталину, а до этого никогда ею не был. 
+
+Более детально рассмотреть эту карту можно здесь.
+
+PS а если вам нравятся карты, то подписывайтесь на мой подсайт любителей всяких чертежей — http://mapporn.d3.ru/ :)
+
+Написал Surikat , 10 Августа 2013 в 03.16 на ukraine · 123 комментария         
+123
+
+
+
+У несовершеннолетней дочери Собянина нашлась квартира за 173 млн. рублей.
+ 
+
+Квартира площадью 308 кв. м принадлежащая несовершеннолетней дочери Собянина — Ольге Сергеевне (1997 г. р.) стоит примерно в 6 раз больше, чем его возможный доход за последние 10 лет.
+
+Написал weltbewegung , 9 Августа 2013 в 16.17 на politota · 383 комментария            
+748
+
+
+
+Эдинбургский покупатель трупов
+ 
+Эдинбургский покупатель трупов
+На дворе стоял пасмурный ноябрь 1827 года. В один из дней в дом эдинбургского врача Роберта Нокса постучались. У порога, закутавшись в плащи и надвинув шляпы на самые глаза, стояли два незнакомца. Под их ногами лежал труп. 
+
+Двери Нокса всегда были открыты для гостей с мертвецами, ведь он преподавал анатомию в известной в Шотландии анатомической школе. Он придерживался "французской модели" обучения, которая подразумевала обеспечение каждого студента отдельным трупом. Студентов было много, поэтому материала для обучения хронически не хватало. Обычно препарировали тела преступников, но их поступало все меньше, поскольку в Великобритании продолжалось смягчение законов и смертная казнь становилась редкостью. С другой стороны, родственников умерших людей почти невозможно было уговорить на продажу или передачу трупа — религиозные чувства верующих были еще глубоки. 
+
+Тем временем посетители представились как Уильям Хэйр и Уильям Берк. За чашкой чая они любезно рассказали, что родственники умершего продали им труп, а они хотели бы не без выгоды его перепродать. Анатомическая школа испытывала острую нехватку в товаре и Нокс не стал задавать лишних вопросов. Быстро сторговались на значительной сумме — 7 фунтах и 10 шиллингах. 
+
+Как выяснилось значительно позже, труп принадлежал безвременно почившему жильцу ночлежки "У Таннера". Владельцем же заведения был вышеназванный Уильям Хэйр. Последнему не удалось найти родственников покойника и он решил возместить неоплаченное проживание известным способом. 
+
+Хэйр и помогавший ему Берк догадались, что напали на золотую жилу — один труп принес сумму, которая могла быть выручена за неделю содержания ночлежки. В течение следующих 12 месяцев сговорчивый Роберт Нокс приобрел у Уильямов еще 16 мертвецов. Все они были направлены на благородное дело — обучение молодых анатомов и хирургов. 
+
+События шли взаимовыгодным чередом, пока однажды в полицию не обратились родственники пропавшего несколько дней назад пьянчуги. Следы привели сыщиков в ночлежку. Совсем немного смекалки понадобилось для того, чтобы воссоздать картину преступления — во время пьяного сна человек был придушен Берком и Хэйром. Еще они сознались, что отвезли труп к известному всему городу Ноксу, получив взамен внушительный гонорар. 
+
+Вина преступников в убийстве семнадцати человек была полностью доказана. Большое содействие судье оказал Хэйр, сразу же пошедший на сделку с правосудием. Это предоставило ему иммунитет от высшей меры наказания и поэтому повешен был только его сообщник. 
+
+А Роберт Нокс? Анатом был оправдан за отсутствием улик, указывавших на его непосредственное участие в убийствах. Тем не менее, с того дня его врачебная карьера пошла под откос. Пресса раструбила кошмарную историю на всю Британию. Испуганные и озлобленные жители Эдинбурга напали на дом анатома и выбили все окна. Коллеги вынудили Нокса закрыть преподаваемые им анатомические курсы и подать в отставку со всех постов. Он был вынужден перебраться в Лондон, где перебивался статьями в медицинских журналах и подрабатывал патологоанатомом. Злополучный Нокс умер в нужде и одиночестве в 1862 году.
+
+Впрочем, деятельность Роберта Нокса косвенно способствовала развитию медицины. Описанная история, оставшаяся в истории как "Уэст–Портские убийства", послужила катализатором широкой общественной дискуссии. В результате в 1832 году британский парламент принял Анатомический акт, расширивший законные способы получения трупов для проведения анатомических занятий. Интересно, что закон до сих пор действует в Шотландии.
+
+На картинке для привлечения внимания — портрет Роберта Нокса. Во время работы.
+
+Написал Fergan_Trop , 10 Августа 2013 в 02.31 на story · 32 комментария         
+92
+
+
+
+Уничтожение SEO–вируса в зародыше
+ 
+
+Уничтожение SEO–вируса в зародыше	
+	"Наша мама говорит, что если мы соберем 1 миллион лайков, мы не получим нифига.
+Если нам что–то нужно, для этого надо поработать, а не унижаться на фэйсбуке."
+
+Написал ZorgeZorge , 9 Августа 2013 в 16.53 на hahahahah · 79 комментариев            
+497
+
+
+
+Ничто не предвещало. Страшно и нелепо
+ 
+
+Когда их грузили на Украине, сказали, что доставят в МинВоды, что их там ждут уютные помещения, обильный и высококалорийный рацион, заботливый обслуживающий персонал и приятный во всех отношениях климат. Дорога для них представлялась не самым приятным времяпровождением, да и тесновато пришлось, но они не унывали и, вероятно, даже весело переговаривались друг с другом. Они не могли догадываться, что транспорт тем временем набрал положенный крейсерский ход и направился в сторону Германии... 
+
+Когда вокруг полыхнуло сплошной стеной огня, никто из них так и не понял, что произошло. Мы даже точно не знаем, сколь их было, может сотни, но скорее все–таки тысячи, и, конечно, уже не узнаем, какие мысли бушевали в их головах в последние мгновенья перед мучительной гибелью. Как скупо сообщают источники, не выжил никто.
+
+Написал TeleGin , 10 Августа 2013 в 04.08 на politics · 24 комментария         
+62
+
+
+
+Единочество
+ 
+
+Единочество	
+Путин, Петурбург и петербуржцы.
+
+Написал Beo , 9 Августа 2013 в 18.20 на politota · 250 комментариев            
+308
+
+
+
+Храните запасы в гривне — самой красивой валюте в мире
+ 
+
+Храните запасы в гривне — самой красивой валюте в мире	
+Швейцарские финансисты решили, что в деньгах важна не только покупательская способность, но и эстетическая составляющая, поперебирали привычными к этому пальцами купюры разных стран, и выбрали самые красивые. Ими оказались гривны... Хоть что–то...
+
+Написал Doddy , 9 Августа 2013 в 18.07 на ukraine · 107 комментариев            
+163
+
+
+
+Систематизация знаний... о геях
+ 
+
+Небольшая аннотация: иногда нашим «правителям» хочется сказать огромное спасибо за то, что дремучесть их знаний, подвигает нас к тому, чтобы копаться в теме, которая раньше казалось абсолютно не интересной. 
+За свою сознательную жизнь мое отношение к людям нетрадиционной ориентации постепенно изменилось от негативного (в годы юношеской пылкости суждений) к полностью нейтральному, когда умом понимаешь, что все люди разные и не нужно из этого делать трагедию. 
+Но черт возьми, только клинический идиотизм депутатов и совершеннейшая тупость принимаемых законов подвигли меня к тому, чтобы читать статьи, слушать мнения и просто интересоваться отношением окружающих к людям нетрадиционной ориентации. И вот тут–то понадобилось сформировать не просто нейтральную точку зрения, а позицию основанную на фактах. 
+Тут стоит сказать огромное спасибо Доктору botalex(простите за ЖЖ), который написал на эту тему несколько постов, но мне показалось, что из этих постов будет уместно вытащить самую сутевую часть, которую полезно использовать в повседневной аргументации своей позиции. Если есть желающие почитать полностью, то ссылки в конце. 
+
+Итак, поехали:
+1. Крайне важно разделять «Сексуальную ориентацию» и «сексуальное поведение». Путаница в этих терминах приводит к ошибочным выводам, что сексуальное поведение человека можно направить (хотя под действием определенных факторов поведение может отклоняться от ориентации, тут уместно вспомнить хотя бы армию или тюрьму).
+
+Сексуальная ориентация — направленность сексуального влечения в отношении того или иного пола. Иными словами, сексуальная ориентация определяет, на мужчину или на женщину испытывает (сознательно или неосознанно) сексуальное возбуждение индивид.
+
+Сексуальное поведение определяет, с лицами какого пола вступает в сексуальные связи индивид.
+
+Таким образом важно – не каждый, кто сексуется (отличный термин) с лицами своего пола имеет гомосексуальную ориентацию. Не всякий, кто обладает гетеросексуальной ориентацией вступает в сексуальные контакты исключительно с лицами противоположного пола. 
+
+2. Относительно сексуальной ориентации существует две теории: психоаналитическая (теория социализации) и биологическая. Первая говорит о том, что гомосексуальность формируется психологией, семьей, комплексами и т.д. Автор – дедушка Фрейд. Несмотря на то, что обыватели интуитивно доверяют этой теории, исследования ее не подтверждают. В частности показано, что, несмотря на распространение гомосексуальных контактов в мужских интернАтах, впоследствии у повзрослевших воспитанников гомосексуальная ориентация формируется не чаще, чем в среднем по популяции. В другом исследовании лесбиянки подвергались сексуальному растлению в детстве ничуть не чаще, чем гетеросексуальны женщины. 
+И самый наглядный случай – это Брюс Реймер (писали тут). Очень кратко – из–за неудачной операции по обрезанию крайней плоти он фактически лишился пениса. Родители пытались воспитывать, как девочку, сидел на гормонах, подвергся операции по смене пола. В возрасте 15 лет начал бунтовать против маскарада. Сделал мастэктомию, прошел курс тестостерона и т.д. В 38 лет покончил с собой. 
+Что это доказывает? Что семья, пропаганда и т.д. не могут из мальчика вырастить девочку (и наоборот), если человек родился без отклонений.
+
+3. Биологическая теория, она же Пренатальная гормональная теория, говорит о том, что сексуальная ориентация предопределяется теми же механизмами, что другие половые особенности, а именно под влиянием гормонов на этапах раннего развития.
+Что в доказательной базе?Манипуляции с концентрацией андрогенов на этапе внутриутробного развития крыс влияет на дальнейшее предпочтение сексуального партнера того или иного пола.
+Это же явление можно наблюдать за развитием сексуальной ориентации у женщин с врождённой гиперплазией коры надпочечников. При этом заболевании плод женского пола подвергается воздействию очень высокого уровня андрогенов. Исследования четко показывают, что у таких женщин достоверно чаще наблюдаются лесбийские наклонности, в том числе по сравнению с их здоровыми сестрами, воспитанными в той же семье.
+Так же здесь важно, что в результате исследований были выявлены не только функциональные различия в работе головного мозга, но и анатомические различия. Во всех исследованиях геи мужчины приближались по этим показателям к женщинам. Как вы, наверняка понимаете, например, функционирование внутреннего уха или различие в относительных размерах левого и правого полушарий мозга, невозможно сформировать в социуме. Это либо есть от природы, либо нет. 
+Таким образом, исследования показывают, что сексуальная ориентация является именно врожденным признаком. Не генетическим (т.е. не передается с генами родителей), а определяется развитием плода в утробе матери.
+Отсюда следует очень простой вывод – в любой нормальной гетеросексуальной семье может родиться ребенок гомосексуальной ориентации. И наоборот – однополая семья, усыновившая мальчика, может сколько угодно наряжать его в розовое платьице – он вырастет нормальным гетеросексуальным мужчиной. 
+
+4. Бисексуальность – многие считают бисексуальность следствием распущенности нравов и падения общества. В духе бабушек на скамейке: «он и с другом и с подругой, срамота какая–то!». Вот результаты исследований: ученые взяли 3 группы мужчин, идентифицировавших себя соответственно как гомо–, гетеро — и бисексуалы. Бисексуалы утверждали, что их привлекают оба пола примерно в равной степени. Всем демонстрировались эротические изображения, в то время как плетизмограф (аппарат для определения колебаний объёма пениса в зависимости от степени его кровенаполнения) фиксировал, как подопытные реагируют на тот или иной стимул. В результате оказалось, что гетеросекуалов возбуждали женские образы, гомосексуалов – мужские, а бисексуалов... практически только мужские!
+Это говорит о том, что с биологической точки зрения существует только 2 типа сексуальной ориентации: гомо — и гетеросексуальная.Все что происходит дальше, это уже следствие внутренних психологически запретов, табуированности общества, стеснения, нежелания признавать собственную сущность. Фактически бисексуалы – это латентные геи, которые едва ли очень счастливы ведя двойную жизнь. 
+
+5. Транссексуальность– в общей популяции транссексуальность у биологических мужчин диагностируется с частотой около 30 : 1 000 000, у биологических женщин – 10 : 1 000 000. Транссексуальность (или транссексуализм) – это постоянная и тотальная инверсия половой роли (гендерной идентичности), когда анатомический пол субъекта не совпадает с его половым самосознанием.Фактически транссексуалы на протяжении всей своей жизни ощущают себя помещенными в чужое тело. 
+Транссексуалы не являются геями по сути расстройства. Несмотря на это, именно транссексуал (женоподобный мужчина или мужеподобная женщина) является эталонным образом гея в умах обывателей, в то время как на самом деле большинство геев и лесбиянок ни внешне, ни в манерах ничем не отличаются от гетеросексуальных лиц своего пола, они совершенно довольны своей анатомией и не терпят гендерного несоответствия у других геев и лесбиянок. Например, подавляющее большинство геев, гак и гетересексуалы находят женоподобных мужчин отталкивающими.
+В общем, транссексуальность – это сложная тема, которая вообще не имеет никакого отношения к социумум, психологии (в части возникновения) и склонения кого–либо к чему–либо. Транссексуалом нельзя стать. Им можно родиться и ничего радостного в жизни такого человека скорей всего не будет. 
+
+Источник:
+Про геев
+Про бисексуалов
+Про транссексуалов
+
+А нафига это все? А затем, что большинство людей, окружающих нас, живет в собственном, подчас убогом, мирке, который сформирован из суеверий, предубеждений и закостенелых взглядов. И если уж вы прочитали нечто, что расширяет ваш собственный кругозор, то вываливайте это и на собеседников. Вода камень точит.
+
+Написал analitik13 , 9 Августа 2013 в 14.37 на mind · 277 комментариев         
+301
+
+
+
+Классика советской эротики
+ 
+Классика советской эротики
+Источник
+
+Альбом литовского мастера был впервые продемонстрирован на международной книжной ярмарке в Москве в 1987 году. Иностранные эксперты удивлялись: откуда мог появиться такой высокий уровень мастерства в стране, где фотографии в жанре «ню» были 70 лет под запретом.
+
+В сталинское время мальчик потерял мать, высланную в Сибирь, и оказался в детдоме для детей врагов народа. Он смог не ожесточиться, а искать красоту вокруг себя. Альбом создавался многие годы так, что никто до конечного издания не видел ни одной фотографии.
+Признанный фотомастер не приемлет сегодняшней, как он выразился, эксплуатации женского образа в искусстве, когда даже творожный сырок рекламирует полуобнаженная девушка. Однажды художник заявил: «Святая тема стала примитивным товаром. Хочу из этой сферы выйти.»
+
+P.S. Надеюсь, что выбрала правильный подсайт.
+
+Написала Riska , 9 Августа 2013 в 19.18 на historyporn · 26 комментариев            
+123
+
+
+
+Он ушел!
+ 
+
+Он ушел!
+
+Написал boshetunmai , 9 Августа 2013 в 18.20 на img · 47 комментариев         
+73
+
+
+
+[Шеф–повар] Технолог пищевой промышленности.
+ 
+
+18 лет стаж. Возглавлял крупное производство кулинарных изделий, работал с ресторанами, фабриками–кухнями и т.д. В настоящее время занимаюсь консультациями по открытию заведений, помогаю с созданием меню, персоналом, "ставлю" кухню. Также работаю на частных мероприятиях в качестве гриль–мастера.
+
+Написал Nave , 9 Августа 2013 в 10.53 на sprosi · 449 комментариев            
+287
+
+
+
+X Rebirth
+ 
+X Rebirth
+Egosoft опубликовали трейлер своего нового космосимулятора. Судя по предварительным данным, всех фанатов серии ждет нечто грандиозное. Обещают, что на начальном этапе развития игра будет намного более дружелюбной по отношению к новичкам. Запланированная дата выхода — 15 ноября 2013. В Steam уже появилась страничка с игрой, где можно посмотреть скриншоты геймплея.
+
+Написал JumpDa , 9 Августа 2013 в 17.11 на games · 38 комментариев         
+64
+
+
+
+Я все помню, я — дельфин!
+ 
+Я все помню, я — дельфин!
+В дикой природе дельфины очень подвижны и не привязаны к определенной группе. Потому у каждого животного существует свой уникальный позывной. Ученые из Чикагского университета (США) под руководством Джейсона Брука решили выяснить, сколько времени дельфины могут помнить позывные своих друзей. Для эксперимента исследователи использовали 43 особи разных возрастных групп.
+
+Ученые постоянно меняли местоположение дельфинов. Некоторые особи не видели партнеров по эксперименту несколько лет. Спустя какое–то время исследователи воспроизводили дельфинам позывные их сородичей. К чужим позывным животные были равнодушны, а "своих" дельфины вспоминали и пытались контактировать с динамиком, воспроизводившим знакомые звуки. К концу эксперимента было установлено, что память дельфинов может превышать 20 лет.
+
+Написал ikocs , 9 Августа 2013 в 14.49 на science · 21 комментарий         
+80
+
+
+
+30 из 150
+ 
+30 из 150
+Новый сборник нашей любимой Дискотеки Косово готов. К сожалению новые реалии требуют драконовских методов, и из более чем 150 постов за июнь мы отобрали 30 треков. Зато каких — пальчики оближешь.
+Намекнём: посты, состоящие из одной лишь ссылки на Ютьюб без описания, личных впечатлений, побудивших потревожить дремоту здешних обитателей, или, например, клёвой истории создания произведения, которую автор поста услышал на кухне у автора песни в 86 году за дружеской тарелкой кайзершмаррена, мы старались обходить стороной, за редким исключением.
+Если вы вдруг посчитаете, что мы незаслуженно пропустили песню–другую — милости просим — добавим в следующих выпусках. А пока — текущий треклист Mudi XCVI — в первом комментарии.
+
+P.S. Альтернативные ссылки на скачивание: Дропбокс, Некака, Русфолдер.
+
+Написал kiLstrom , 9 Августа 2013 в 13.59 на music · 58 комментариев         
+84
+
+
+
+Достучаться до небес — 2
+ 
+Достучаться до небес — 2
+Автор
+
+Написал ob1 , 9 Августа 2013 в 13.01 на img · 19 комментариев         
+90
+
+
+
+Русские народные сказки признаны вредными для детей
+ 
+
+Вот это уже совсем не в какие ворота не лезет, в народных сказках передаётся мудрость поколений. Да и вообще борьба с фольклором, по моему мнению это уже борьба против нации.
+
+Написал pmihail1 , 9 Августа 2013 в 10.59 на politota · 168 комментариев         
+88
+
+
+
+Тиньков, ты, наверное, забыл, что в отличие от президента в нашей стране банк еще можно сменить
+ 
+
+Тиньков, ты, наверное, забыл, что в отличие от президента в нашей стране банк еще можно сменить	
+Спасибо за деньги. Иди поточи.
+
+Осторожно, в этом посте закрываются счета и разрезаются кредитки.
+
+Написал ethaniel , 8 Августа 2013 в 22.12 на politics · 871 комментарий         
+664
+
+
+
+"Банкиры", обманувшие государство на 10 млрд руб., амнистированы
+ 
+
+Помните разговоры о экономической амнистии, которую объявило наше государство? А вот вам и счастливые амнистированные: Подпольные банкиры Эльнур Мирзоев и Сабуха Сафаралиев, обманувшие государство на 10 млрд руб., признаны виновными и освобождены по недавно объявленной экономической амнистии.
+
+Согласно решению суда, Э.Мирзоев и С.Сафаралиев признаны виновными в незаконной банковской деятельности, совершенной организованной группой и сопряженной с извлечением дохода в особо крупном размере, и приговорены к полутора годам лишения свободы каждый. Обвиняемые свою вину признали, а посему были моментально амнистированы.
+
+Вот вам и вся амнистия, наглядно: Два «Рафика» поимели государство на 10 миллиардов рублей, признали себя виновными и тут же были освобождены. Причём на абсолютно законных основаниях.
+
+Написал pmihail1 , 9 Августа 2013 в 00.21 на politota · 89 комментариев            
+285
+
+
+
+Королева пожертвований
+ 
+Королева пожертвований
+Был не так давно на кошачьей выставке, внимание привлекла кошка собиравшая пожертвования для кошачьего приюта — она таскала за собой маленькую копилку на колесах и вид имела весьма суровый...
+
+Положили денюжку и сфотографировали — не смогли пройти мимо такого типажа. В комментах несколько фото с той же выставки.
+
+Написал aminin , 9 Августа 2013 в 04.26 на kotiki · 42 комментария            
+122
+ 
+
+
+
+
+1 2 3 4 5 6 7 8 9 10 
+
+
+
+
+ 
+
+ 
+
+
+
+
+
+ 
+О сайте
+Энциклопедия
+Размещение рекламы
+  Аpхивы сайта
+Правила
+  
+
+
+©2013  
+Общие вопросы —
+mailbox@d3.ru 
+Что-то сломалось?
+wtf@d3.ru 
+Пользовательское соглашение
+Политика конфиденциальности 
+Сайт только для совершеннолетних. 
+
+
+
+ 
+
+
+
+Введите пароль или зарегистрируйтесь. 
+
+
+
+
+
+
+     
+ 
+ 
+
+
+
+
+
+
+
+
+
+ 
+
+
+
+
+Permalink | Advertise  | Privacy | Mobile 
+ Web01 | 2.6.130804.1 | Last Updated 21 Oct 2009 
+
+Article Copyright 2009 by Carsten Zeumer
+Everything else Copyright © CodeProject, 1999-2013 
+Terms of Use 
+
+Layout: fixed | fluid 
+
+
+
+      
+

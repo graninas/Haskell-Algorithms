@@ -68,7 +68,7 @@ possibleMoves (x, y) = filter validCoords cross
 
 type Line = Int
 type Program = Map.Map Line Command
-                      
+
 updateProgram :: Line -> Command -> Program -> Program
 updateProgram line command = Map.update (\_ -> Just command) line
 
@@ -81,7 +81,6 @@ getLine m (tx, ty) = line
     command = (m !! tx) !! ty
     line = fromJust . elemIndex command $ programLines
 
-    
 isProgramValid :: Program -> Bool
 isProgramValid prog = all (== True) $ map (\k -> Map.member k prog) [1..programSize]
 
@@ -97,29 +96,40 @@ evalCommand :: Line -> Command -> (Position, Path) -> (Position, Path)
 evalCommand _ command (pos, ps) = let newPos = moveBounded pos command
                                   in (newPos, ps ++ [newPos])
 
-data Result = Result
+data EvalResult = EvalResult
                 { resultPath :: Path
                 , reversedPath :: Path }
-            | Error
+            | NoResult
   deriving (Show, Read, Eq)
 
-evalProgram :: Position -> Program -> Result
-evalProgram robotPos prog | isProgramValid prog = let
-    (newPos, path) = Map.foldWithKey evalCommand (robotPos, []) prog
-    in path
-evalProgram _ _ = []
+evalProgram :: Position -> Program -> EvalResult
+evalProgram kikiPos prog | isProgramValid prog = let
+    (newPos, path) = Map.foldWithKey evalCommand (kikiPos, []) prog
+    in EvalResult path (reverse path)
+evalProgram _ _ = NoResult
 
 compile :: Commands -> Program
 compile = Map.fromList . zip [1..]
 
+checkResult :: Field -> EvalResult -> Bool
+checkResult _ NoResult = False
+checkResult _ (EvalResult _ []) = False
+checkResult f (EvalResult pt _) = let
+    (x, y) = last pt
+    fieldItem = (f !! x) !! y
+    in fieldItem == p
 
-checkPath :: Field -> Path -> Bool
-checkPath _ [] = False
-checkPath f path = 
 
 
-testingProgram :: Program
-testingProgram = compile [u, u, r, r, u, l, u]
+
+
+testProgram :: Program
+testProgram = compile [u, u, r, r, u, r, u]
+
+evalTestProgram = evalProgram kikiStart testProgram
+
+checkTestResult = checkResult field1 evalTestProgram
+
 
 {-
 solve :: Field -> Int -> Dislocation -> SolutionTree
@@ -145,14 +155,14 @@ foldSuccesses (B d branches) = case folded branches of
     folded [] = []
     folded bs = concat $ map foldSuccesses bs
 
--- Показать статистику решений для глубины n
+-- пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ n
 try f n = let ss = foldSuccesses (solve f n startPositions)
               pathLengths = map length ss
               groupedPathLengths = group . sort $ pathLengths
               pathLengthStats = map (\gpls -> (head gpls, length gpls)) groupedPathLengths
           in (length ss, pathLengthStats)
 
--- Показать решения длиной k для глубины n
+-- пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ k пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ n
 solutions f k n = let ss = foldSuccesses (solve f n startPositions)
                       kLengths = filter ((== k) . length) ss
                   in kLengths

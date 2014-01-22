@@ -22,8 +22,8 @@
 
 module Tools where
 
-import qualified Time as T (TimeDiff(..), CalendarTime(..), ClockTime(..), addToClockTime, toClockTime)
-import Char (toUpper, toLower)
+import qualified System.Time as T (TimeDiff(..), CalendarTime(..), ClockTime(..), addToClockTime, toClockTime)
+import Data.Char (toUpper, toLower)
 import Types
 
 firstMonthDay :: T.CalendarTime -> T.CalendarTime

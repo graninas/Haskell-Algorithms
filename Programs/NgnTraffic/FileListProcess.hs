@@ -23,7 +23,7 @@
 module FileListProcess where
 
 import Types
-import Char (isDigit)
+import Data.Char (isDigit)
 
 -- | Проверяет, нужно ли мержить файл с таким именем.
 isFileForMerge :: FilePath -> YearMonth -> Bool

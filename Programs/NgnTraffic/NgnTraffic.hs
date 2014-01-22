@@ -28,9 +28,9 @@ import FileListProcess
 import DataProcess
 
 import System.Directory (getDirectoryContents, getCurrentDirectory)
-import qualified Time as T (CalendarTime(..), toCalendarTime, getClockTime)
+import qualified System.Time as T (CalendarTime(..), toCalendarTime, getClockTime)
 import qualified Data.ByteString.Char8 as C
-import qualified System as S (getArgs) 
+import qualified System.Environment as S (getArgs) 
 import Data.List as L (concat, isInfixOf, intercalate)
 
 import Constants
