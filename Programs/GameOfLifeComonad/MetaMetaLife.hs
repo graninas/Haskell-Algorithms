@@ -1,6 +1,6 @@
 {-# LANGUAGE TupleSections #-}
 
-module MetaLife where
+module MetaMetaLife where
 
 import Control.Comonad
 import Control.Applicative
@@ -11,19 +11,46 @@ data Cell =  Dead | Alive
     deriving (Eq, Show)
     
 type MetaCell = (Int, Cell)
+type MetaMetaCell = (Int, MetaCell)
 
-metaFactor = 3
+factor'  = 3
+factor'' = 3
 
-metaRule :: Universe2 MetaCell -> MetaCell
-metaRule u
-    | nc == metaFactor   = (0,  snd $ rule' u)
-    | nc <  metaFactor   = (-1, snd $ rule' u)
-    | otherwise          = (1,  snd $ rule' u)
+isAlive (_, (_, c)) = c == Alive
+zeroCellCreator c = (0, (0, c))
+zeroCell :: MetaMetaCell
+zeroCell = zeroCellCreator Dead
+
+rule'' :: Universe2 MetaMetaCell -> MetaMetaCell
+rule'' u
+    | nc == factor''   = (0,  snd $ rule' u)
+    | nc <  factor''   = (-1, snd $ rule' u)
+    | otherwise        = (1,  snd $ rule' u)
   where
-    nc = length $ filter (\(_, c) -> c == Alive) (metaNeighbours u)
+    nc = length $ filter isAlive (neighbours'' u)
 
-metaNeighbours :: (Universe2 a) -> [a]
-metaNeighbours u =
+rule' :: Universe2 MetaMetaCell -> MetaMetaCell
+rule' u
+    | nc == factor'   = (factModifier,     snd $ rule u)
+    | nc <  factor'   = (factModifier - 1, snd $ rule u)
+    | otherwise       = (factModifier + 1, snd $ rule u)
+  where
+    old@(factModifier, c) = extract u
+    nc = length $ filter isAlive (neighbours' u)
+
+rule :: Universe2 MetaMetaCell -> MetaMetaCell
+rule u
+    | nc == (f'' + 2) = old
+    | nc == (f'' + 3) = (f'', (f', Alive))
+    | otherwise       = (f'', (f', Dead))
+    where
+        old@(f'', (f', c)) = extract u
+        nc = length $ filter isAlive (neighbours u)
+
+neighbours'' = neighbours
+
+neighbours' :: (Universe2 a) -> [a]
+neighbours' u =
     [ nearest5 . extract . left . left
     , pure     . extract . left . left  . extract . left
     , pure     . extract . right . right . extract . left
@@ -33,29 +60,7 @@ metaNeighbours u =
     , pure     . extract . right . right . extract . right
     , nearest5 . extract . right . right
     ] >>= ($ getUniverse2 u)
-
-nearest5 :: Universe a -> [a]
-nearest5 u = fmap extract [left . left $ u, left u, u, right u, right . right $ u]
-
-rule' :: Universe2 MetaCell -> MetaCell
-rule' u
-    | nc == (factor + 2) = oldMetaCell
-    | nc == (factor + 3) = (factor, Alive)
-    | otherwise          = (factor, Dead)
-    where
-        oldMetaCell@(factor, oldCell) = extract u
-        nc = length $ filter (\(_, c) -> c == Alive) (neighbours u)
-
-metaCells = map (map (0,)) cells
-
-initialMetaModel :: Universe2 MetaCell
-initialMetaModel = fromList2 (0, Dead) metaCells
-
-stepMetaLifeUniverse = (=>> metaRule)
-
-nearest3 :: Universe a -> [a]
-nearest3 u = fmap extract [left u, u, right u]
-
+    
 neighbours :: (Universe2 a) -> [a]
 neighbours u =
     [ nearest3 . extract . left
@@ -64,12 +69,12 @@ neighbours u =
     , nearest3 . extract . right
     ] >>= ($ getUniverse2 u)
 
-fromList :: a -> [a] -> Universe a
-fromList d (x:xs) = Universe (repeat d) x (xs ++ repeat d)
+initialModel'' :: Universe2 MetaMetaCell
+initialModel'' = fromList2 zeroCell metaCells
 
-fromList2 :: a -> [[a]] -> Universe2 a
-fromList2 d = Universe2 . fromList ud . fmap (fromList d)
-    where ud = Universe (repeat d) d (repeat d)
+stepLifeUniverse'' = (=>> rule'')
+
+metaCells = map (map zeroCellCreator) cells
 
 cells = [ [ Dead, Alive,  Dead]
         , [Alive,  Dead,  Dead]
@@ -90,7 +95,3 @@ cells' = [ [Alive, Dead, Alive, Alive, Alive, Alive ]
         , [Alive, Dead, Dead, Alive, Dead, Dead ]
         ]
 
-initialModel :: Universe2 Cell
-initialModel = fromList2 Dead cells
-
-stepLifeUniverse = (=>> rule)

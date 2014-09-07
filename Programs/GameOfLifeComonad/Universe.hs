@@ -38,6 +38,18 @@ instance Comonad Universe2 where
     duplicate = fmap Universe2 . Universe2 . shifted . shifted . getUniverse2
         where shifted :: Universe (Universe a) -> Universe (Universe (Universe a))
               shifted = makeUniverse (fmap left) (fmap right)
+nearest3 :: Universe a -> [a]
+nearest3 u = fmap extract [left u, u, right u]
+
+nearest5 :: Universe a -> [a]
+nearest5 u = fmap extract [left . left $ u, right . right $ u] ++ nearest3 u
+
+fromList :: a -> [a] -> Universe a
+fromList d (x:xs) = Universe (repeat d) x (xs ++ repeat d)
+
+fromList2 :: a -> [[a]] -> Universe2 a
+fromList2 d = Universe2 . fromList ud . fmap (fromList d)
+    where ud = Universe (repeat d) d (repeat d)
 
 takeRange2 :: (Int, Int) -> (Int, Int) -> Universe2 a -> [[a]]
 takeRange2 (x0, y0) (x1, y1)
