@@ -22,12 +22,12 @@ renderMetaCell (i, Alive) = Color (pickColor i) $ ThickCircle thickness aliveRad
 renderMetaCell (i, Dead)  = Color (pickColor i) $ ThickCircle thickness deadRadius
 
 renderMetaLife :: Universe2 MetaCell -> Picture
-renderMetaLife = toPicture . takeRange2 (-15, -15) (20, 20)
+renderMetaLife = toPicture . takeRange2 (-30, -30) (20, 20)
 
 toPicture :: [[MetaCell]] -> Picture
-toPicture picss = (foldr1 mappend . foldr1 mappend) $ map toPicture' (zip [(-10)..] picss)
+toPicture picss = (foldr1 mappend . foldr1 mappend) $ map toPicture' (zip [(-30)..] picss)
   where
-    toPicture' (j, pics) = map (transCellX j) (zip [(-10)..] pics)
+    toPicture' (j, pics) = map (transCellX j) (zip [(-30)..] pics)
 
 transCellX :: Int -> (Int, MetaCell) -> Picture
 transCellX j (i, mc) = Translate ((fromIntegral i) * side) ((fromIntegral j) * side) (renderMetaCell mc)
@@ -38,7 +38,7 @@ stepMetaLife _ _ = stepMetaLifeUniverse
 
 main = simulate (InWindow "Cellular automata" (1024, 768) (500, 300))
                 white
-                2
+                1
                 initialMetaModel
                 renderMetaLife
                 stepMetaLife

@@ -17,21 +17,21 @@ metaFactor = 3
 
 metaRule :: Universe2 MetaCell -> MetaCell
 metaRule u
-    | nc == metaFactor   = rule' u
-    | nc <  metaFactor   = (-1, snd $ rule' $ u)
-    | otherwise          = (1,  snd $ rule' $ u)
+    | nc == metaFactor   = (0,  snd $ rule' u)
+    | nc <  metaFactor   = (-1, snd $ rule' u)
+    | otherwise          = (1,  snd $ rule' u)
   where
     nc = length $ filter (\(_, c) -> c == Alive) (metaNeighbours u)
 
 metaNeighbours :: (Universe2 a) -> [a]
 metaNeighbours u =
     [ nearest5 . extract . left . left
-    , pure     . extract . left . left  . extract . left -- 3
-    , pure     . extract . right . right . extract . left -- 4
-    , pure     . extract . left . left  . extract -- 1
-    , pure     . extract . right . right . extract -- 2
-    , pure     . extract . left . left  . extract . right -- 5
-    , pure     . extract . right . right . extract . right -- 6
+    , pure     . extract . left . left  . extract . left
+    , pure     . extract . right . right . extract . left
+    , pure     . extract . left . left  . extract
+    , pure     . extract . right . right . extract
+    , pure     . extract . left . left  . extract . right
+    , pure     . extract . right . right . extract . right
     , nearest5 . extract . right . right
     ] >>= ($ getUniverse2 u)
 
@@ -82,12 +82,24 @@ fromList2 :: a -> [[a]] -> Universe2 a
 fromList2 d = Universe2 . fromList ud . fmap (fromList d)
     where ud = Universe (repeat d) d (repeat d)
 
-cells' = [ [ Dead, Alive,  Dead]
+cells = [ [ Dead, Alive,  Dead]
         , [Alive,  Dead,  Dead]
         , [Alive, Alive, Alive] ]
 
-cells = [[Alive, Alive],
-         [Alive, Alive]]
+cells' = [ [Alive, Dead, Alive, Alive, Alive, Alive ]
+        , [Dead, Alive, Alive, Alive, Dead, Alive ]
+        , [Alive, Dead, Dead, Alive, Alive, Alive ]
+        , [Dead, Alive, Dead, Dead, Alive, Dead ]
+        , [Alive, Dead, Dead, Alive, Alive, Dead ]
+        , [Dead, Alive, Alive, Dead, Dead, Alive ]
+        , [Alive, Dead, Alive, Alive, Alive, Alive ]
+        , [Dead, Alive, Alive, Dead, Alive, Alive ]
+        , [Alive, Dead, Alive, Dead, Alive, Alive ]
+        , [Dead, Alive, Dead, Dead, Alive, Dead ]
+        , [Alive, Dead, Alive, Alive, Dead, Dead ]
+        , [Dead, Alive, Alive, Dead, Alive, Alive ]
+        , [Alive, Dead, Dead, Alive, Dead, Dead ]
+        ]
 
 initialModel :: Universe2 Cell
 initialModel = fromList2 Dead cells
