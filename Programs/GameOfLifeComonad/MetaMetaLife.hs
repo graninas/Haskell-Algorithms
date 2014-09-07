@@ -13,7 +13,7 @@ data Cell =  Dead | Alive
 type MetaCell = (Int, Cell)
 type MetaMetaCell = (Int, MetaCell)
 
-factor'' = 5
+factor'' = 2
 factor' = 1
 
 isAlive (_, (_, c)) = c == Alive
@@ -31,10 +31,10 @@ rule'' u
 
 rule' :: Universe2 MetaMetaCell -> MetaMetaCell
 rule' u
-    | nc <  (factor' + (factModifier'' - factModifier'')) = (factModifier'', (-1, snd . snd $ rule u))
-    | nc >  (factor' + (factModifier'' + factModifier'')) = (factModifier'', (1,  snd . snd $ rule u))
-    | nc == (factor' + (factModifier'' + factModifier'')) = (factModifier'', (0,  snd . snd $ rule u))
-    | otherwise = old
+    | nc <  (factor' - factModifier'' - factModifier'')   = (factModifier'', (0, snd . snd $ rule u))
+    | nc == factor'                                       = (factModifier'', (1,  snd . snd $ rule u))
+    | nc >  (factor' + factModifier'' + factModifier'')   = (factModifier'', (-1,  snd . snd $ rule u))
+    | otherwise                                           = (factModifier'', (0,  snd . snd $ rule u))
   where
     old@(factModifier'', (factModifier', c)) = extract u
     nc = length $ filter isAlive (neighbours' u)
