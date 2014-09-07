@@ -13,8 +13,8 @@ data Cell =  Dead | Alive
 type MetaCell = (Int, Cell)
 type MetaMetaCell = (Int, MetaCell)
 
-factor'' = 2
-factor' = 13
+factor'' = 0
+factor' = 2
 
 isAlive (_, (_, c)) = c == Alive
 zeroCellCreator c = (0, (0, c))
@@ -32,7 +32,7 @@ rule'' u
 rule' :: Universe2 MetaMetaCell -> MetaMetaCell
 rule' u
     | nc == factor' = old
-    | otherwise     = (factModifier'', (factModifier' + factModifier'', snd . snd $ rule u))
+    | otherwise     = (factModifier'', (factModifier', snd . snd $ rule u))
   where
     old@(factModifier'', (factModifier', c)) = extract u
     nc = length $ filter isAlive (neighbours' u)
@@ -90,11 +90,13 @@ stepLifeUniverse'' = (=>> rule'')
 
 metaCells = map (map zeroCellCreator) cells
 
-cells' = [ [ Dead, Alive,  Dead]
+cells = [[Alive, Alive, Alive]]
+
+cells'' = [ [ Dead, Alive,  Dead]
         , [Alive,  Dead,  Dead]
         , [Alive, Alive, Alive] ]
 
-cells = [ [Alive, Dead, Alive, Alive, Alive, Alive ]
+cells' = [ [Alive, Dead, Alive, Alive, Alive, Alive ]
         , [Dead, Alive, Alive, Alive, Dead, Alive ]
         , [Alive, Dead, Dead, Alive, Alive, Alive ]
         , [Dead, Alive, Dead, Dead, Alive, Dead ]
