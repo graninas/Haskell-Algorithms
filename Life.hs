@@ -1,8 +1,7 @@
-module Main where
+module Life where
 
 import Control.Comonad
 import Control.Applicative
-import System.Process (rawSystem)
 
 import Universe
 
@@ -27,11 +26,6 @@ rule u
     | otherwise = Dead
     where nc = length $ filter (==Alive) (neighbours u)
 
-renderLife :: Universe2 Cell -> String
-renderLife = unlines . map concat . map (map renderCell) . takeRange2 (-7, -7) (20, 20)
-    where renderCell Alive = "██"
-          renderCell Dead  = "  "
-
 fromList :: a -> [a] -> Universe a
 fromList d (x:xs) = Universe (repeat d) x (xs ++ repeat d)
 
@@ -43,12 +37,6 @@ cells = [ [ Dead, Alive,  Dead]
         , [Alive,  Dead,  Dead]
         , [Alive, Alive, Alive] ]
 
-main = do
-    gameLoop $ fromList2 Dead cells
+initialModel :: Universe2 Cell
+initialModel = fromList2 Dead cells
 
-gameLoop :: Universe2 Cell -> IO a
-gameLoop u = do
---    getLine
-    rawSystem "clear" []
-    putStr $ renderLife u
-    gameLoop (u =>> rule)
