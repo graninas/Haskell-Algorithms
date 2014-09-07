@@ -45,3 +45,4 @@ cells = [ [ Dead, Alive,  Dead]
 initialModel :: Universe2 Cell
 initialModel = fromList2 Dead cells
 
+stepLifeUniverse = (=>> rule)

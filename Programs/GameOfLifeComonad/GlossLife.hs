@@ -25,11 +25,11 @@ transCellX j (i, c) = Translate ((fromIntegral i) * side) ((fromIntegral j) * si
 
 
 stepLife :: a -> Float -> Universe2 Cell -> Universe2 Cell
-stepLife _ _ = (=>> rule)
+stepLife _ _ = stepLifeUniverse
 
 main = simulate (InWindow "Cellular automata" (1024, 768) (500, 300))
                 white
-                1
+                10
                 initialModel
                 renderLife
                 stepLife
