@@ -13,22 +13,15 @@ renderCell Alive = Circle 5.0
 renderCell Dead = Circle 2.0
 
 renderLife :: Universe2 Cell -> Picture
---renderLife = (foldr1 mappend . foldr1 mappend) . map (map renderCell) . takeRange2 (-7, -7) (20, 20)
 renderLife = toPicture . takeRange2 (-7, -7) (20, 20)
-
-transCellX :: Int -> (Int, Cell) -> Picture
-transCellX j (i, c) = Translate ((fromIntegral i) * side) ((fromIntegral j) * side) (renderCell c)
-
-l :: [Cell]
-l = [Alive, Dead, Alive, Dead, Dead]
-cs :: [Picture]
-cs = map renderCell l
 
 toPicture :: [[Cell]] -> Picture
 toPicture picss = (foldr1 mappend . foldr1 mappend) $ map toPicture' (zip [0..] picss)
   where
---    toPicture' :: (Int, [Picture]) -> Picture
     toPicture' (j, pics) = map (transCellX j) (zip [0..] pics)
+
+transCellX :: Int -> (Int, Cell) -> Picture
+transCellX j (i, c) = Translate ((fromIntegral i) * side) ((fromIntegral j) * side) (renderCell c)
 
 
 stepLife :: a -> Float -> Universe2 Cell -> Universe2 Cell

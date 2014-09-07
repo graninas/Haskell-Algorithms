@@ -1,3 +1,8 @@
+{-
+    This code taken from Habrahabr:
+    http://habrahabr.ru/post/225473/
+-}
+
 module AsciiLife where
 
 import Control.Comonad
