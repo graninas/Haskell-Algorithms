@@ -44,6 +44,9 @@ nearest3 u = fmap extract [left u, u, right u]
 nearest5 :: Universe a -> [a]
 nearest5 u = fmap extract [left . left $ u, right . right $ u] ++ nearest3 u
 
+nearest7 :: Universe a -> [a]
+nearest7 u = fmap extract [left . left . left $ u, right . right . right $ u] ++ nearest5 u
+
 fromList :: a -> [a] -> Universe a
 fromList d (x:xs) = Universe (repeat d) x (xs ++ repeat d)
 

@@ -47,7 +47,7 @@ stepLife'' _ _ = stepLifeUniverse''
 
 main = simulate (InWindow "Cellular automata" (1024, 768) (500, 300))
                 white
-                1
+                3
                 initialModel''
                 renderLife''
                 stepLife''
