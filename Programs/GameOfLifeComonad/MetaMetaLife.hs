@@ -31,10 +31,12 @@ rule'' u
 
 rule' :: Universe2 MetaMetaCell -> MetaMetaCell
 rule' u
-    | nc == factor' = old
-    | otherwise     = (factModifier'', (factModifier', snd . snd $ rule u))
+    | nc == v = old
+    | nc <  v = (factModifier'', (factModifier' - 1, snd . snd $ rule u))
+    | nc >  v = (factModifier'', (factModifier' + 1, snd . snd $ rule u))
   where
     old@(factModifier'', (factModifier', c)) = extract u
+    v = factor' + factModifier''
     nc = length $ filter isAlive (neighbours' u)
 
 rule :: Universe2 MetaMetaCell -> MetaMetaCell
@@ -90,9 +92,9 @@ stepLifeUniverse'' = (=>> rule'')
 
 metaCells = map (map zeroCellCreator) cells
 
-cells = [[Alive, Alive, Alive]]
+cells'' = [[Alive, Alive, Alive]]
 
-cells'' = [ [ Dead, Alive,  Dead]
+cells = [ [ Dead, Alive,  Dead]
         , [Alive,  Dead,  Dead]
         , [Alive, Alive, Alive] ]
 
