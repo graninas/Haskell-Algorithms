@@ -8,6 +8,8 @@ import Control.Applicative
 import Graphics.Gloss
 import Data.Monoid
 
+configFile = "config.txt"
+
 side = 15.0
 thickness = 0.5
 aliveRadius = 5.0
@@ -42,13 +44,23 @@ transCellX :: Int -> (Int, MetaMetaCell) -> Picture
 transCellX j (i, mc) = Translate ((fromIntegral i) * side) ((fromIntegral j) * side) (renderCell'' mc)
 
 
-stepLife'' :: a -> Float -> Universe2 MetaMetaCell -> Universe2 MetaMetaCell
-stepLife'' _ _ = stepLifeUniverse''
+stepLife'' :: MetaFactor -> a -> Float -> Universe2 MetaMetaCell -> Universe2 MetaMetaCell
+stepLife'' mf _ _ = stepLifeUniverse'' mf
 
-main = simulate (InWindow "Cellular automata" (1024, 768) (500, 300))
+main = do
+    confData <- readFile configFile
+    let conf = filter (\l -> head l /= '#') . filter (not . null) . lines $ confData
+    if null conf
+        then putStrLn $ "Please, give right configuration in file " ++ configFile
+        else do
+            print $ "Got: " ++ show conf
+            let [f'', f', cntInSec] = words . head $ conf
+            let mf = (read f'', read f')
+            print $ "Config will be: " ++ show mf
+            simulate (InWindow "Cellular automata" (1024, 768) (500, 300))
                 white
-                3
+                (read cntInSec)
                 initialModel''
                 renderLife''
-                stepLife''
+                (stepLife'' mf)
 

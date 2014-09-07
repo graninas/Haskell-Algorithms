@@ -12,35 +12,37 @@ data Cell =  Dead | Alive
     
 type MetaCell = (Int, Cell)
 type MetaMetaCell = (Int, MetaCell)
-
-factor'' = 3
-factor' = 2
+type MetaFactor = (Int, Int)
+--factor'' = 3
+--factor' = 2
 
 isAlive (_, (_, c)) = c == Alive
 zeroCellCreator c = (0, (0, c))
 zeroCell :: MetaMetaCell
 zeroCell = zeroCellCreator Dead
 
-rule'' :: Universe2 MetaMetaCell -> MetaMetaCell
-rule'' u
-    | nc == factor''   = (0,  snd $ rule' u)
-    | nc <  factor''   = (1,  snd $ rule' u)
-    | otherwise        = (-1, snd $ rule' u)
+rule'' :: MetaFactor -> Universe2 MetaMetaCell -> MetaMetaCell
+rule'' mf@(f'', f') u
+    | nc == f''   = (0,  new)
+    | nc <  f''   = (1,  new)
+    | otherwise   = (-1, new)
   where
+    new = snd $ rule' mf u
     nc = length $ filter isAlive (neighbours'' u)
 
-rule' :: Universe2 MetaMetaCell -> MetaMetaCell
-rule' u
-    | nc <  (factor' - factModifier' - factModifier'')   = (factModifier'', (0, snd . snd $ rule u))
-    | nc == factor'                                       = (factModifier'', (1,  snd . snd $ rule u))
-    | nc >  (factor' + factModifier' + factModifier'')   = (factModifier'', (-1,  snd . snd $ rule u))
-    | otherwise                                           = (factModifier'', (0,  snd . snd $ rule u))
+rule' :: MetaFactor -> Universe2 MetaMetaCell -> MetaMetaCell
+rule' mf@(f'', f') u
+    | nc <  (f' - factModifier' - factModifier'')   = (factModifier'', (0,  new))
+    | nc == f'                                      = (factModifier'', (1,  new))
+    | nc >  (f' + factModifier' + factModifier'')   = (factModifier'', (-1, new))
+    | otherwise                                     = (factModifier'', (0,  new))
   where
     old@(factModifier'', (factModifier', c)) = extract u
+    new = snd . snd $ rule mf u
     nc = length $ filter isAlive (neighbours' u)
 
-rule :: Universe2 MetaMetaCell -> MetaMetaCell
-rule u
+rule :: MetaFactor -> Universe2 MetaMetaCell -> MetaMetaCell
+rule mf@(f'', f') u
     | nc == (f' + 2) = old
     | nc == (f' + 3) = (f'', (f', Alive))
     | otherwise      = (f'', (f', Dead))
@@ -88,7 +90,7 @@ neighbours u =
 initialModel'' :: Universe2 MetaMetaCell
 initialModel'' = fromList2 zeroCell metaCells
 
-stepLifeUniverse'' = (=>> rule'')
+stepLifeUniverse'' mf = (=>> (rule'' mf))
 
 metaCells = map (map zeroCellCreator) cells
 
