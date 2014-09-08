@@ -4,26 +4,76 @@ module MetaLife where
 
 import Control.Comonad
 import Control.Applicative
+import Control.Parallel.Strategies
+import Control.DeepSeq
+import qualified Data.Vector as V
 
 import Universe
 
-data Cell =  Dead | Alive
-    deriving (Eq, Show)
-    
+type Cell = Int
+dead  = 0
+alive = 1
+
 type MetaCell = (Int, Cell)
+type MetaMetaCell = (Int, MetaCell)
+type MetaFactor = (Int, Int)
 
-metaFactor = 3
+isalive (_, (_, c)) = c == alive
+zeroCellCreator c = (0, (0, c))
+zeroCell :: MetaMetaCell
+zeroCell = zeroCellCreator dead
 
-metaRule :: Universe2 MetaCell -> MetaCell
-metaRule u
-    | nc == metaFactor   = (0,  snd $ rule' u)
-    | nc <  metaFactor   = (-1, snd $ rule' u)
-    | otherwise          = (1,  snd $ rule' u)
+rule'' :: MetaFactor -> Universe2 MetaMetaCell -> MetaMetaCell
+rule'' mf@(f'', f') u
+    | nc == f''   = (0,  new)
+    | nc <  f''   = (1,  new)
+    | otherwise   = (-1, new)
   where
-    nc = length $ filter (\(_, c) -> c == Alive) (metaNeighbours u)
+    new = snd $ rule' mf u
+    nc = length $ filter isalive (parNeighbours neighbours'' u)
 
-metaNeighbours :: (Universe2 a) -> [a]
-metaNeighbours u =
+rule' :: MetaFactor -> Universe2 MetaMetaCell -> MetaMetaCell
+rule' mf@(f'', f') u
+    | nc <  (f' - factModifier'' - factModifier'')  = (factModifier'', (0,  new))
+    | nc == f'                                      = (factModifier'', (1,  new))
+    | nc >  (f' + factModifier'' + factModifier'')  = (factModifier'', (-1, new))
+    | otherwise                                     = (factModifier'', (0,  new))
+  where
+    old@(factModifier'', (factModifier', c)) = extract u
+    new = snd . snd $ rule mf u
+    nc = length $ filter isalive (parNeighbours neighbours' u)
+
+rule :: MetaFactor -> Universe2 MetaMetaCell -> MetaMetaCell
+rule mf@(f'', f') u
+    | nc == (f' + 2) = old
+    | nc == (f' + 3) = (f'', (f', alive))
+    | otherwise      = (f'', (f', dead))
+    where
+        old@(f'', (f', c)) = extract u
+        nc = length $ filter isalive (parNeighbours neighbours u)
+
+
+parNeighbours :: NFData a => ((Universe2 a) -> [a]) -> (Universe2 a) -> [a]
+parNeighbours ns u = runEval $ parList rpar (force $ ns u)
+   
+neighbours'' :: (Universe2 a) -> [a]
+neighbours'' u =
+    [ nearest7 . extract . left . left . left
+    , pure     . extract . left . left . left . extract . left
+    , pure     . extract . right . right . right . extract . left
+    , pure     . extract . left . left . left . extract . left . left
+    , pure     . extract . right . right . right . extract . left . left
+    , pure     . extract . left . left . left . extract
+    , pure     . extract . right . right . right . extract
+    , pure     . extract . left . left . left . extract . right
+    , pure     . extract . right . right . right . extract . right
+    , pure     . extract . left . left . left . extract . right . right
+    , pure     . extract . right . right . right . extract . right . right
+    , nearest7 . extract . right . right . right
+    ] >>= ($ getUniverse2 u)
+
+neighbours' :: (Universe2 a) -> [a]
+neighbours' u =
     [ nearest5 . extract . left . left
     , pure     . extract . left . left  . extract . left
     , pure     . extract . right . right . extract . left
@@ -34,28 +84,6 @@ metaNeighbours u =
     , nearest5 . extract . right . right
     ] >>= ($ getUniverse2 u)
 
-nearest5 :: Universe a -> [a]
-nearest5 u = fmap extract [left . left $ u, left u, u, right u, right . right $ u]
-
-rule' :: Universe2 MetaCell -> MetaCell
-rule' u
-    | nc == (factor + 2) = oldMetaCell
-    | nc == (factor + 3) = (factor, Alive)
-    | otherwise          = (factor, Dead)
-    where
-        oldMetaCell@(factor, oldCell) = extract u
-        nc = length $ filter (\(_, c) -> c == Alive) (neighbours u)
-
-metaCells = map (map (0,)) cells
-
-initialMetaModel :: Universe2 MetaCell
-initialMetaModel = fromList2 (0, Dead) metaCells
-
-stepMetaLifeUniverse = (=>> metaRule)
-
-nearest3 :: Universe a -> [a]
-nearest3 u = fmap extract [left u, u, right u]
-
 neighbours :: (Universe2 a) -> [a]
 neighbours u =
     [ nearest3 . extract . left
@@ -64,33 +92,40 @@ neighbours u =
     , nearest3 . extract . right
     ] >>= ($ getUniverse2 u)
 
-fromList :: a -> [a] -> Universe a
-fromList d (x:xs) = Universe (repeat d) x (xs ++ repeat d)
+initialModel :: Int -> Universe2 MetaMetaCell
+initialModel s = fromList2 s zeroCell metaCells
 
-fromList2 :: a -> [[a]] -> Universe2 a
-fromList2 d = Universe2 . fromList ud . fmap (fromList d)
-    where ud = Universe (repeat d) d (repeat d)
+stepLifeUniverse'' mf = (=>> (rule'' mf))
 
-cells = [ [ Dead, Alive,  Dead]
-        , [Alive,  Dead,  Dead]
-        , [Alive, Alive, Alive] ]
+metaCells = map (map zeroCellCreator) cells
 
-cells' = [ [Alive, Dead, Alive, Alive, Alive, Alive ]
-        , [Dead, Alive, Alive, Alive, Dead, Alive ]
-        , [Alive, Dead, Dead, Alive, Alive, Alive ]
-        , [Dead, Alive, Dead, Dead, Alive, Dead ]
-        , [Alive, Dead, Dead, Alive, Alive, Dead ]
-        , [Dead, Alive, Alive, Dead, Dead, Alive ]
-        , [Alive, Dead, Alive, Alive, Alive, Alive ]
-        , [Dead, Alive, Alive, Dead, Alive, Alive ]
-        , [Alive, Dead, Alive, Dead, Alive, Alive ]
-        , [Dead, Alive, Dead, Dead, Alive, Dead ]
-        , [Alive, Dead, Alive, Alive, Dead, Dead ]
-        , [Dead, Alive, Alive, Dead, Alive, Alive ]
-        , [Alive, Dead, Dead, Alive, Dead, Dead ]
+cells' = [[alive, alive, dead, alive, alive]]
+
+cells'' = [[alive, alive, alive]]
+
+cells = [ [ dead, alive,  dead]
+        , [alive,  dead,  dead]
+        , [alive, alive, alive] ]
+
+cells''' = [ [alive, dead, alive, alive, alive, alive ]
+        , [dead, alive, alive, alive, dead, alive ]
+        , [alive, dead, dead, alive, alive, alive ]
+        , [dead, alive, dead, dead, alive, dead ]
+        , [alive, dead, dead, alive, alive, dead ]
+        , [dead, alive, alive, dead, dead, alive ]
+        , [alive, dead, alive, alive, alive, alive ]
+        , [dead, alive, alive, dead, alive, alive ]
+        , [alive, dead, alive, dead, alive, alive ]
+        , [dead, alive, dead, dead, alive, dead ]
+        , [alive, dead, alive, alive, dead, dead ]
+        , [dead, alive, alive, dead, alive, alive ]
+        , [alive, dead, dead, alive, dead, dead ]
         ]
 
-initialModel :: Universe2 Cell
-initialModel = fromList2 Dead cells
 
-stepLifeUniverse = (=>> rule)
+toList :: Universe2 MetaMetaCell -> [[MetaMetaCell]]
+toList u = vs
+  where
+    (Universe vu' _) = getUniverse2 u
+    getCells (Universe v _) = V.toList v
+    vs = map getCells (V.toList vu')

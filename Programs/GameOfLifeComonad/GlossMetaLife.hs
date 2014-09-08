@@ -3,10 +3,14 @@ module Main where
 import Universe
 import MetaLife
 
+import Graphics.Gloss
 import Control.Comonad
 import Control.Applicative
-import Graphics.Gloss
+import Control.Parallel.Strategies
+
 import Data.Monoid
+
+configFile = "config.txt"
 
 side = 15.0
 thickness = 0.5
@@ -18,28 +22,72 @@ pickColor (-1) = red
 pickColor 1    = blue
 pickColor _    = green
 
-renderMetaCell (i, Alive) = Color (pickColor i) $ ThickCircle thickness aliveRadius
-renderMetaCell (i, Dead)  = Color (pickColor i) $ ThickCircle thickness deadRadius
+windowCfg = InWindow "Cellular automata" (1024, 768) (500, 300)
 
-renderMetaLife :: Universe2 MetaCell -> Picture
-renderMetaLife = toPicture . takeRange2 (-30, -30) (20, 20)
+pickCellRadius c | c == dead = deadRadius
+                 | otherwise = aliveRadius
 
-toPicture :: [[MetaCell]] -> Picture
-toPicture picss = (foldr1 mappend . foldr1 mappend) $ map toPicture' (zip [(-30)..] picss)
+pickFactorRadius f = 7.0 + (fromIntegral f)
+
+renderCell'' (f'', (f', c)) = Pictures [
+    Color black $ Circle (pickFactorRadius f''),
+    Color (pickColor f')  $ ThickCircle thickness (pickCellRadius c)
+    ]
+   
+
+renderLife :: Universe2 MetaMetaCell -> Picture
+renderLife = toPicture . toList
+
+toPicture :: [[MetaMetaCell]] -> Picture
+toPicture picss = (foldr1 mappend . foldr1 mappend) $ map toPicture' (zip [0..] picss)
   where
-    toPicture' (j, pics) = map (transCellX j) (zip [(-30)..] pics)
+    toPicture' (j, pics) = map (transCellX j) (zip [0..] pics)
 
-transCellX :: Int -> (Int, MetaCell) -> Picture
-transCellX j (i, mc) = Translate ((fromIntegral i) * side) ((fromIntegral j) * side) (renderMetaCell mc)
+transCellX :: Int -> (Int, MetaMetaCell) -> Picture
+transCellX j (i, mc) = Translate ((fromIntegral i) * side) ((fromIntegral j) * side) (renderCell'' mc)
 
 
-stepMetaLife :: a -> Float -> Universe2 MetaCell -> Universe2 MetaCell
-stepMetaLife _ _ = stepMetaLifeUniverse
+stepLife'' :: MetaFactor -> a -> Float -> Universe2 MetaMetaCell -> Universe2 MetaMetaCell
+stepLife'' mf _ _ = stepLifeUniverse'' mf
 
-main = simulate (InWindow "Cellular automata" (1024, 768) (500, 300))
+type Universes = (Int, Int, [Universe2 MetaMetaCell])
+stepUniverses :: a -> Float -> Universes -> Universes
+stepUniverses _ _ (cur, end, us) | cur >= end = (cur, end, us)
+                                 | otherwise  = (cur + 1, end, us)
+
+renderUniverses :: Universes -> Picture
+renderUniverses (cur, _, us) = renderLife . head . drop cur $ us
+
+main = do
+    confData <- readFile configFile
+    let conf = filter (\l -> head l /= '#') . filter (not . null) . lines $ confData
+    if null conf
+        then putStrLn $ "Invalid configuration file: " ++ configFile
+        else do
+            let [f'', f', sizeStr, cntInSec] = words . head $ conf
+            let mf = (read f'', read f') :: (Int, Int)
+            let s = (read sizeStr) :: Int
+            print $ "Config will be: " ++ show mf
+            print $ "Size will be: " ++ sizeStr
+            
+            let m = initialModel s
+            display windowCfg white (renderLife m)
+            
+            {-
+            simulate 
                 white
-                1
-                initialMetaModel
-                renderMetaLife
-                stepMetaLife
+                (read cntInSec)
+                initialModel
+                renderLife''
+                (stepLife'' mf)
+            -}
+            {-
+            let universes = iterate (stepLifeUniverse'' mf) (initialModel s)
+            simulate (InWindow "Cellular automata" (1024, 768) (500, 300))
+                white
+                (read cntInSec)
+                (0, 30, universes)
+                renderUniverses
+                stepUniverses
+            -}
 
