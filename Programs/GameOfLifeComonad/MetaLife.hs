@@ -123,9 +123,3 @@ cells''' = [ [alive, dead, alive, alive, alive, alive ]
         ]
 
 
-toList :: Universe2 MetaMetaCell -> [[MetaMetaCell]]
-toList u = vs
-  where
-    (Universe vu' _) = getUniverse2 u
-    getCells (Universe v _) = V.toList v
-    vs = map getCells (V.toList vu')

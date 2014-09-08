@@ -11,6 +11,8 @@ import Control.Parallel.Strategies
 import Data.Monoid
 
 configFile = "config.txt"
+screenXShift = (-30)
+screenYShift = (-30)
 
 side = 15.0
 thickness = 0.5
@@ -36,12 +38,12 @@ renderCell'' (f'', (f', c)) = Pictures [
    
 
 renderLife :: Universe2 MetaMetaCell -> Picture
-renderLife = toPicture . toList
+renderLife = toPicture . toList2
 
 toPicture :: [[MetaMetaCell]] -> Picture
-toPicture picss = (foldr1 mappend . foldr1 mappend) $ map toPicture' (zip [0..] picss)
+toPicture picss = (foldr1 mappend . foldr1 mappend) $ map toPicture' (zip [screenXShift..] picss)
   where
-    toPicture' (j, pics) = map (transCellX j) (zip [0..] pics)
+    toPicture' (j, pics) = map (transCellX j) (zip [screenYShift..] pics)
 
 transCellX :: Int -> (Int, MetaMetaCell) -> Picture
 transCellX j (i, mc) = Translate ((fromIntegral i) * side) ((fromIntegral j) * side) (renderCell'' mc)

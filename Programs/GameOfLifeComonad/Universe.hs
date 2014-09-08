@@ -79,3 +79,9 @@ fromList2 s zeroC xss = Universe2 vss
     vss   = fromListU s zeroU vs
 
 
+toList2 :: Universe2 a -> [[a]]
+toList2 u = vs
+  where
+    (Universe vu' _) = getUniverse2 u
+    getCells (Universe v _) = V.toList v
+    vs = map getCells (V.toList vu')
