@@ -1,0 +1,19 @@
+# This is GlossMetaMetaLife config file.
+# Format:
+# factor'' factor' fieldSize totalIters itersPerSec
+# The first conf is counting.
+
+
+0 0 30 1000 10 Simulate
+
+1 2 60 1000 5 Simulate
+3 1 60 1000 5 Simulate
+10 0 60 1000 4 Simulate
+# Intresting chaotic oscilation behavior!
+3 1 60 1000 4 Simulate
+4 1 60 1000 4 Simulate
+
+1 4 60 1000 1 Simulate
+1 1 60 1000 1 Simulate
+
+3 2 60 1000 10 Simulate
