@@ -1,19 +1,18 @@
 # This is GlossMetaMetaLife config file.
 # Format:
-# factor'' factor' fieldSize totalIters itersPerSec
+# f1 f2 f3 f4 f5 ra1 ra2 ra3 fieldSize totalIters itersPerSec mode
+# mode = Play | Simulate
+# ra1, ra2, ra3 - Rule Area for bottom, middle and top rule levels respectively,
+# where the bottom level is the level of real game of life.
+# Rule area defines the area where the alive cells counting.
+# RuleArea = Ring1  -- Classic ring of neighbour cells with the radius == 3.
+#          | Ring2  -- Next ring with the radius == 5.
+#          | Ring3  -- Next ring with the radius == 7.
 # The first conf is counting.
+#
 
 
-0 0 30 1000 10 Simulate
+1   2   1   0   0     Ring1 Ring2 Ring3 60 1000 4 Simulate
 
-1 2 60 1000 5 Simulate
-3 1 60 1000 5 Simulate
-10 0 60 1000 4 Simulate
-# Intresting chaotic oscilation behavior!
-3 1 60 1000 4 Simulate
-4 1 60 1000 4 Simulate
+0   0   0   1   1     Ring1 Ring2 Ring3 60 1000 4 Simulate
 
-1 4 60 1000 1 Simulate
-1 1 60 1000 1 Simulate
-
-3 2 60 1000 10 Simulate
