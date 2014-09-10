@@ -13,8 +13,6 @@ import Control.Parallel.Strategies
 import Data.Monoid
 
 configFile = "config.txt"
-screenXShift = (-15)
-screenYShift = (-15)
 
 side = 15.0
 thickness = 0.5
@@ -48,6 +46,8 @@ renderLife = toPicture . toList2
 toPicture :: [[MetaCell]] -> Picture
 toPicture picss = (foldr1 mappend . foldr1 mappend) $ map toPicture' (zip [screenXShift..] picss)
   where
+    screenXShift = (length picss) `div` (-2)
+    screenYShift = screenXShift
     toPicture' (j, pics) = map (transCellX j) (zip [screenYShift..] pics)
 
 transCellX :: Int -> (Int, MetaCell) -> Picture
