@@ -12,7 +12,12 @@ import Control.Parallel.Strategies
 
 import Data.Monoid
 
+data Mode = Play | Simulate
+  deriving (Show, Read)
+
 configFile = "config.txt"
+
+windowCfg = InWindow "Cellular automata" (1024, 768) (500, 300)
 
 side = 15.0
 thickness = 0.5
@@ -24,11 +29,6 @@ pickColor (-1) = red
 pickColor 1    = blue
 pickColor _    = green
 
-windowCfg = InWindow "Cellular automata" (1024, 768) (500, 300)
-
-data Mode = Play | Simulate
-  deriving (Show, Read)
-
 pickCellRadius c | c == dead = deadRadius
                  | otherwise = aliveRadius
 
@@ -36,8 +36,8 @@ pickFactorRadius f = 7.0 + (fromIntegral f)
 
 renderCell :: MetaCell -> Picture
 renderCell ((df1', df2', df3'), (df1, df2, df3), c) = Pictures [
-    Color black $ Circle (pickFactorRadius df2'),
-    Color (pickColor df1')  $ ThickCircle thickness (pickCellRadius c)
+    Color black $ Circle (pickFactorRadius df2),
+    Color (pickColor df3)  $ ThickCircle thickness (pickCellRadius c)
     ]
 
 renderLife :: Universe2 MetaCell -> Picture

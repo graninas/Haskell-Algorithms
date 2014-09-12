@@ -5,8 +5,7 @@
 .bin
 dist
 .project~
-./Life
-./GlossLife
 *~
 .tree
 .swp
+./GlossMetaLife

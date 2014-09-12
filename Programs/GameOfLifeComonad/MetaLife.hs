@@ -41,39 +41,39 @@ isAlive (_, _, c) = c == alive
 
 rule'' :: MetaFactor -> Universe2 MetaCell -> MetaCell
 rule'' mf@(f1, f2, f3, f4, f5, _, _, r3) u
-    | nc == f2   = (oldDfMods, ( 0,  0, dftR),  new)
-    | nc <  f2   = (oldDfMods, ( 1,  1, dftR),  new)
-    | otherwise  = (oldDfMods, (-1, -1, dftR),  new)
+    | nc == f1   = (oldDfMods, ( 0,  0,  dftR),  new)
+    | nc <  f1   = (oldDfMods, ( 1,  1,  dftR),  new)
+    | otherwise  = (oldDfMods, (-1, -1,  dftR),  new)
   where
     old@( oldDfMods@(dfOtL', dfMt', dftR')
-        , oldMods  @(dfOtL,  dfMt,  dftR)
+        , oldMods
         , c) = extract u
-    (_, _, new) = rule' mf u
+    (_, (dfOtL, dfMt, dftR), new) = rule' mf u
     ruleArea = pickRuleArea r3
     nc       = length $ filter isAlive (parNeighbours ruleArea u)
 
 rule' :: MetaFactor -> Universe2 MetaCell -> MetaCell
 rule' mf@(f1, f2, f3, _, _, _, r2, _) u
-    | nc <  (f1 - dfOtL - dfMt)        = (oldDfMods, (dfOtL, dfMt, 0),  new)
-    | nc == f1                         = (oldDfMods, (dfOtL, dfMt, 1),  new)
-    | nc >  (f1 + dfOtL + dfMt)        = (oldDfMods, (dfOtL, dfMt, -1), new)
-    | otherwise                        = (oldDfMods, (dfOtL, dfMt, 0),  new)
+    | nc <  (f2 - factModifier'' - factModifier'')        = (oldDfMods, (dfOtL, factModifier'', 0),  new)
+    | nc == f2                                            = (oldDfMods, (dfOtL, factModifier'', 1),  new)
+    | nc >  (f2 + factModifier'' + factModifier'')        = (oldDfMods, (dfOtL, factModifier'', -1), new)
+    | otherwise                                           = (oldDfMods, (dfOtL, factModifier'', 0),  new)
   where
     old@( oldDfMods@(dfOtL', dfMt', dftR')
-        , oldMods  @(dfOtL,  dfMt,  dftR)
+        , oldMods  @(dfOtL,  factModifier'',  factModifier')
         , c) = extract u
     (_, _, new) = rule mf u
     ruleArea = pickRuleArea r2
     nc = length $ filter isAlive (parNeighbours ruleArea u)
 
 rule :: MetaFactor -> Universe2 MetaCell -> MetaCell
-rule mf@(_, _, _, _, _, r1, _, _) u
-    | nc == (dftR + 2) = old
-    | nc == (dftR + 3) = (oldDf, oldDf, alive)
-    | otherwise        = (oldDf, oldDf, dead)
+rule mf@(f2, f1, _, _, _, r1, _, _) u
+    | nc == (f' + 2) = old
+    | nc == (f' + 3) = (oldDf', (dfOtL, f'', f'), alive)
+    | otherwise      = (oldDf', (dfOtL, f'', f'), dead)
     where
         ruleArea = pickRuleArea r1
-        old@(oldDf', oldDf@(dfOtL, dfMt, dftR), c) = extract u
+        old@(oldDf', oldDf@(dfOtL, f'', f'), c) = extract u
         nc = length $ filter isAlive (parNeighbours ruleArea u)
 
 pickRuleArea Ring1 = neighbours

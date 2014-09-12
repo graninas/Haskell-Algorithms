@@ -2,7 +2,7 @@ module SampleCells where
 
 import MetaLife
 
-metaCells = map (map zeroCellCreator) cells'''
+metaCells = map (map zeroCellCreator) cellsGlider
 
 cells' = [[alive, alive, dead, alive, alive]]
 

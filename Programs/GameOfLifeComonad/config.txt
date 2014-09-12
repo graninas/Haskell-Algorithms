@@ -11,7 +11,7 @@
 # The first conf is counting.
 #
 
-1   2   0   0   0     Ring1 Ring2 Ring3 60 1000 4 Simulate
+2   1   0   0   0     Ring1 Ring2 Ring3 60 1000 4 Simulate
 
 
 1   2   1   0   0     Ring1 Ring2 Ring3 60 1000 4 Simulate
