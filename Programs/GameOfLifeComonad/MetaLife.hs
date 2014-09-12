@@ -20,7 +20,6 @@ data RuleArea = Ring1 | Ring2 | Ring3
 -- dfOtL for df Old Threshold Left  Limit
 -- dfMt for df Middle Threshold Limit
 -- dftR for df Threshold Right
--- Classic GOL:
 
 
 type DfOtL = Int
@@ -41,13 +40,13 @@ isAlive :: MetaCell -> Bool
 isAlive (_, _, c) = c == alive
 
 rule'' :: MetaFactor -> Universe2 MetaCell -> MetaCell
-rule'' mf@(_, _, _, f4, f5, _, _, r3) u
---    | nc < f4      = ((dfOtL', dfMt', dftR'), oldMods, new)
---    | nc < f4 + f5 = ((1, 1, 1),              oldMods, new)
-    | otherwise    = ((1, 0, 1),           oldMods, new)
+rule'' mf@(f1, f2, f3, f4, f5, _, _, r3) u
+    | nc == f2   = (oldDfMods, ( 0,  0, dftR),  new)
+    | nc <  f2   = (oldDfMods, ( 1,  1, dftR),  new)
+    | otherwise  = (oldDfMods, (-1, -1, dftR),  new)
   where
-    old@( (dfOtL', dfMt', dftR')
-        , oldMods
+    old@( oldDfMods@(dfOtL', dfMt', dftR')
+        , oldMods  @(dfOtL,  dfMt,  dftR)
         , c) = extract u
     (_, _, new) = rule' mf u
     ruleArea = pickRuleArea r3
@@ -55,9 +54,10 @@ rule'' mf@(_, _, _, f4, f5, _, _, r3) u
 
 rule' :: MetaFactor -> Universe2 MetaCell -> MetaCell
 rule' mf@(f1, f2, f3, _, _, _, r2, _) u
-    | nc < f1           = (oldDfMods, (dfOtL' + dfOtL, dfMt', dftR' + dftR),     new)
-    | nc < f1 + f2      = (oldDfMods, (dfOtL, dfMt,  dftR),                 new)
-    | otherwise         = (oldDfMods, (dfOtL' - dfOtL, dfMt', dftR' - dftR), new)
+    | nc <  (f1 - dfOtL - dfMt)        = (oldDfMods, (dfOtL, dfMt, 0),  new)
+    | nc == f1                         = (oldDfMods, (dfOtL, dfMt, 1),  new)
+    | nc >  (f1 + dfOtL + dfMt)        = (oldDfMods, (dfOtL, dfMt, -1), new)
+    | otherwise                        = (oldDfMods, (dfOtL, dfMt, 0),  new)
   where
     old@( oldDfMods@(dfOtL', dfMt', dftR')
         , oldMods  @(dfOtL,  dfMt,  dftR)
@@ -68,9 +68,9 @@ rule' mf@(f1, f2, f3, _, _, _, r2, _) u
 
 rule :: MetaFactor -> Universe2 MetaCell -> MetaCell
 rule mf@(_, _, _, _, _, r1, _, _) u
-    | nc >= (2 - dfOtL) && nc < (3 + dfMt) = old
-    | nc >= (3 + dfMt)  && nc < (4 + dftR) = (oldDf', oldDf, alive)
-    | otherwise                            = (oldDf', oldDf, dead)
+    | nc == (dftR + 2) = old
+    | nc == (dftR + 3) = (oldDf, oldDf, alive)
+    | otherwise        = (oldDf, oldDf, dead)
     where
         ruleArea = pickRuleArea r1
         old@(oldDf', oldDf@(dfOtL, dfMt, dftR), c) = extract u
