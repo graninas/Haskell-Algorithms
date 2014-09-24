@@ -1,0 +1,42 @@
+Netwire
+-------
+
+Tetris:
+http://scrambledeggsontoast.github.io/2014/09/23/tetris-netwire/#fn:whynetwire
+
+Netwire-Pong:
+https://github.com/crockeo/netwire-pong
+
+Netwire-Tutorial:
+https://github.com/crockeo/netwire-tutorial
+
+Input combinators for Netwire:
+https://github.com/Mokosha/netwire-input
+https://github.com/Mokosha/netwire-input-glfw
+
+Full example of Netwire (ver. < 5.0)
+http://stackoverflow.com/questions/14787797/full-example-for-netwire
+
+Game engines
+------------
+
+Hickory:
+https://github.com/asivitz/Hickory
+
+LambdaHack:
+https://github.com/LambdaHack/LambdaHack
+
+Elerea
+------
+
+Writing a game in Haskell:
+http://www.youtube.com/watch?v=1MNTerD8IuI
+
+Games
+-----
+
+3D Snake:
+https://github.com/mikeplus64/plissken
+
+Varoius prototypes:
+https://github.com/mlesniak/game
