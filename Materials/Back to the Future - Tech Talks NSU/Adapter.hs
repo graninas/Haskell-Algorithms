@@ -18,7 +18,7 @@ getNodes n tg = maybe [] id (lookup n tg)
 asGraph :: TableGraph -> Graph
 asGraph tg node = Set.fromList succs
   where
-    succs = getNodes node tg
+    succs = maybe [] id (lookup node tg)
 
 asGraph' :: TableGraph -> Graph
 asGraph' tg = Set.fromList . flip getNodes tg
