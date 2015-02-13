@@ -36,10 +36,8 @@ step p = L.nub $ filter (stillAlive p) p ++ (next' p p)
                                                 length (neighbours8 (x, y) all) == 3]
                                             ++ (next' all alives)
         box8 (ax, ay) = [(x,y) | x <- range ax, y <- range ay, (ax,ay) /= (x,y)]
-        --box9 (ax, ay) = [(x,y) | x <- range ax, y <- range ay]
-        lim n = [n - 1, n + 1]
+        lim   n = [n - 1, n + 1]
         range n = [n - 1..n + 1]
-        --neighbours9 cell cells = cells `L.intersect` (box9 cell)
         neighbours8 cell cells = cells `L.intersect` (box8 cell)
         stillAlive all cell = length (neighbours8 cell all) `elem` [2,3]
 
