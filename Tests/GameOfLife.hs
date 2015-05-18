@@ -28,20 +28,22 @@ sh1 >|< sh2 = L.nub (sh1 ++ sh2)
 iterations :: Shape -> [Shape]
 iterations pos = pos : iterations (step pos)
 
+neighbours8 cell cells = cells `L.intersect` (box8 cell)
+
+box8 (ax, ay) = [(x,y) | x <- range ax, y <- range ay, (ax,ay) /= (x,y)]
+lim n = [n - 1, n + 1]
+range n = [n - 1, n, n + 1]
+
 step :: Shape -> Shape
-step p = L.nub $ filter (stillAlive p) p ++ (next' p p)
-    where
-        next' all [] = []
-        next' all cur@((aX, aY) : alives) = [(x, y) | x <- lim aX, y <- lim aY,
-                                                length (neighbours8 (x, y) all) == 3]
-                                            ++ (next' all alives)
-        box8 (ax, ay) = [(x,y) | x <- range ax, y <- range ay, (ax,ay) /= (x,y)]
-        --box9 (ax, ay) = [(x,y) | x <- range ax, y <- range ay]
-        lim n = [n - 1, n + 1]
-        range n = [n - 1..n + 1]
-        --neighbours9 cell cells = cells `L.intersect` (box9 cell)
-        neighbours8 cell cells = cells `L.intersect` (box8 cell)
-        stillAlive all cell = length (neighbours8 cell all) `elem` [2,3]
+step p = let
+    next all [] = []
+    next all cur@((aX, aY) : alives) = 
+        [(x, y) | x <- lim aX, y <- lim aY,
+                  length (neighbours8 (x, y) all) == 3]
+        ++ (next all alives)
+    alive all cell = length (neighbours8 cell all) `elem` [2,3]
+  in L.nub $ filter (alive p) p ++ (next p p)
+
 
 whileAlive :: Shape -> [Shape]
 whileAlive p = let next = step p

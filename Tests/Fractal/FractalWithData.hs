@@ -20,7 +20,9 @@ checkComLaws3 = (duplicate . duplicate $ cantorLayer) == (fmap duplicate . dupli
 cLaws = [checkComLaws1, checkComLaws2, checkComLaws3]
 
 comonadCantorRule :: Layer Segments -> Segments
-comonadCantorRule = cantorGen . extract
+comonadCantorRule layer = concatMap cantorRule . extract
+    let segments = extract layer
+    in concatMap cantorRule segments
 
 
 type Segment = (Float, Float)
@@ -32,11 +34,12 @@ cantorRule (x1, x2) = let
     oneThird = len / 3.0
     in [(x1, x1 + oneThird), (x2 - oneThird, x2)]
 
-cantorGen :: Segments -> Segments
-cantorGen segs = concatMap cantorRule segs
+
+cantorCustomGen :: Segments -> Segments
+cantorCustomGen segs = concatMap cantorRule segs
 
 fractal' :: [Segments]
-fractal' = iterate cantorGen [(0.0, 0.9)]
+fractal' = iterate cantorCustomGen [(0.0, 0.9)]
 
 
 cantorStartSegment x1 x2 = [(x1, x2)]
@@ -46,20 +49,12 @@ mkCantor :: Float -> Float -> Layer Segments
 mkCantor x1 x2 = Layer $ cantorStartSegment x1 x2
 
 comonadCantorGen :: Layer Segments -> Layer Segments
-comonadCantorGen layer = comonadCantorRule `extend` layer
+comonadCantorGen = (=>> comonadCantorRule)
 
 fractal = iterate comonadCantorGen cantorLayer
 
 {- LYAH -}
 {-
-
-> class Functor w => Comonad w where
->         extract :: w a -> a
->         duplicate :: w a -> w (w a)
->         extend :: (w a -> b) -> w a -> w b
->         extend f = fmap f . duplicate
->         duplicate = extend id
-
 data Tree a = Empty | Node a (Tree a) (Tree a)
     deriving (Show)
     
