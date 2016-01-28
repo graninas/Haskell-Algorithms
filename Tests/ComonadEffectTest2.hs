@@ -22,6 +22,7 @@ noCast = C noEffect noCast
 toString :: Cast a -> String
 toString = undefined
 
+
 {-
 buff :: String -> Cast a -> Cast a
 buff "" _ = noCast
@@ -51,7 +52,10 @@ coldC = C (eff cold 1) noCast
 
 warmC :: Cast a
 warmC = C (eff warm 1) noCast
-                      
+
+inert :: Cast Int -> Int
+inert _ = 44
+
 frozenable :: Cast Int -> Int
 frozenable c = 100 <~ (c, "cold")
 
@@ -70,8 +74,8 @@ merge (C (E e1 i1) c1) xc@(C (E e2 i2) c2) = C (E e1 i1) (merge xc c1)
 --    | e1 == e2  = merge (C (E e1 (i1 + i2)) c1) c2
 --    | otherwise = C (E e1 i1) (merge xc c1)
 
-extract :: Object a -> a
-extract (O c f) = f c
+--extract :: Object a -> a
+--extract (O c f) = f c
 
 cast c (O c1 f) = f (merge c1 c)
 
@@ -83,21 +87,42 @@ castCold = cast coldC
 
 mergeF f1 f2 = f1 -- TODO!!!!
 
--- extract box :: a
--- extract :: Object a -> a
-
 -- objCr :: aaa -> a
 -- caster1 :: aaa -> a
 -- caster2 :: aaa -> a
 -- let caster1 = objCr # warmC'
 -- let caster2 = caster1 # coldC'
 -- let i = extract caster2
--- extract caster2 :: a
--- extract :: (aaa -> a) -> a
 -- warmC' :: (aaa -> a) -> (aaa -> a)
 -- coldC' :: (aaa -> a) -> (aaa -> a)
+-- extract caster2 :: a
+-- extract :: (aaa -> a) -> a
+
+objCr :: Object a -> Object a -> a
+objCr (O c1 f) (O c2 _) = f (merge c1 c2)
+
+defaultObjCr :: Object a -> a
+defaultObjCr (O _ f) = f warmC
 
 
+warmC', coldC' :: (Object a -> a) -> Object a -> a
+warmC' b = \(O c1 f1) -> b (O (merge warmC c1) f1)
+coldC' b = \(O c1 f1) -> b (O (merge warmC c1) f1)
+
+noObj = O noCast (\c -> noCast)
+
+extract :: (Object Int -> Int) -> Int
+extract b = b (O noCast inert)
+
+a # f = f a
+
+boxCasted = let
+    caster1 = defaultObjCr # warmC'
+    --caster2 = caster1 # coldC'
+    caster2 = caster1 # warmC'
+    in extract caster2
+    
+    
 
 {-
 
