@@ -4,7 +4,6 @@ module WiseConstructorTH where
 
 import Language.Haskell.TH
 import Language.Haskell.TH.Syntax
-import Control.Monad ((<=<), join)
 import Data.Traversable (traverse)
 import Data.Char (toLower)
 

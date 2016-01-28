@@ -41,9 +41,9 @@ isAlive (_, _, c) = c == alive
 
 rule'' :: MetaFactor -> Universe2 MetaCell -> MetaCell
 rule'' mf@(f1, f2, f3, f4, f5, _, _, r3) u
-    | nc == f1   = (oldDfMods, ( 0,  0,  dftR),  new)
-    | nc <  f1   = (oldDfMods, ( 1,  1,  dftR),  new)
-    | otherwise  = (oldDfMods, (-1, -1,  dftR),  new)
+--    | nc == f1   = (oldDfMods, ( 0,  0,  dftR),  new)
+--    | nc <  f1   = (oldDfMods, ( 1,  1,  dftR),  new)
+    | otherwise  = (oldDfMods, (3, 4,  dftR),  new)
   where
     old@( oldDfMods@(dfOtL', dfMt', dftR')
         , oldMods
@@ -54,9 +54,9 @@ rule'' mf@(f1, f2, f3, f4, f5, _, _, r3) u
 
 rule' :: MetaFactor -> Universe2 MetaCell -> MetaCell
 rule' mf@(f1, f2, f3, _, _, _, r2, _) u
-    | nc <  (f2 - factModifier'' - factModifier'')        = (oldDfMods, (dfOtL, factModifier'', 0),  new)
-    | nc == f2                                            = (oldDfMods, (dfOtL, factModifier'', 1),  new)
-    | nc >  (f2 + factModifier'' + factModifier'')        = (oldDfMods, (dfOtL, factModifier'', -1), new)
+--    | nc <  (f2 - factModifier'' - factModifier'')        = (oldDfMods, (dfOtL, factModifier'', 0),  new)
+--    | nc == f2                                            = (oldDfMods, (dfOtL, factModifier'', 1),  new)
+--    | nc >  (f2 + factModifier'' + factModifier'')        = (oldDfMods, (dfOtL, factModifier'', -1), new)
     | otherwise                                           = (oldDfMods, (dfOtL, factModifier'', 0),  new)
   where
     old@( oldDfMods@(dfOtL', dfMt', dftR')
@@ -68,8 +68,8 @@ rule' mf@(f1, f2, f3, _, _, _, r2, _) u
 
 rule :: MetaFactor -> Universe2 MetaCell -> MetaCell
 rule mf@(f2, f1, _, _, _, r1, _, _) u
-    | nc == (f' + 2) = old
-    | nc == (f' + 3) = (oldDf', (dfOtL, f'', f'), alive)
+--    | nc == (f' + 1) = old
+    | nc == (f' + 1) = old
     | otherwise      = (oldDf', (dfOtL, f'', f'), dead)
     where
         ruleArea = pickRuleArea r1
