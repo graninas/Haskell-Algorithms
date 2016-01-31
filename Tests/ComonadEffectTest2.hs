@@ -11,6 +11,9 @@ instance Show Effect where
 instance Show (Cast a) where
   show (C (E "" _) _) = ""
   show (C e c) = show e ++ " " ++ show c
+  
+instance Show a => Show (Object a) where
+  show (O c f) = show $ f c
 
 noEffect :: Effect
 noEffect = E "" 0
@@ -68,33 +71,8 @@ castCold = cast coldC
 a # f = f a
 
 mergeF f1 f2 = f1 -- TODO!!!!
-{-
--- objCr :: aaa -> a
--- caster1 :: aaa -> a
--- caster2 :: aaa -> a
--- let caster1 = objCr # warmC'
--- let caster2 = caster1 # coldC'
--- let i = extract caster2
--- warmC' :: (aaa -> a) -> (aaa -> a)
--- coldC' :: (aaa -> a) -> (aaa -> a)
--- extract caster2 :: a
--- extract :: (aaa -> a) -> a
 
-objCr :: Object a -> Object a -> a
-objCr (O c1 f) (O c2 _) = f (merge c1 c2)
-
-defaultObjCr :: Object a -> a
-defaultObjCr (O c1 f) = f c1
-
-
-warmC', coldC' :: (Object a -> a) -> Object a -> a
-warmC' b = \(O c1 f1) -> b (O (merge warmC c1) f1)
-coldC' b = \(O c1 f1) -> b (O (merge warmC c1) f1)
-
-extract :: (Object Int -> Int) -> Int
-extract b = b (O noCast inert)
-
--}
+-- warmC :: Object a -> a
 
 -- box' # warmC' :: (Object a -> Object a)
 -- warmC' box' :: (Object a -> Object a)
@@ -105,11 +83,18 @@ warmC', coldC' :: (Object a -> Object a) -> (Object a -> Object a)
 coldC' = \gen -> \(O c1 f1) -> gen (O (merge coldC c1) f1)
 warmC' = \gen -> \(O c1 f1) -> gen (O (merge warmC c1) f1)
 
+-- extend :: (w a -> b) -> w a -> w b
+--extend :: ((Object a -> Object a) -> Object a) -> ((Object a -> Object a) -> (Object a -> Object a))
+extend =  \genF -> \gen -> (\(O c1 f1) -> genF (\(O c2 f2) -> gen (O (merge c1 c2) (mergeF f1 f2)  )) )
+
+
+
+
 box' :: Object Int -> Object Int
 box' = \(O c1 f1) -> O c1 frozenable
 
---extract :: (Object a -> Object a) -> a
-extract gen = let (O c f) = (gen noObj) in f c
+--extract :: (Object a -> Object a) -> Object a
+extract gen = let (O c f) = (gen noObj) in O c f
 
 boxCasted = let
     caster1 = box' # warmC'
