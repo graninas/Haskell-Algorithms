@@ -89,10 +89,10 @@ warmC' = eff' warmC
 extend = \genF -> \gen -> (\(O c1 f1) -> genF (\(O c2 f2) -> gen (O (merge c1 c2) (mergeF f1 f2)  )) )
 
 
-
+mkActor caps = \(O c1 _) -> O c1 caps
 
 box' :: Object Int -> Object Int
-box' = \(O c1 f1) -> O c1 frozenable
+box' = mkActor frozenable
 
 --extract :: (Object a -> Object a) -> Object a
 extract gen = let (O c f) = (gen noObj) in O c f

@@ -1,99 +1,102 @@
 ﻿module RogueLike where
 
 data Effect = E String Int
-data Cast a = C Effect (Cast a)
-
-
+data Cast a = C Effect (Cast a) | NoCast
 type Capability a = Cast a -> a
+data Caps a = Cap (Capability a) (Caps a) | NoCaps
 
-data Object a = O (Cast a) (Capability a)
+type Properties a = Caps a -> a
+data Object a = O (Cast a) (Properties a)
+type Actor a = Object a -> Object a
+
+type ActorF a = Actor a -> Actor a
 
 instance Show Effect where
-  show (E "" i) = "noEffect"
-  show (E n i) = "(" ++ n ++ ":" ++ show i ++ ")"
-  
+  show (E n i) = "(" ++ n ++ "=" ++ show i ++ ")"
+
 instance Show (Cast a) where
-  show (C (E "" _) _) = ""
+  show NoCast = "No cast."
   show (C e c) = show e ++ " " ++ show c
+
+instance Show (Caps a) where
+  show NoCaps = "No caps."
+  show (Cap c caps) = "(Caps: " {- ++ show c -} ++ ", " ++ show caps ++ ")"
   
 instance Show a => Show (Object a) where
-  show (O c f) = show $ f c
+  show (O cast caps) = show $ applyCast cast caps
 
-noEffect :: Effect
-noEffect = E "" 0
+cast (E "" _) = error "No cast: empty effect."
+cast e = C e noCast
+
+effect "" _ = error "No effect: empty name."
+effect n i = E n i
+
+object = O
+
+cap c = Cap c NoCaps
 
 noCast :: Cast a
-noCast = C noEffect noCast
+noCast = NoCast
 
-noObj = O noCast (\_ -> 0)
-                      
+noCaps :: Caps a
+noCaps = NoCaps
+
+noObj = object noCast (\_ -> noCaps)
+
+addCapability :: (Cast a -> a) -> (Caps a -> a)
+addCapability c = \caps -> case caps of
+    NoCaps     -> c noCast
+    Cap c2 css -> 
+    
+-- (Caps a) is monoid!!
+mergeCaps :: Caps a -> Caps a -> Caps a
+mergeCaps NoCaps NoCaps = noCaps
+mergeCaps NoCaps caps   = caps
+mergeCaps caps   NoCaps = caps
+mergeCaps (Cap c1 caps1) second@(Cap c2 caps2) = Cap c1 (mergeCaps caps1 second)
+-- TODO!
+--    | caps2 `contain` c1 = error "Capability " ++ show c1 ++ " is already set." 
+--    | caps1 `contain` c2 = error "Capability " ++ show c2 ++ " is already set." 
+--    | otherwise = Cap c1 (mergeCaps c2 second)
+
+-- (Cast a) is monoid!!
+mergeCasts :: Cast a -> Cast a -> Cast a
+mergeCasts NoCast NoCast = noCast
+mergeCasts NoCast c      = c
+mergeCasts c      NoCast = c
+mergeCasts (C (E e1 i1) c1) xc@(C (E e2 i2) c2) = C (E e1 i1) (mergeCasts xc c1)
+
+applyCast cast caps = "Cast to caps: TODO."
+
 takeBuff :: Int -> (Cast Int, String) -> Int
-takeBuff i (C (E "" eVal) _, _) = i
+takeBuff i (NoCast, _) = i
 takeBuff i (C (E eName eVal) c, buffName) | eName == buffName = takeBuff (i + eVal) (c, buffName)
                                           | otherwise         = takeBuff i          (c, buffName)
 
 (<~) = takeBuff
 
-hp e n = \c -> n <~ (c, e)
-
-eff = E
-
-coldC :: Cast a
-coldC = C (eff cold 1) noCast
-
-warmC :: Cast a
-warmC = C (eff warm 1) noCast
-
-inert :: Cast Int -> Int
-inert _ = 44
-
-mkActor :: Capability Int -> Object Int -> Object Int
-mkActor caps = \(O c1 _) -> O c1 caps
-
-
--- (Cast a) is monoid!!
-merge :: Cast a -> Cast a -> Cast a
-merge (C (E "" _) _) (C (E "" _) _) = noCast
-merge (C (E "" _) _) c = c
-merge c (C (E "" _) _) = c
-merge (C (E e1 i1) c1) xc@(C (E e2 i2) c2) = C (E e1 i1) (merge xc c1)
-
-cast c (O c1 f) = f (merge c1 c)
-
-castWarm :: Object a -> a
-castWarm = cast warmC
-
-castCold :: Object a -> a
-castCold = cast coldC
-
 a # f = f a
 
-mergeF f1 f2 = f1 -- TODO!!!!
+mkActor :: Properties a -> Actor a
+mkActor props = \(O c1 _) -> object c1 props
 
--- warmC :: Object a -> a
+mkActor' :: Capability a -> Actor a
+mkActor' c = \(O casts _) -> object casts (addCapability c)
 
--- box' # warmC' :: (Object a -> Object a)
--- warmC' box' :: (Object a -> Object a)
--- warmC' :: (Object a -> Object a) -> (Object a -> Object a)
+actorF casts = \gen -> \(O c1 f1) -> gen (object (mergeCasts casts c1) f1)
 
-eff' e = \gen -> \(O c1 f1) -> gen (O (merge e c1) f1)
-
-warmC', coldC' :: (Object a -> Object a) -> (Object a -> Object a)
-coldC' = eff' coldC
-warmC' = eff' warmC
-
--- extend :: (w a -> b) -> w a -> w b
---extend :: ((Object a -> Object a) -> Object a) -> ((Object a -> Object a) -> (Object a -> Object a))
-extend = \genF -> \gen -> (\(O c1 f1) -> genF (\(O c2 f2) -> gen (O (merge c1 c2) (mergeF f1 f2)  )) )
---extract :: (Object a -> Object a) -> Object a
 extract gen = let (O c f) = (gen noObj) in O c f
 
+--------------------------------------
 
-
-
+hp e n = \c -> n <~ (c, e)
 
 cold = "cold"
 warm = "warm"
+
+warmCast, coldCast :: ActorF a
+coldCast = actorF $ (cast (effect cold 1))
+warmCast = actorF $ (cast (effect warm 1))
 
 freezeHP :: Int -> Capability Int
 freezeHP hp = \c -> hp <~ (c, cold)
@@ -102,14 +105,12 @@ warmable :: Capability Int
 warmable   c = 10 <~ (c, warm)
 frozenable c = 80 <~ (c, cold)
 
-box = mkActor $ do
-    frozenable
-    warmable
+box = mkActor' frozenable
 
 boxCasted = let
-    caster1 = box # warmC'
-    caster2 = caster1 # coldC'
-    caster3 = caster2 # coldC'
+    caster1 = box # warmCast
+    caster2 = caster1 # coldCast
+    caster3 = caster2 # coldCast
     in extract caster3
     
     
