@@ -1,0 +1,6 @@
+[ ReturnString "This is string."
+, GetCharAt GetLength
+, S (K (ApplyMath Decrement I)) GetLength
+, Sequence (ReturnString "Hello, ") (ReturnString "World!")
+, Apply GetLength (ReturnString "ABCD")
+]

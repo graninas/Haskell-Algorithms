@@ -78,14 +78,15 @@ mergeF f1 f2 = f1 -- TODO!!!!
 -- warmC' box' :: (Object a -> Object a)
 -- warmC' :: (Object a -> Object a) -> (Object a -> Object a)
 
-warmC', coldC' :: (Object a -> Object a) -> (Object a -> Object a)
+eff' e = \gen -> \(O c1 f1) -> gen (O (merge e c1) f1)
 
-coldC' = \gen -> \(O c1 f1) -> gen (O (merge coldC c1) f1)
-warmC' = \gen -> \(O c1 f1) -> gen (O (merge warmC c1) f1)
+warmC', coldC' :: (Object a -> Object a) -> (Object a -> Object a)
+coldC' = eff' coldC
+warmC' = eff' warmC
 
 -- extend :: (w a -> b) -> w a -> w b
 --extend :: ((Object a -> Object a) -> Object a) -> ((Object a -> Object a) -> (Object a -> Object a))
-extend =  \genF -> \gen -> (\(O c1 f1) -> genF (\(O c2 f2) -> gen (O (merge c1 c2) (mergeF f1 f2)  )) )
+extend = \genF -> \gen -> (\(O c1 f1) -> genF (\(O c2 f2) -> gen (O (merge c1 c2) (mergeF f1 f2)  )) )
 
 
 
