@@ -1,20 +1,22 @@
 ﻿module RogueLike where
 
-data Effect = E String Int
-data Cast a = C Effect (Cast a) | NoCast
-type Capability a = Cast a -> a
-data Caps a = Cap (Capability a) (Caps a) | NoCaps
+data Effects a = Effects a (Effects a) | NoEffect
+type Capability a = Effects a -> a
+data Properties a = Property (Capability a) (Properties a) | NoProperties
+data Object a = O (Effects a) (Properties a)
 
-type Properties a = Caps a -> a
-data Object a = O (Cast a) (Properties a)
+-- a :: EffectSystem
+
+
+
+
 type Actor a = Object a -> Object a
-
 type ActorF a = Actor a -> Actor a
 
 instance Show Effect where
   show (E n i) = "(" ++ n ++ "=" ++ show i ++ ")"
 
-instance Show (Cast a) where
+instance Show (Effects a) where
   show NoCast = "No cast."
   show (C e c) = show e ++ " " ++ show c
 
@@ -35,7 +37,7 @@ object = O
 
 cap c = Cap c NoCaps
 
-noCast :: Cast a
+noCast :: Effects a
 noCast = NoCast
 
 noCaps :: Caps a
@@ -43,7 +45,7 @@ noCaps = NoCaps
 
 noObj = object noCast (\_ -> noCaps)
 
-addCapability :: (Cast a -> a) -> (Caps a -> a)
+addCapability :: (Effects a -> a) -> (Caps a -> a)
 addCapability c = \caps -> case caps of
     NoCaps     -> c noCast
     Cap c2 css -> 
@@ -59,16 +61,16 @@ mergeCaps (Cap c1 caps1) second@(Cap c2 caps2) = Cap c1 (mergeCaps caps1 second)
 --    | caps1 `contain` c2 = error "Capability " ++ show c2 ++ " is already set." 
 --    | otherwise = Cap c1 (mergeCaps c2 second)
 
--- (Cast a) is monoid!!
-mergeCasts :: Cast a -> Cast a -> Cast a
+-- (Effects a) is monoid!!
+mergeCasts :: Effects a -> Effects a -> Effects a
 mergeCasts NoCast NoCast = noCast
 mergeCasts NoCast c      = c
 mergeCasts c      NoCast = c
 mergeCasts (C (E e1 i1) c1) xc@(C (E e2 i2) c2) = C (E e1 i1) (mergeCasts xc c1)
 
-applyCast cast caps = "Cast to caps: TODO."
+applyCast cast caps = "Effects to caps: TODO."
 
-takeBuff :: Int -> (Cast Int, String) -> Int
+takeBuff :: Int -> (Effects Int, String) -> Int
 takeBuff i (NoCast, _) = i
 takeBuff i (C (E eName eVal) c, buffName) | eName == buffName = takeBuff (i + eVal) (c, buffName)
                                           | otherwise         = takeBuff i          (c, buffName)

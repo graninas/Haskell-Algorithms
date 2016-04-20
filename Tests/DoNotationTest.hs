@@ -3,7 +3,7 @@ data Cast a = C Effect (Cast a)
 type Capability a = Cast a -> a
 data Object a = O (Cast a) (Capability a)
 
-mkActor :: Capability Int -> Object Int -> Object Int
+mkActor :: Capability a -> Object a -> Object a
 mkActor caps = \(O c1 _) -> O c1 caps
 
 takeBuff :: Int -> (Cast Int, String) -> Int
