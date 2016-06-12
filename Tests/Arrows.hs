@@ -5,7 +5,9 @@ import Prelude hiding ((.), id)
 import Control.Category
 import Control.Arrow
 
-data MyArr b c = MyArr (b -> (c, MyArr b c))
+-- This is actually a stateful stream transducer.
+-- See http://stackoverflow.com/questions/4191424/what-are-arrows-and-how-can-i-use-them
+newtype MyArr b c = MyArr (b -> (c, MyArr b c))
 
 countA :: MyArr b Int
 countA = count' 0
@@ -42,7 +44,7 @@ composedA' = proc lst -> do
     shs  <- showA  -< cnts
     returnA -< shs
 
-test = do
+test1 = do
     let charsList = ['a'..'z']
     let rs1 = runArrLst showA $ runArrLst countA charsList
     putStrLn $ show rs1
@@ -55,4 +57,36 @@ test = do
     
     putStrLn $ show $ rs1 == rs2
     putStrLn $ show $ rs1 == rs3
+
+
+newtype SF b c = SF { runSF :: [b] -> [c] }
+
+instance Category SF where
+    id = SF id
+    SF g . SF f = SF (g . f)
+
+instance Arrow SF where
+    arr f = SF (map f)
+-- http://stackoverflow.com/questions/28402932/haskell-arrow-delay-function
+    first (SF f) = SF (unzip >>> first f >>> uncurry zip)
+{-
+    first (SF f) = SF (uncurry zip . (f .*. id) . unzip)
+      where
+            (.*.) :: (a -> b) -> (c -> d) -> (a,c) -> (b,d)
+            (.*.) f g (a,c) = (f a, g c)
+-}
+
+delay x = SF (x:)
+
+pairPred = arr id &&& delay 0
+
+test2 = do
+    print $ runSF (arr (+1)) [1..5]
+    print $ runSF (delay 0) [1..5]
+    print $ runSF pairPred [1..5]
+        
+        
+        
+        
+        
 
