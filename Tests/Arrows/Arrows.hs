@@ -116,25 +116,54 @@ instance Monad eff => Arrow (ArrEff eff) where
             feededF fb d
         feededF (c, arr1) d = return ((c, d), first arr1)
 
-{-
-runArrEvent :: Read b => MyArr b (Bool, c) -> [c] -> IO [c]
-runArrEvent (MyArr f) cs = do
+instance Monad eff => Functor (ArrEff eff b) where
+    fmap f (ArrEff r) = ArrEff (\b -> do
+        (c, next) <- r b
+        return (f c, fmap f next))
+
+mArr mf = ArrEff (\b -> do
+    c <- mf b
+    return (c, mArr mf))
+    
+runArrEvent :: Read b => ArrEff IO b (Bool, c) -> [c] -> IO [c]
+runArrEvent (ArrEff f) cs = do
     b <- getLine
     result <- f (read b)
     case result of
         ((True, c), next) -> runArrEvent next (c:cs)
         ((False, c), _)   -> return (c:cs)
-        -}
 
-        
+runArrEff' :: [c] -> ArrEff IO b c -> [b] -> IO [c]
+runArrEff' cs (ArrEff f) []     = return cs
+runArrEff' cs (ArrEff f) (b:bs) = do
+    (c, next) <- f b
+    runArrEff' (c:cs) next bs
+
+runArrEff :: ArrEff IO b c -> [b] -> IO [c]
+runArrEff = runArrEff' []
+    
+readTemperatureA :: ArrEff IO b Temperature
+readTemperatureA = mArr $ \_ -> readTemperature globalContr
+
+heatUpBoostersA :: ArrEff IO b ()
+heatUpBoostersA = mArr $ \_ -> heatUpBoosters globalContr 0 0
+
+testA :: ArrEff IO () Temperature
+testA = readTemperatureA <<< heatUpBoostersA
+
 testEvent = do
-    t1 <- readTemperature globalContr
-    heatUpBoosters globalContr 0 0
-    t2 <- readTemperature globalContr
-    print t1
-    print t2
+--    t1 <- readTemperature globalContr
+--    heatUpBoosters globalContr 0 0
+--    t2 <- readTemperature globalContr
+--    print t1
+--    print t2
 
-        
+    runArrEff testA [()]
+    t3 <- readTemperature globalContr
+    print t3
+
+    
+    
         
         
 
