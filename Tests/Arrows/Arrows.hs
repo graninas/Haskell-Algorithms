@@ -124,6 +124,12 @@ instance Monad eff => Functor (ArrEff eff b) where
 mArr mf = ArrEff (\b -> do
     c <- mf b
     return (c, mArr mf))
+
+mConst mf = ArrEff (\_ -> do
+    c <- mf
+    return (c, mConst mf))
+
+aConst c = arr (const c)
     
 runArrEvent :: Read b => ArrEff IO b (Bool, c) -> [c] -> IO [c]
 runArrEvent (ArrEff f) cs = do
@@ -141,27 +147,36 @@ runArrEff' cs (ArrEff f) (b:bs) = do
 
 runArrEff :: ArrEff IO b c -> [b] -> IO [c]
 runArrEff = runArrEff' []
+
+runArrEff1 :: ArrEff IO b c -> b -> IO (c, ArrEff IO b c)
+runArrEff1 (ArrEff f) b = f b
+
+readTemperatureA :: ArrEff IO Controller Temperature
+readTemperatureA = mArr $ \contr -> readTemperature contr
+
+heatUpBoostersA :: ArrEff IO Controller Controller
+heatUpBoostersA = mArr $ \contr -> heatUpBoosters contr 0 0 >> return contr
+
+testA :: ArrEff IO Controller Temperature
+testA = heatUpBoostersA >>> readTemperatureA
+
+timesA' :: [c] -> Int -> ArrEff IO b c -> ArrEff IO b [c]
+timesA' cs 0 _ = aConst cs
+timesA' cs n ar = ArrEff (\b -> do
+    (c, next) <- runArrEff1 ar b
+    let r = c:cs
+    return (r, timesA' r (n-1) next))
+
+timesA :: Int -> ArrEff IO b c -> ArrEff IO b [c]
+timesA = timesA' []
+
+testEffectfulArrow = do
+    result1 <- runArrEff (mConst initBoosters' >>> testA) [1,2,3]
+    print result1 -- [2.0, 2.0, 2.0]
     
-readTemperatureA :: ArrEff IO b Temperature
-readTemperatureA = mArr $ \_ -> readTemperature globalContr
-
-heatUpBoostersA :: ArrEff IO b ()
-heatUpBoostersA = mArr $ \_ -> heatUpBoosters globalContr 0 0
-
-testA :: ArrEff IO () Temperature
-testA = readTemperatureA <<< heatUpBoostersA
-
-testEvent = do
---    t1 <- readTemperature globalContr
---    heatUpBoosters globalContr 0 0
---    t2 <- readTemperature globalContr
---    print t1
---    print t2
-
-    runArrEff testA [()]
-    t3 <- readTemperature globalContr
-    print t3
-
+    r <- runArrEff1 (mConst initBoosters' >>> timesA 3 testA) ()
+    print (fst r)
+    --print result2
     
     
         
