@@ -152,31 +152,30 @@ runArrEff1 :: ArrEff IO b c -> b -> IO (c, ArrEff IO b c)
 runArrEff1 (ArrEff f) b = f b
 
 readTemperatureA :: ArrEff IO Controller Temperature
-readTemperatureA = mArr $ \contr -> readTemperature contr
+readTemperatureA = mArr readTemperature
 
 heatUpBoostersA :: ArrEff IO Controller Controller
 heatUpBoostersA = mArr $ \contr -> heatUpBoosters contr 0 0 >> return contr
 
 testA :: ArrEff IO Controller Temperature
 testA = heatUpBoostersA >>> readTemperatureA
-
-timesA' :: [c] -> Int -> ArrEff IO b c -> ArrEff IO b [c]
-timesA' cs 0 _ = aConst cs
-timesA' cs n ar = ArrEff (\b -> do
-    (c, next) <- runArrEff1 ar b
-    let r = c:cs
-    return (r, timesA' r (n-1) next))
-
+    
 timesA :: Int -> ArrEff IO b c -> ArrEff IO b [c]
-timesA = timesA' []
+timesA 0 _  = aConst []
+timesA n ar = ArrEff (\b -> do
+    (c, next)   <- runArrEff1 ar b
+    (cs, next') <- runArrEff1 (timesA (n-1) next) b
+    return (c:cs, next'))
 
 testEffectfulArrow = do
     result1 <- runArrEff (mConst initBoosters' >>> testA) [1,2,3]
     print result1 -- [2.0, 2.0, 2.0]
     
-    r <- runArrEff1 (mConst initBoosters' >>> timesA 3 testA) ()
-    print (fst r)
-    --print result2
+    r1 <- runArrEff1 (mConst initBoosters' >>> timesA 3 testA) ()
+    print (fst r1) -- [2.0,3.0,4.0]
+    r2 <- runArrEff1 (snd r1) ()
+    print (fst r2) -- []
+    
     
     
         
