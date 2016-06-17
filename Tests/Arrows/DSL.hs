@@ -1,7 +1,9 @@
+{-# LANGUAGE DeriveFunctor #-}
 module DSL where
 
 import Data.Time
 import Data.IORef
+import Control.Monad.Free
 import Control.Concurrent
 import System.IO.Unsafe
 
@@ -19,101 +21,126 @@ type Temperature = Float
 data ControllerImpl = ControllerImpl Name Status Int [Temperature]
 data Controller = ControllerMock (IORef ControllerImpl)
 
-type Script = [Procedure]
+data Procedure a
+    = ReadTemperature Controller (Temperature -> a)
+    | Report Value a
+    | Store Value a
+    | AskStatus Controller (Status -> a)
+    | InitBoosters (Controller -> a)
+    | HeatUpBoosters Controller Power Duration a
+  deriving (Functor)
 
-data Procedure
-    = ReadTemperature Controller (Temperature -> Script)
-    | Report Value
-    | Store Value
-    | AskStatus Controller (Status -> Script)
-    | InitBoosters (Controller -> Script)
-    | HeatUpBoosters Controller Power Duration
+type Script a = Free Procedure a
 
-evalScript :: Script -> IO [Value]
-evalScript script = evalScript' script []
-evalScript' :: Script -> [Value] -> IO [Value]
-evalScript' [] out = return out
-evalScript' (p:ps) out = do
-    vals <- evalProcedure p
-    evalScript' ps (out ++ vals)
+readTemperatureF c = liftF $ ReadTemperature c id
+reportF v = liftF $ Report v ()
+storeF v = liftF $ Store v ()
+askStatusF c = liftF $ AskStatus c id
+initBoostersF = liftF $ InitBoosters id
+heatUpBoostersF c p d = liftF $ HeatUpBoosters c p d ()
 
-evalProcedure :: Procedure -> IO [Value]
-evalProcedure (ReadTemperature controller next) = do
+--interpretScript :: Script a -> IO a
+interpretScript (Pure a) = return a
+interpretScript (Free a) = interpretProcedure a
+
+--interpretProcedure :: Procedure a -> IO a
+interpretProcedure (ReadTemperature controller next) = do
     temp <- readTemperature controller
-    evalScript (next temp)
-evalProcedure (Report v) = reportValue v >> return []
-evalProcedure (Store v)  = storeValue v >> return []
-evalProcedure (AskStatus controller next) = do
+    interpretScript (next temp)
+interpretProcedure (Report v next) = do
+    reportValue v
+    interpretScript next
+interpretProcedure (Store v next) = do
+    storeValue v
+    interpretScript next
+interpretProcedure (AskStatus controller next) = do
     status <- askStatus controller
-    evalScript (next status)
-evalProcedure (InitBoosters next) = do
+    interpretScript (next status)
+interpretProcedure (InitBoosters next) = do
     controller <- initBoosters
-    evalScript (next controller)
-evalProcedure (HeatUpBoosters controller power dur) = do
+    interpretScript (next controller)
+interpretProcedure (HeatUpBoosters controller power dur next) = do
     heatUpBoosters controller power dur
-    return []
+    interpretScript next
 
+------------ Scripts -----------------------------
+reportAndStore :: Value -> Script ()
+reportAndStore val = do
+    reportF val
+    storeF val
 
-data Action = Times Int Int Action
-            | EvalScript Script ([Value] -> Scenario)
-            | PrintValues [Value]
-            
-type Scenario = [Action]
-
-evalScenario :: Scenario -> IO ()
-evalScenario acts = mapM_ evalAction acts
-
-evalAction (Times n dt action) = do
-    let acts = replicate n (evalAction action >> threadDelay dt)
-    putStrLn $ "Times: n = " ++ show n ++ ", d = " ++ show dt
-    sequence_ acts
-evalAction (EvalScript script next) = do
-    putStrLn "EvalScript"
-    vals <- evalScript script
-    evalScenario (next vals)
-evalAction (PrintValues vals) = do
-    putStrLn "PrintValues"
-    mapM_ print vals
-
-
-reportAndStore :: Value -> Script
-reportAndStore val = [ Report val, Store val ]
-
-processTemp :: Temperature -> Script
+processTemp :: Temperature -> Script ()
 processTemp t = reportAndStore (temperatureToValue t)
 
-heatingUp :: Controller -> Script
-heatingUp controller =
-    [ ReadTemperature controller processTemp
-    , HeatUpBoosters controller 1.0 (seconds 10)
-    , ReadTemperature controller processTemp ]
+heatingUp :: Controller -> Script ()
+heatingUp controller = do
+    t1 <- readTemperatureF controller
+    processTemp t1
+    heatUpBoostersF controller 1.0 (seconds 10)
+    t2 <- readTemperatureF controller
+    processTemp t2
 
-testBoostersScript :: Script
-testBoostersScript = [ InitBoosters heatingUp ]
+testBoostersScript :: Script Controller
+testBoostersScript = do
+    cont <- initBoostersF
+    heatingUp cont
+    return cont
 
-printValues :: [Value] -> Scenario
-printValues vals = [ PrintValues vals ]
+--------------------------------------------------
+------------ Scenarios ---------------------------
 
-heatOnceASecond = EvalScript testBoostersScript printValues
+data Action b a = Times Int Int (Scenario b a) (b -> a)
+                | EvalScript (Script b) (b -> a)
+                | PrintValues [Value] a
+  deriving (Functor)
+  
+type Scenario b a = Free (Action b) a
 
-testBoostersScenario :: Scenario
-testBoostersScenario = [ Times 10 (seconds 1) heatOnceASecond ]
+timesF n dt scn = liftF $ Times n dt scn id
+evalScriptF scr = liftF $ EvalScript scr id
+printValuesF vs = liftF $ PrintValues vs ()
 
+--interpretScenario :: Scenario a -> IO a
+interpretScenario (Pure a) = return a
+interpretScenario (Free a) = interpretAction a
 
-test = do
-    evalScenario testBoostersScenario
+{-
+interpretTimes' rs 0 _  _   next = interpretScenario next
+interpretTimes' rs n dt scn next = do
+    r <- interpretScenario scn
+    threadDelay dt
+    interpretTimes' (r:rs) (n-1) dt scn next
+    -}
 
--- this is a hack for demo
-globalContr :: Controller
-{-# NOINLINE globalContr #-}
-globalContr = unsafePerformIO initBoosters'
+interpretTimes' = undefined
+    
+--interpretAction :: Action a -> IO a
+interpretAction (Times n dt scn next) = do
+    putStrLn $ "Times: n = " ++ show n ++ ", d = " ++ show dt
+    interpretTimes' [] n dt scn next
+interpretAction (EvalScript script next) = do
+    putStrLn "EvalScript"
+    vals <- interpretScript script
+    interpretScenario (next vals)
+interpretAction (PrintValues vals next) = do
+    putStrLn "PrintValues"
+    mapM_ print vals
+    interpretScenario next
 
--- This is a hack for demo
-initBoosters' = do
+heatOnceASecond = do
+    --evalScriptF testBoostersScript
+    --vals <- evalScriptF readTemperatureF
+    printValuesF []
+
+testBoostersScenario = timesF 10 (seconds 1) heatOnceASecond
+
+test = interpretScenario testBoostersScenario
+
+----- Hardware ---------------------------------------------------------------------
+
+initBoosters = do
    controllerImpl <- newIORef (ControllerImpl "" Online 0 (map fromIntegral [1..]))
    return $ ControllerMock controllerImpl
-
-initBoosters = return globalContr
 
 reportValue v = print ("reported: " ++ show v)
 storeValue v = print ("stored: " ++ show v)
@@ -124,5 +151,6 @@ askStatus _ = return Online
 heatUpBoosters (ControllerMock controller) _ _ = do
     ControllerImpl _ st n ts <- readIORef controller
     writeIORef controller $ ControllerImpl "" st (n + 1) (drop 1 ts)
+
 seconds n = n * 1000000
 temperatureToValue = FloatValue

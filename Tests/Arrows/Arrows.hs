@@ -168,16 +168,15 @@ timesA n ar = ArrEff (\b -> do
     return (c:cs, next'))
 
 testEffectfulArrow = do
-    result1 <- runArrEff (mConst initBoosters' >>> testA) [1,2,3]
+    result1 <- runArrEff (mConst initBoosters >>> testA) [1,2,3]
     print result1 -- [2.0, 2.0, 2.0]
     
-    r1 <- runArrEff1 (mConst initBoosters' >>> timesA 3 testA) ()
+    r1 <- runArrEff1 (mConst initBoosters >>> timesA 3 testA) ()
     print (fst r1) -- [2.0,3.0,4.0]
     r2 <- runArrEff1 (snd r1) ()
     print (fst r2) -- []
-    
-    
-    
-        
+
+---------------------------------------------------------------------------
+
         
 
