@@ -4,6 +4,7 @@
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE KindSignatures #-}
 {-# LANGUAGE ExistentialQuantification #-}
+{-# LANGUAGE TypeFamilies #-}
 
 module DSL where
 
@@ -14,7 +15,7 @@ import Data.Time
 import Data.IORef
 import Control.Monad.Free
 import Control.Concurrent
-import System.IO.Unsafe
+import Unsafe.Coerce
 
 data Value = FloatValue Float
            | IntValue Int
@@ -70,8 +71,8 @@ reportAndStore val = do
 processTemp :: Temperature -> Script ()
 processTemp t = reportAndStore (temperatureToValue t)
 
-heatingUp :: Controller -> Script ()
-heatingUp controller = do
+heatingUpTest :: Controller -> Script ()
+heatingUpTest controller = do
     t1 <- readTemperature controller
     processTemp t1
     heatUpBoosters controller 1.0 (seconds 10)
@@ -81,24 +82,29 @@ heatingUp controller = do
 testBoostersScript :: Script Controller
 testBoostersScript = do
     cont <- initBoosters
-    heatingUp cont
+    heatingUpTest cont
     return cont
 
 --------------------------------------------------
 ------------ Scenarios ---------------------------
 
-data Action a = --Times Int Int (ScenarioFT b a) (b -> a)
-                forall b .EvalScript (Script b) (b -> a)
+data Action a = forall b . Times Int (Script b) ([b] -> a)
+              | forall b . EvalScript (Script b) (b -> a)
               | PrintValues [Value] a
 
+type Scenario a = Free Action a
+              
 instance Functor Action where
     fmap f (PrintValues vs a) = PrintValues vs (f a)
     fmap f (EvalScript scr g) = EvalScript scr (f . g)
+    fmap f (Times n scr g)    = Times n scr (f . g)
 
 printValues vs = liftF $ PrintValues vs ()
 evalScript scr = liftF $ EvalScript scr id
+times n scr    = liftF $ Times n scr id
 
-scnenario = do
+scnenario1 :: Scenario ()
+scnenario1 = do
     let v1 = IntValue 1
     let v2 = IntValue 2
     printValues [v1, v2]
@@ -109,22 +115,43 @@ scnenario = do
     t2 <- evalScript (readTemperature cont)
     printValues [temperatureToValue t1, temperatureToValue t2]
 
-testFreeOfFree :: IO ()
-testFreeOfFree = interpretScenario scnenario
+scenario2 :: Controller -> Scenario Temperature
+scenario2 cont = evalScript (readTemperature cont)
+
+heatingUp cont = do
+    heatUpBoosters cont 1.0 (seconds 10)
+    readTemperature cont
+
+scenario3 = do
+    cont <- evalScript initBoosters
+    temps <- times 3 (heatingUp cont)
+    printValues $ map temperatureToValue temps
 
 interpretScenario (Pure a) = return a
-interpretScenario (Free a) = interpretActionF a
+interpretScenario (Free a) = interpretAction a
 
-interpretActionF (PrintValues vals next) = do
+interpretAction (PrintValues vals next) = do
     putStrLn "PrintValues"
     mapM_ print vals
     interpretScenario next
-interpretActionF (EvalScript script next) = do
+interpretAction (EvalScript script next) = do
     putStrLn "EvalScript"
     vals <- interpretScript script
     interpretScenario (next vals)
-
+interpretAction (Times n scr next) = do
+    putStrLn "Times"
+    let scrs = replicate n (interpretScript scr)
+    vals <- sequence scrs
+    interpretScenario (next vals)
+   
+------------ Evaluation (interpretation) of scenarios ---------------
+    
+testFreeOfFree :: IO ()
+testFreeOfFree = do
+    interpretScenario scenario3
+    
 ----- Service functions --------------------------------------------
 
 seconds n = n * 1000000
 temperatureToValue = FloatValue
+
