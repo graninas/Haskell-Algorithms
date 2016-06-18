@@ -1,21 +1,12 @@
 {-# LANGUAGE DeriveFunctor #-}
-{-# LANGUAGE TypeSynonymInstances #-}
-{-# LANGUAGE FlexibleInstances #-}
-{-# LANGUAGE MultiParamTypeClasses #-}
-{-# LANGUAGE KindSignatures #-}
 {-# LANGUAGE ExistentialQuantification #-}
-{-# LANGUAGE TypeFamilies #-}
 
 module DSL where
 
 import qualified Hardware as H
 import HardwareTypes
 
-import Data.Time
-import Data.IORef
 import Control.Monad.Free
-import Control.Concurrent
-import Unsafe.Coerce
 
 data Value = FloatValue Float
            | IntValue Int
