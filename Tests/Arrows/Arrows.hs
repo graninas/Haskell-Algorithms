@@ -5,6 +5,8 @@ import Prelude hiding ((.), id)
 import Control.Category
 import Control.Arrow
 
+import HardwareTypes
+import qualified Hardware as H
 import DSL
 
 -------------------------------------------------------------------------------
@@ -152,10 +154,10 @@ runArrEff1 :: ArrEff IO b c -> b -> IO (c, ArrEff IO b c)
 runArrEff1 (ArrEff f) b = f b
 
 readTemperatureA :: ArrEff IO Controller Temperature
-readTemperatureA = mArr readTemperature
+readTemperatureA = mArr H.readTemperature
 
 heatUpBoostersA :: ArrEff IO Controller Controller
-heatUpBoostersA = mArr $ \contr -> heatUpBoosters contr 0 0 >> return contr
+heatUpBoostersA = mArr $ \contr -> H.heatUpBoosters contr 0 0 >> return contr
 
 testA :: ArrEff IO Controller Temperature
 testA = heatUpBoostersA >>> readTemperatureA
@@ -168,10 +170,10 @@ timesA n ar = ArrEff (\b -> do
     return (c:cs, next'))
 
 testEffectfulArrow = do
-    result1 <- runArrEff (mConst initBoosters >>> testA) [1,2,3]
+    result1 <- runArrEff (mConst H.initBoosters >>> testA) [1,2,3]
     print result1 -- [2.0, 2.0, 2.0]
     
-    r1 <- runArrEff1 (mConst initBoosters >>> timesA 3 testA) ()
+    r1 <- runArrEff1 (mConst H.initBoosters >>> timesA 3 testA) ()
     print (fst r1) -- [2.0,3.0,4.0]
     r2 <- runArrEff1 (snd r1) ()
     print (fst r2) -- []
