@@ -81,16 +81,19 @@ testBoostersScript = do
 
 data Action a = forall b . Times Int (Script b) ([b] -> a)
               | forall b . EvalScript (Script b) (b -> a)
-              | PrintValues [Value] a
+              | PrintValues [Value] a -- TODO: remove this, becaure only PrintValue is needed
+              | PrintValue Value a
 
 type Scenario a = Free Action a
               
 instance Functor Action where
     fmap f (PrintValues vs a) = PrintValues vs (f a)
+    fmap f (PrintValue v a)   = PrintValue v (f a)
     fmap f (EvalScript scr g) = EvalScript scr (f . g)
     fmap f (Times n scr g)    = Times n scr (f . g)
 
 printValues vs = liftF $ PrintValues vs ()
+printValue v   = liftF $ PrintValue v ()
 evalScript scr = liftF $ EvalScript scr id
 times n scr    = liftF $ Times n scr id
 
@@ -109,13 +112,15 @@ scnenario1 = do
 scenario2 :: Controller -> Scenario Temperature
 scenario2 cont = evalScript (readTemperature cont)
 
-heatingUp cont = do
+heatingUpScript :: Controller -> Script Temperature
+heatingUpScript cont = do
     heatUpBoosters cont 1.0 (seconds 10)
     readTemperature cont
 
+scenario3 :: Scenario ()
 scenario3 = do
     cont <- evalScript initBoosters
-    temps <- times 3 (heatingUp cont)
+    temps <- times 3 (heatingUpScript cont)
     printValues $ map temperatureToValue temps
 
 interpretScenario (Pure a) = return a
@@ -124,6 +129,10 @@ interpretScenario (Free a) = interpretAction a
 interpretAction (PrintValues vals next) = do
     putStrLn "PrintValues"
     mapM_ print vals
+    interpretScenario next
+interpretAction (PrintValue val next) = do
+    putStrLn "PrintValue"
+    print val
     interpretScenario next
 interpretAction (EvalScript script next) = do
     putStrLn "EvalScript"

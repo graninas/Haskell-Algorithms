@@ -1,11 +1,14 @@
 {-# LANGUAGE Arrows #-}
 {-# LANGUAGE ExistentialQuantification #-}
+{-# LANGUAGE RankNTypes #-}
+{-# LANGUAGE FlexibleContexts #-}
 
 module ArrowizedDSL where
 
 import Prelude hiding ((.), id)
 import Control.Category
 import Control.Arrow
+import Control.Monad.Identity
 import Control.Monad.Free
 
 import ArrEff
@@ -13,7 +16,7 @@ import HardwareTypes
 import qualified Hardware as H
 import DSL
 
--------------- demo processes ----------------------------------
+-------------- demo IO processes ----------------------------------
 
 readTemperatureA :: ArrEff IO Controller Temperature
 readTemperatureA = mArr H.readTemperature
@@ -33,38 +36,63 @@ testEffectfulArrow = do
     r2 <- runArrEff1 (snd r1) ()
     print (fst r2) -- []
 
----------------------------------------------------------------------------
-type ArrEffFreeProc = ArrEff (Free Procedure)
+------ Arrows that work with Script -------------------------------------
 
-simpleArrFA :: ArrEffFreeProc Value ()
-simpleArrFA = mArr report
+type ArrEffFreeProc b c = ArrEffFree Procedure b c
+    
+reportScriptFA :: ArrEffFreeProc Value ()
+reportScriptFA = mArr report
 
-initBoostersFA :: ArrEffFreeProc () Controller
-initBoostersFA = mConst initBoosters
+initBoostersScriptFA :: ArrEffFreeProc () Controller
+initBoostersScriptFA = mConst initBoosters
 
 readTemperatureFA :: ArrEffFreeProc Controller Temperature
 readTemperatureFA = mArr readTemperature
 
-runFreeArr :: ArrEffFreeProc b c -> b -> IO c
-runFreeArr ar v = do
-    let p = runArrEff1 ar v
-    (c, next) <- interpretScript p -- TODO: what to do with next?
-    return c
-
-heatingUpFA = proc cont -> do
+heatingUpScriptFA = proc cont -> do
     t1      <- readTemperatureFA                 -< cont
     r_      <- mArr (\c -> heatUpBoosters c 0 0) -< cont
     (t2, _) <- first readTemperatureFA           -< (cont, r_)
     returnA -< [t1, t2]
     
-heatingUpProcessFA = proc x -> do
-    cont <- initBoostersFA -< x
-    ts   <- heatingUpFA    -< cont
+heatingUpProcessScriptFA = proc x -> do
+    cont <- initBoostersScriptFA -< x
+    ts   <- heatingUpScriptFA    -< cont
     returnA -< ts
     
-testFreeEffArrow :: IO ()
-testFreeEffArrow = do
-    r1 <- runFreeArr simpleArrFA (FloatValue 1.0)
-    r2 <- runFreeArr heatingUpProcessFA ()
+testScriptArrow :: IO ()
+testScriptArrow = do
+    r1 <- runFreeArr interpretScript reportScriptFA (FloatValue 1.0)
+    r2 <- runFreeArr interpretScript heatingUpProcessScriptFA ()
     print r1
+    print r2
+
+------ Arrows that work with Scenario -------------------------------------
+type ArrEffFreeAct b c = ArrEffFree Action b c
+
+printValuesScenarioFA :: ArrEffFreeAct [Value] ()
+printValuesScenarioFA = mArr printValues
+
+--evalScriptScenarioFA :: Script b -> ArrEffFreeAct () b
+-- TODO: understand this.
+evalScriptScenarioFA scr = mArr (evalScript . scr)
+
+printValueScenarioFA :: ArrEffFreeAct Value ()
+printValueScenarioFA = mArr printValue
+
+heatingUpScenarioFA :: ArrEffFreeAct Controller Temperature
+heatingUpScenarioFA = mArr (evalScript . heatingUpScript)
+
+scenario3FA :: ArrEffFreeAct () [Temperature]
+scenario3FA = proc x -> do
+     cont <- evalScriptScenarioFA (const initBoosters) -< x
+     ts <- timesA 3 heatingUpScenarioFA -< cont
+     forEachA printValueScenarioFA -< map temperatureToValue ts
+     returnA -< ts
+
+testScenarioArrow :: IO ()
+testScenarioArrow = do
+    r1 <- runFreeArr interpretScenario printValuesScenarioFA [FloatValue 1.333, IntValue 44]
+    print r1
+    r2 <- runFreeArr interpretScenario scenario3FA ()
     print r2

@@ -4,6 +4,7 @@ module ArrEff where
 import Prelude hiding ((.), id)
 import Control.Category
 import Control.Arrow
+import Control.Monad.Free
 
 newtype ArrEff eff b c = ArrEff (b -> eff (c, ArrEff eff b c))
 
@@ -61,6 +62,26 @@ timesA n ar = ArrEff (\b -> do
     (c, next)   <- runArrEff1 ar b
     (cs, next') <- runArrEff1 (timesA (n-1) next) b
     return (c:cs, next'))
+
+
+forEachA :: Monad m => ArrEff m b () ->  ArrEff m [b] ()
+forEachA ar = ArrEff (\bs -> do
+    mapM_ (runArrEff1 ar) bs
+    return ((), aConst ()))
+
+------ Arrow for Free language --------------------------------------------------
+type ArrEffFree f b c = ArrEff (Free f) b c
+
+-- :t says:
+-- (Monad m1, Monad m)
+--      => (m (c, ArrEff m b c) -> m1 (b1, t))
+--      -> ArrEff m b c
+--      -> b
+--      -> m1 b1
+runFreeArr interpret ar v = do
+    let p = runArrEff1 ar v
+    (c, next) <- interpret p -- TODO: what to do with next?
+    return c
     
 --------------------- Research stuff -------------------
 
