@@ -15,7 +15,6 @@ import Data.Monoid
 
 -- http://stackoverflow.com/questions/12001350/useful-operations-on-free-arrows
 
-{-
 data FreeA eff a b where
     Arr :: (a -> b) -> FreeA eff a b
     Eff :: eff a b -> FreeA eff a b
@@ -34,12 +33,53 @@ instance Arrow (FreeA eff) where
     first f = Par f id
     second f = Par id f
     (***) = Par
--}
+   
+-- http://stackoverflow.com/questions/34837008/arrows-free-monads-and-io    
+data IO_Eff a b where
+    PutStr :: IO_Eff String ()
+    GetLine :: IO_Eff () String
+
+f :: forall a b . IO_Eff a b -> Kleisli IO a b
+f PutStr = Kleisli putStr
+f GetLine = Kleisli (const getLine)
+
+type IO_EffArr a b = FreeA IO_Eff a b
+
+putStrA :: IO_EffArr String ()
+putStrA = Eff PutStr
+
+getLineA :: IO_EffArr () String
+getLineA = Eff GetLine
+
+-- How this should work??
+{-
+runArr1 :: FreeA eff b c -> b -> c
+runArr1 (Arr f)     b = f b
+runArr1 (Eff eff)   b = eff b
+runArr1 (Seq a1 a2) b = do
+    v1 <- runArr1 a1 b
+    c <- runArr1 a2 v1
+    return c
+runArr1 (Par a1 a2) b = undefined
+    
+runFreeArr interpret ar v = do
+    let p = runArr1 ar v
+    c <- interpret p
+    return c
+    -}
+
+
+myArr = proc _ -> do
+   putStrA -< "ABC"
+   line <- getLineA -< ()
+   returnA -< line
+
+    
 
 
 --data Free f a = Pure a
 --              | Free (f (Free f a))
-
+{-
     internalA :: FreeA eff () ()
     internalA = PureA id
     
@@ -71,6 +111,7 @@ data Process a b = ValueP (String, String) (b, Process a b)
                  | PrintP String (a -> b)
 
 type Scheme a b = FreeA Process a b
+    -}
 
 
 {-

@@ -44,14 +44,14 @@ mConst mf = ArrEff (\_ -> do
 
 aConst c = arr (const c)
 
-runArrEff' :: Monad m => [c] -> ArrEff m b c -> [b] -> m [c]
-runArrEff' cs (ArrEff f) []     = return cs
-runArrEff' cs (ArrEff f) (b:bs) = do
+runArrEffList :: Monad m => [c] -> ArrEff m b c -> [b] -> m [c]
+runArrEffList cs (ArrEff f) []     = return cs
+runArrEffList cs (ArrEff f) (b:bs) = do
     (c, next) <- f b
-    runArrEff' (c:cs) next bs
+    runArrEffList (c:cs) next bs
 
 runArrEff :: Monad m => ArrEff m b c -> [b] -> m [c]
-runArrEff = runArrEff' []
+runArrEff = runArrEffList []
 
 runArrEff1 :: Monad m => ArrEff m b c -> b -> m (c, ArrEff m b c)
 runArrEff1 (ArrEff f) b = f b
@@ -62,7 +62,6 @@ timesA n ar = ArrEff (\b -> do
     (c, next)   <- runArrEff1 ar b
     (cs, next') <- runArrEff1 (timesA (n-1) next) b
     return (c:cs, next'))
-
 
 forEachA :: Monad m => ArrEff m b () ->  ArrEff m [b] ()
 forEachA ar = ArrEff (\bs -> do
