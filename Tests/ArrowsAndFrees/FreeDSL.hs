@@ -1,7 +1,7 @@
 {-# LANGUAGE DeriveFunctor #-}
 {-# LANGUAGE ExistentialQuantification #-}
 
-module DSL where
+module FreeDSL where
 
 import qualified Hardware as H
 import HardwareTypes
