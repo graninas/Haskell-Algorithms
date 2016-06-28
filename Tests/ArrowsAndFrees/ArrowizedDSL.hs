@@ -14,7 +14,7 @@ import Control.Monad.Free
 import ArrEff
 import HardwareTypes
 import qualified Hardware as H
-import DSL
+import FreeDSL
 
 -------------- demo IO processes ----------------------------------
 
