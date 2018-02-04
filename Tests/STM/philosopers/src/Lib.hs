@@ -5,47 +5,64 @@ module Lib
 
 import Control.Monad
 import Control.Concurrent
+import Control.Concurrent.MVar (MVar, newMVar, takeMVar, putMVar)
 import Control.Concurrent.STM
+import System.Random (randomRIO)
 
 data ForkState = Free | Taken
-  deriving Show
+  deriving (Show, Eq)
 
 data Fork = Fork String ForkState
-  deriving Show
+  deriving (Show, Eq)
 
-data Action = Thinking | Eating
-  deriving Show
+data Activity = Thinking | Eating
+  deriving (Show, Eq)
 
 type TFork     = TVar Fork
 type TForkPair = (TFork, TFork)
 
+-- TODO: With this data structure, philosopher can "put" foreign fork.
+-- Forks should be peronalized.
+
 data Philosopher = Philosopher
-  { name   :: String
-  , action :: TVar Action
-  , forks  :: TForkPair
+  { name     :: String
+  , cycles   :: TVar Int
+  , activity :: TVar Activity
+  , forks    :: TForkPair
   }
 
-data PhilosopherSnapshot = PhilosopherSnapshot
-  { name   :: String
-  , action :: Action
-  , forks  :: (Fork, Fork)
+data Shot = Shot
+  { name     :: String
+  , cycles   :: Int
+  , activity :: Activity
+  , forks    :: (Fork, Fork)
   }
+  deriving Eq
 
+type Snapshot = ([Shot], Int)
 
--- takeFork :: TVar Fork -> STM ()
--- takeFork fork = do
---   state <- readTVar fork
---   case state of
---     Taken -> retry
---     Free  -> writeTVar fork Taken
+type LogLock = MVar ()
+
+logMsg :: LogLock -> String -> IO ()
+logMsg logLock msg = do
+  _ <- takeMVar logLock
+  putStrLn msg
+  putMVar logLock ()
+
+acquire :: LogLock -> IO ()
+acquire l = void $ takeMVar l
+
+release :: LogLock -> IO ()
+release l = putMVar l ()
 
 mkFork :: Int -> IO TFork
 mkFork n = newTVarIO $ Fork (show n) Free
 
 mkPhilosoper :: (Int, TForkPair) -> IO Philosopher
-mkPhilosoper (n, fs) = do
-  act <- newTVarIO Thinking
-  pure $ Philosopher (show n) act fs
+mkPhilosoper (n, tFs) = do
+  tAct    <- newTVarIO Thinking
+  tCycles <- newTVarIO 0
+  pure $ Philosopher (show n) tCycles tAct tFs
 
 mkCycledPairs :: [TFork] -> [TForkPair]
 mkCycledPairs []  = error "No elems"
@@ -60,45 +77,116 @@ mkCycledPairs fs  = map mkPair pairIndexes
 readForks :: TForkPair -> STM (Fork, Fork)
 readForks (l, r) = (,) <$> readTVar l <*> readTVar r
 
-printForkPair :: TForkPair -> IO ()
-printForkPair tFs = do
-  fs <- atomically $ readForks tFs
-  putStrLn $ "\n" ++ show fs
-
-printPhilosopher :: Philosopher -> IO ()
-printPhilosopher = undefined
-
-takeSnapshot :: Philosopher -> STM PhilosopherSnapshot
-takeSnapshot (Philosopher n tAct tFs) = do
+takeShot :: Philosopher -> STM Shot
+takeShot (Philosopher n tC tAct tFs) = do
+  c   <- readTVar  tC
+  act <- readTVar  tAct
   fs  <- readForks tFs
-  act <- readTVar tAct
-  pure $ PhilosopherSnapshot n act fs
+  pure $ Shot n c act fs
 
-takeSnapshots :: [Philosopher] -> IO [PhilosopherSnapshot]
-takeSnapshots ps = atomically $ mapM takeSnapshot ps
+takeSnapshot :: Int -> [Philosopher] -> IO Snapshot
+takeSnapshot n ps = (,) <$> atomically (mapM takeShot ps) <*> pure n
 
-printSnapshot :: PhilosopherSnapshot -> IO ()
-printSnapshot (PhilosopherSnapshot n act fs) =
-  putStrLn $ "\n  [" ++ n ++ "] " ++ show act ++ ", " ++ show fs
+printShot :: Shot -> IO ()
+printShot (Shot n c act fs) = putStrLn $ "  [" ++ n ++ "] (" ++ show c ++ ") " ++ show act ++ ", " ++ show fs
 
-monitoring :: [Philosopher] -> Int -> IO ()
-monitoring ps n = do
-  snapshots <- takeSnapshots ps
-  putStrLn $ "\nSnapshot #" ++ show n ++ ":"
-  mapM_ printSnapshot snapshots
+printSnapshot :: LogLock -> Snapshot -> IO ()
+printSnapshot logLock (s, n) = do
+  acquire logLock
+  putStrLn $ "Snapshot #" ++ show n ++ ":"
+  mapM_ printShot s
+  release logLock
+
+monitoring :: LogLock -> Snapshot -> [Philosopher] -> IO ()
+monitoring logLock s@(ss, n) ps = do
   threadDelay $ 1000 * 1000
-  monitoring ps (n + 1)
+  snapshot <- takeSnapshot (n + 1) ps
+  if s /= snapshot
+    then do
+      printSnapshot logLock s
+      monitoring logLock snapshot ps
+    else monitoring logLock s ps
+
+takeFork :: TFork -> STM Bool
+takeFork tFork = do
+  Fork n st <- readTVar tFork
+  case st of
+    Taken -> pure False
+    Free  -> do
+      modifyTVar' tFork (\(Fork n st) -> Fork n Taken)
+      pure True
+
+takeForks :: TForkPair -> STM Bool
+takeForks (left, right) = do
+  leftTaken  <- takeFork left
+  rightTaken <- takeFork right
+  pure $ leftTaken && rightTaken
+
+-- N.B., Someone can "put" foreign fork.
+putFork :: TFork -> STM ()
+putFork tFork = modifyTVar' tFork (\(Fork n st) -> Fork n Free)
+
+putForks :: TForkPair -> STM ()
+putForks (left, right) = do
+  putFork left
+  putFork right
+
+changeActivity :: Philosopher -> STM Activity
+changeActivity (Philosopher n tC tAct tFs) = do
+  act <- readTVar tAct
+  case act of
+    Thinking -> do
+      taken <- takeForks tFs
+      unless taken retry  -- Do not need to put forks if any was taken!
+      writeTVar tAct Eating
+      pure Eating
+    Eating -> do
+      putForks tFs
+      writeTVar tAct Thinking
+      pure Thinking
+
+incrementCycles :: Philosopher -> STM Int
+incrementCycles (Philosopher _ tCycles _ _) = do
+  modifyTVar' tCycles (+1)
+  readTVar tCycles
+
+philosopher :: LogLock -> Philosopher -> IO ()
+philosopher logLock p@(Philosopher n _ tAct _) = do
+  t1 <- randomRIO (1, 5)
+  t2 <- randomRIO (1, 5)
+  let activity1Time = 1000 * 1000 * t1
+  let activity2Time = 1000 * 1000 * t2
+
+  c <- atomically $ incrementCycles p
+  logMsg logLock $ "-- Philosopher " ++ show n ++ " next cycle: " ++ show c
+
+  act1 <- atomically $ changeActivity p
+  logMsg logLock $ "-- Philosopher " ++ show n ++ " changed activity to: " ++ show act1 ++ " for " ++ show t1 ++ " secs."
+  threadDelay activity1Time
+
+  act2 <- atomically $ changeActivity p
+  logMsg logLock $ "-- Philosopher " ++ show n ++ " changed activity to: " ++ show act2 ++ " for " ++ show t2 ++ " secs."
+  threadDelay activity2Time
+
+  philosopher logLock p
+
+runPhilosopher :: LogLock -> Philosopher -> IO ()
+runPhilosopher logLock ps = void $ forkIO (philosopher logLock ps)
 
 testDiningPhilosophers :: IO ()
 testDiningPhilosophers = do
   let count = 5
 
-  forks@(f:fs) <- sequence $ take count (map mkFork [1..])
+  forks <- sequence $ take count (map mkFork [1..])
   let forkPairs = mkCycledPairs forks
-  mapM_ printForkPair forkPairs
-
   ps <- mapM mkPhilosoper (zip [1..] forkPairs)
 
-  _ <- forkIO (monitoring ps 0)
+  logLock <- newMVar ()
+
+  s@(ss, _) <- takeSnapshot 0 ps
+  printSnapshot logLock s
+
+  _ <- forkIO (monitoring logLock (ss, 1) ps)
+  mapM_ (runPhilosopher logLock) ps
 
   putStrLn "Ok."
