@@ -1,21 +1,27 @@
 {-# LANGUAGE GADTs #-}
+
 module STM.Free where
 
+import           Control.Monad.Free
+import           STM.TVar
 
-data STMF a next
-  = NewTVar            a (TVar a  -> next)
-  | WriteTVar (TVar a) a next
-  | ReadTVar  (TVar a)   (a -> next)
+data STMF next where
+  NewTVar   ::           a -> (TVar a -> next) -> STMF next
+  WriteTVar :: TVar a -> a -> next             -> STMF next
+  ReadTVar  :: TVar a ->      (a -> next)      -> STMF next
 
-data Free method where
-  Free :: method
+instance Functor STMF where
+  fmap g (NewTVar        a nextF) = NewTVar        a (g . nextF)
+  fmap g (WriteTVar tvar a next ) = WriteTVar tvar a (g next)
+  fmap g (ReadTVar  tvar   nextF) = ReadTVar  tvar   (g . nextF)
 
-data Pure a = Pure a
+type STM a = Free STMF a
 
-instance Functor (STMF a) where
-  fmap f (NewTVar        a nextF) = NewTVar        a (f . nextF)
-  fmap f (WriteTVar tvar a next)  = WriteTVar tvar a (f next)
-  fmap f (ReadTVar  tvar nextF)   = ReadTVar  tvar   (f . nextF)
+newTVar :: a -> Free STMF (TVar a)
+newTVar a = liftF (NewTVar a id)
 
-  -- instance Functor ComponentF where
-  --   fmap f (SensorDef cd ci p next) = SensorDef cd ci p (f next)
+writeTVar :: TVar a -> a -> Free STMF ()
+writeTVar tvar a = liftF (WriteTVar tvar a ())
+
+readTVar :: TVar a -> Free STMF a
+readTVar tvar = liftF (ReadTVar tvar id)
