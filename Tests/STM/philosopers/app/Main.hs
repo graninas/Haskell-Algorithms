@@ -1,6 +1,6 @@
 module Main where
 
-import Lib
+import           Philosophers
 
 main :: IO ()
-main = testDiningPhilosophers
+main = runPhilosophers 5
