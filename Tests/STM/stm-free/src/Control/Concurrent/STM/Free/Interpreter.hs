@@ -1,11 +1,11 @@
-module STM.Interpreter where
+module Control.Concurrent.STM.Free.Interpreter where
 
 import           Control.Monad.Free
-import           Control.Monad.State.Strict (StateT, evalStateT, get, modify,
-                                             put)
+import           Control.Monad.State.Strict       (StateT, evalStateT, get,
+                                                   modify, put)
 
-import           STM.Free
-import           STM.TVar
+import           Control.Concurrent.STM.Free.STML
+import           Control.Concurrent.STM.Free.TVar
 
 data Runtime = Runtime
 
@@ -36,8 +36,8 @@ interpreter' (WriteTVar tvar a next) = do
   writeTVar' tvar a
   pure next
 
-runSTM' :: STM a -> STM' a
+runSTM' :: STML a -> STM' a
 runSTM' = foldFree interpreter'
 
-run :: STM a -> IO a
+run :: STML a -> IO a
 run stm = evalStateT (runSTM' stm) Runtime

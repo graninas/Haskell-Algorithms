@@ -1,6 +1,6 @@
 module Main where
 
-import Lib
+import           Control.Concurrent.STM.Free
 
 main :: IO ()
-main = someFunc
+main = putStrLn "Not implemented."

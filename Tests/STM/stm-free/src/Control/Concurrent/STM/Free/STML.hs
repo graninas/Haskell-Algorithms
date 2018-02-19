@@ -1,9 +1,10 @@
 {-# LANGUAGE GADTs #-}
 
-module STM.Free where
+module Control.Concurrent.STM.Free.STML where
 
 import           Control.Monad.Free
-import           STM.TVar
+
+import           Control.Concurrent.STM.Free.TVar
 
 data STMF next where
   NewTVar   ::           a -> (TVar a -> next) -> STMF next
@@ -15,7 +16,7 @@ instance Functor STMF where
   fmap g (WriteTVar tvar a next ) = WriteTVar tvar a (g next)
   fmap g (ReadTVar  tvar   nextF) = ReadTVar  tvar   (g . nextF)
 
-type STM a = Free STMF a
+type STML a = Free STMF a
 
 newTVar :: a -> Free STMF (TVar a)
 newTVar a = liftF (NewTVar a id)
