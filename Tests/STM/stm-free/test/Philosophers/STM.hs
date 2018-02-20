@@ -4,17 +4,17 @@ import           Control.Concurrent.STM.Free
 
 import           Philosophers.Types
 
-readForks :: TForkPair -> STML (Fork, Fork)
-readForks (l, r) = (,) <$> readTVar l <*> readTVar r
+-- readForks :: TForkPair -> STML (Fork, Fork)
+-- readForks (l, r) = (,) <$> readTVar l <*> readTVar r
 
--- takeFork :: TFork -> STM Bool
--- takeFork tFork = do
---   Fork n st <- readTVar tFork
---   case st of
---     Taken -> pure False
---     Free  -> do
---       modifyTVar' tFork (\(Fork n st) -> Fork n Taken)
---       pure True
+takeFork :: TFork -> STM Bool
+takeFork tFork = do
+  Fork n st <- readTVar tFork
+  case st of
+    Taken -> pure False
+    Free  -> do
+      modifyTVar' tFork (\(Fork n st) -> Fork n Taken)
+      pure True
 --
 -- takeForks :: TForkPair -> STM Bool
 -- takeForks (left, right) = do

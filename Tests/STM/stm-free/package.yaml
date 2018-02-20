@@ -41,3 +41,4 @@ tests:
     - -with-rtsopts=-N
     dependencies:
     - stm-free
+    - hspec

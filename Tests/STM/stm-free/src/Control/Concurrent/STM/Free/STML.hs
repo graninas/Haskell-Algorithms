@@ -26,3 +26,6 @@ writeTVar tvar a = liftF (WriteTVar tvar a ())
 
 readTVar :: TVar a -> Free STMF a
 readTVar tvar = liftF (ReadTVar tvar id)
+
+modifyTVar :: TVar a -> (a -> a) -> STM ()
+modifyTVar tvar f = readTVar tvar >>= writeTVar tvar . f
