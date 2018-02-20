@@ -22,15 +22,15 @@ import           Control.Concurrent.STM.Free.TVar
 newTVar' :: ToJSON a => a -> STM' (TVar a)
 newTVar' a = do
   mvar <- liftIO $ newMVar $ encode a
-  StmlRuntime tmvarsMap <- get
+  Runtime tmvarsMap <- get
   let nextId = Map.size tmvarsMap
   let newTMVars = Map.insert nextId mvar tmvarsMap
-  put $ StmlRuntime newTMVars
+  put $ Runtime newTMVars
   pure $ TVar nextId
 
 readTVar' :: FromJSON a => TVar a -> STM' a
 readTVar' (TVar tvarId) = do
-  StmlRuntime tmvarsMap <- get
+  Runtime tmvarsMap <- get
   case Map.lookup tvarId tmvarsMap of
     Nothing   -> error $ "Impossible: TVar not found: " ++ show tvarId
     Just mvar -> do
@@ -41,28 +41,28 @@ readTVar' (TVar tvarId) = do
 
 writeTVar' ::  ToJSON a => TVar a -> a -> STM' ()
 writeTVar' (TVar tvarId) a = do
-  StmlRuntime tmvarsMap <- get
+  Runtime tmvarsMap <- get
   case Map.lookup tvarId tmvarsMap of
     Nothing   -> error $ "Impossible: TVar not found: " ++ show tvarId
     Just mvar -> liftIO $ putMVar mvar $ encode a  -- TODO: Blocking operation. Should be not blocking.
 
 
-interpreter' :: STMF a -> STM' a
+interpretStmf :: STMF a -> STM' a
 
-interpreter' (NewTVar a nextF) = do
+interpretStmf (NewTVar a nextF) = do
   tvar <- newTVar' a
   pure $ nextF tvar
 
-interpreter' (ReadTVar tvar nextF) = do
+interpretStmf (ReadTVar tvar nextF) = do
   a <- readTVar' tvar
   pure $ nextF a
 
-interpreter' (WriteTVar tvar a next) = do
+interpretStmf (WriteTVar tvar a next) = do
   writeTVar' tvar a
   pure next
 
 runSTML' :: STML a -> STM' a
-runSTML' = foldFree interpreter'
+runSTML' = foldFree interpretStmf
 
 runSTML :: STML a -> IO a
-runSTML stm = evalStateT (runSTML' stm) (StmlRuntime Map.empty)
+runSTML stm = evalStateT (runSTML' stm) (Runtime Map.empty)

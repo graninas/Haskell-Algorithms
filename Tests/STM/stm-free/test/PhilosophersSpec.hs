@@ -22,9 +22,9 @@ spec =
   describe "Philosophers test" $
     it "Philosophers test" $ do
 
-      stm <- testFork
-      res1 <- runSTM stm
+      (res1, res2) <- runSTM testFork
 
-      res1 `shouldBe` Fork "1" Free
+      res1 `shouldBe` True
+      res2 `shouldBe` False
 
       putStrLn "Ok."

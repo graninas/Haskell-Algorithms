@@ -14,10 +14,10 @@ type TVarId = Int
 
 type TVars = Map.Map Int (MVar BSL.ByteString)
 
-data StmlRuntime = StmlRuntime
+data Runtime = Runtime
   { tmvars :: TVars
 
   }
 
 
-type STM' a = StateT StmlRuntime IO a
+type STM' a = StateT Runtime IO a
