@@ -8,25 +8,28 @@ import           Control.Monad.State.Strict (StateT, evalStateT, get, modify,
                                              put)
 import qualified Data.Aeson                 as A
 import qualified Data.ByteString.Lazy       as BSL
+import           Data.IORef                 (IORef, modifyIORef, newIORef,
+                                             readIORef, writeIORef)
 import qualified Data.Map                   as Map
 import           Data.Time.Clock            (UTCTime, getCurrentTime)
 import           GHC.Generics               (Generic)
 
 type TVarId = Int
-type TVarItem = MVar BSL.ByteString
 
-data TVarHandle = TVarHandle Int UTCTime TVarItem
-
-type TVars = Map.Map Int TVarHandle
+type TVarData   = IORef BSL.ByteString
+data TVarHandle = TVarHandle TVarId UTCTime TVarData
+type TVars      = Map.Map TVarId TVarHandle
 
 data AtomicRuntime = AtomicRuntime
-  { timestamp :: UTCTime
-  , tmvars    :: TVars       -- TODO: this should be concurently accessible (mvar), or be a snapshot
+  { timestamp  :: UTCTime
+  , localTVars :: TVars
   }
 
-data StmRuntime = StmRuntime
-  { tmvars :: TVars
+type Lock = MVar ()
 
+data StmRuntime = StmRuntime
+  { tvars :: TVars
+  , lock  :: Lock     -- TODO: lock for groups of TVars, not for all of them
   }
 
 

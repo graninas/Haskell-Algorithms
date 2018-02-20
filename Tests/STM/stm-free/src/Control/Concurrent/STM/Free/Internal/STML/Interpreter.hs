@@ -1,23 +1,30 @@
 {-# LANGUAGE LambdaCase #-}
 module Control.Concurrent.STM.Free.Internal.STML.Interpreter where
 
-import           Control.Concurrent.MVar                    (MVar, newMVar,
-                                                             putMVar, readMVar,
-                                                             takeMVar,
-                                                             tryReadMVar)
+import           Control.Concurrent.MVar                     (MVar, newMVar,
+                                                              putMVar, readMVar,
+                                                              takeMVar,
+                                                              tryReadMVar)
 import           Control.Monad.Free
-import           Control.Monad.IO.Class                     (liftIO)
-import           Control.Monad.State.Strict                 (StateT, evalStateT,
-                                                             get, modify, put)
-import           Data.Aeson                                 (FromJSON, ToJSON,
-                                                             decode, encode)
-import qualified Data.Aeson                                 as A
-import qualified Data.ByteString.Lazy                       as BSL
-import qualified Data.Map                                   as Map
-import           Data.Time.Clock                            (UTCTime,
-                                                             getCurrentTime)
-import           GHC.Generics                               (Generic)
+import           Control.Monad.IO.Class                      (liftIO)
+import           Control.Monad.State.Strict                  (StateT,
+                                                              evalStateT, get,
+                                                              modify, put)
+import           Data.Aeson                                  (FromJSON, ToJSON,
+                                                              decode, encode)
+import qualified Data.Aeson                                  as A
+import qualified Data.ByteString.Lazy                        as BSL
+import           Data.IORef                                  (IORef,
+                                                              modifyIORef,
+                                                              newIORef,
+                                                              readIORef,
+                                                              writeIORef)
+import qualified Data.Map                                    as Map
+import           Data.Time.Clock                             (UTCTime,
+                                                              getCurrentTime)
+import           GHC.Generics                                (Generic)
 
+import           Control.Concurrent.STM.Free.Internal.Common
 import           Control.Concurrent.STM.Free.Internal.Types
 import           Control.Concurrent.STM.Free.STML
 import           Control.Concurrent.STM.Free.TVar
@@ -28,8 +35,8 @@ import           Control.Concurrent.STM.Free.TVar
 
 createTVar :: ToJSON a => UTCTime -> Int -> a -> IO TVarHandle
 createTVar timestamp tvarId a = do
-   mvar <- newMVar $ encode a
-   pure $ TVarHandle tvarId timestamp mvar
+   tvarData <- newIORef $ encode a
+   pure $ TVarHandle tvarId timestamp tvarData
 
 newTVar' :: ToJSON a => a -> STML' (TVar a)
 newTVar' a = do
@@ -47,10 +54,10 @@ readTVar' (TVar tvarId) = do
   AtomicRuntime timestamp tvars <- get
 
   case Map.lookup tvarId tvars of
-    Nothing                                -> error $ "Impossible: TVar not found: " ++ show tvarId
-    Just (TVarHandle tvarId tvarTime mvar) -> liftIO $ tryReadMVar mvar >>= \case
-      Nothing -> error $ "Impossible: Reading of MVar gave Nothing: " ++ show tvarId
-      Just s  -> case decode s of
+    Nothing                        -> error $ "Impossible: TVar not found: " ++ show tvarId
+    Just (TVarHandle _ _ tvarData) -> do
+      s <- liftIO $ readIORef tvarData
+      case decode s of
         Nothing -> error $ "Impossible: Decode error of TVar: " ++ show tvarId
         Just r  -> pure r
 
@@ -59,23 +66,14 @@ writeTVar' (TVar tvarId) a = do
   AtomicRuntime timestamp tvars <- get
 
   case Map.lookup tvarId tvars of
-    Nothing                                -> error $ "Impossible: TVar not found: " ++ show tvarId
-    Just (TVarHandle tvarId tvarTime mvar) -> liftIO $ putMVar mvar $ encode a  -- TODO: Blocking operation. Should be not blocking.
-
+    Nothing                        -> error $ "Impossible: TVar not found: " ++ show tvarId
+    Just (TVarHandle _ _ tvarData) -> liftIO $ writeIORef tvarData $ encode a
 
 interpretStmf :: STMF a -> STML' a
 
-interpretStmf (NewTVar a nextF) = do
-  tvar <- newTVar' a
-  pure $ nextF tvar
-
-interpretStmf (ReadTVar tvar nextF) = do
-  a <- readTVar' tvar
-  pure $ nextF a
-
-interpretStmf (WriteTVar tvar a next) = do
-  writeTVar' tvar a
-  pure next
+interpretStmf (NewTVar a nextF)       = nextF      <$> newTVar' a
+interpretStmf (ReadTVar tvar nextF)   = nextF      <$> readTVar' tvar
+interpretStmf (WriteTVar tvar a next) = const next <$> writeTVar' tvar a
 
 runSTML' :: STML a -> STML' a
 runSTML' = foldFree interpretStmf

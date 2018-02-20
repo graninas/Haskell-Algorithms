@@ -16,10 +16,15 @@ import           Data.Aeson                                            (FromJSON
                                                                         encode)
 import qualified Data.Aeson                                            as A
 import qualified Data.ByteString.Lazy                                  as BSL
+import           Data.IORef                                            (IORef, modifyIORef,
+                                                                        newIORef,
+                                                                        readIORef,
+                                                                        writeIORef)
 import qualified Data.Map                                              as Map
 import           Data.Time.Clock                                       (UTCTime, getCurrentTime)
 import           GHC.Generics                                          (Generic)
 
+import           Control.Concurrent.STM.Free.Internal.Common
 import           Control.Concurrent.STM.Free.Internal.STML.Interpreter
 import           Control.Concurrent.STM.Free.Internal.Types
 import           Control.Concurrent.STM.Free.STM
@@ -27,17 +32,33 @@ import           Control.Concurrent.STM.Free.STML
 import           Control.Concurrent.STM.Free.TVar
 
 
+cloneTVarHandle :: (TVarId, TVarHandle) -> IO (TVarId, TVarHandle)
+cloneTVarHandle (tvarId, TVarHandle _ timestamp tvarData) = do
+  newTVarData <- readIORef tvarData >>= newIORef
+  pure (tvarId, TVarHandle tvarId timestamp newTVarData)
+
+takeSnapshot :: Lock -> TVars -> IO TVars
+takeSnapshot lock tvars = do
+  takeLock lock
+  tvarKVs <- mapM cloneTVarHandle (Map.toList tvars)
+  pure $ Map.fromList tvarKVs
 
 interpretStmModelF :: StmModelF a -> STM' a
 
 interpretStmModelF (Atomically stml nextF) = do
-  StmRuntime tmvars <- get
+  StmRuntime tvars lock <- get
+
+  snapshot  <- liftIO $ takeSnapshot lock tvars
   timestamp <- liftIO getCurrentTime
-  a <- liftIO $ evalStateT (runSTML' stml) (AtomicRuntime timestamp tmvars)
+  a <- liftIO $ evalStateT (runSTML' stml) (AtomicRuntime timestamp snapshot)
+
+  -- Check goes here
   pure $ nextF a
 
 runSTM' :: STM a -> STM' a
 runSTM' = foldFree interpretStmModelF
 
 runSTM :: STM a -> IO a
-runSTM stm = evalStateT (runSTM' stm) (StmRuntime Map.empty)
+runSTM stm = do
+  commitLock <- newMVar ()
+  evalStateT (runSTM' stm) (StmRuntime Map.empty commitLock)
