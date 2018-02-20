@@ -1,3 +1,5 @@
+{-# LANGUAGE DuplicateRecordFields #-}
+
 module Control.Concurrent.STM.Free.Internal.Types where
 
 import           Control.Concurrent.MVar    (MVar, newMVar, putMVar, takeMVar)
@@ -7,17 +9,26 @@ import           Control.Monad.State.Strict (StateT, evalStateT, get, modify,
 import qualified Data.Aeson                 as A
 import qualified Data.ByteString.Lazy       as BSL
 import qualified Data.Map                   as Map
+import           Data.Time.Clock            (UTCTime, getCurrentTime)
 import           GHC.Generics               (Generic)
 
-
 type TVarId = Int
+type TVarItem = MVar BSL.ByteString
 
-type TVars = Map.Map Int (MVar BSL.ByteString)
+data TVarHandle = TVarHandle Int UTCTime TVarItem
 
-data Runtime = Runtime
+type TVars = Map.Map Int TVarHandle
+
+data AtomicRuntime = AtomicRuntime
+  { timestamp :: UTCTime
+  , tmvars    :: TVars       -- TODO: this should be concurently accessible (mvar), or be a snapshot
+  }
+
+data StmRuntime = StmRuntime
   { tmvars :: TVars
 
   }
 
 
-type STM' a = StateT Runtime IO a
+type STML' a = StateT AtomicRuntime IO a
+type STM' a = StateT StmRuntime IO a

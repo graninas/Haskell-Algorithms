@@ -18,7 +18,20 @@ testFork = do
   pure (result1, result2)
 
 
-spec =
+spec = do
+  describe "STM test" $ do
+    it "newTVar / readTVar test" $ do
+      res <- runSTM $ atomically (newTVar (10 :: Int) >>= readTVar)
+      res `shouldBe` 10
+
+    it "newTVar / writeTVar / readTVar test" $ do
+      res <- runSTM $ atomically $ do
+        tvar <- newTVar (10 :: Int)
+        writeTVar tvar 20
+        readTVar tvar
+      res `shouldBe` 20
+
+
   describe "Philosophers test" $
     it "Philosophers test" $ do
 

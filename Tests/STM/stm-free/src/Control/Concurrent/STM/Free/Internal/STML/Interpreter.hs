@@ -1,7 +1,10 @@
+{-# LANGUAGE LambdaCase #-}
 module Control.Concurrent.STM.Free.Internal.STML.Interpreter where
 
 import           Control.Concurrent.MVar                    (MVar, newMVar,
-                                                             putMVar, takeMVar)
+                                                             putMVar, readMVar,
+                                                             takeMVar,
+                                                             tryReadMVar)
 import           Control.Monad.Free
 import           Control.Monad.IO.Class                     (liftIO)
 import           Control.Monad.State.Strict                 (StateT, evalStateT,
@@ -11,6 +14,8 @@ import           Data.Aeson                                 (FromJSON, ToJSON,
 import qualified Data.Aeson                                 as A
 import qualified Data.ByteString.Lazy                       as BSL
 import qualified Data.Map                                   as Map
+import           Data.Time.Clock                            (UTCTime,
+                                                             getCurrentTime)
 import           GHC.Generics                               (Generic)
 
 import           Control.Concurrent.STM.Free.Internal.Types
@@ -19,35 +24,46 @@ import           Control.Concurrent.STM.Free.TVar
 
 -- TODO: this is the first implementation that is know to be wrong from STM point of view.
 
-newTVar' :: ToJSON a => a -> STM' (TVar a)
+-- TODO: reading TVar - at any time is successful operation or it should be aware of TVar changing in other transactions?
+
+createTVar :: ToJSON a => UTCTime -> Int -> a -> IO TVarHandle
+createTVar timestamp tvarId a = do
+   mvar <- newMVar $ encode a
+   pure $ TVarHandle tvarId timestamp mvar
+
+newTVar' :: ToJSON a => a -> STML' (TVar a)
 newTVar' a = do
-  mvar <- liftIO $ newMVar $ encode a
-  Runtime tmvarsMap <- get
-  let nextId = Map.size tmvarsMap
-  let newTMVars = Map.insert nextId mvar tmvarsMap
-  put $ Runtime newTMVars
+  AtomicRuntime timestamp tvars <- get
+
+  let nextId = Map.size tvars
+  tvarHandle <- liftIO $ createTVar timestamp nextId a
+
+  let newTvars = Map.insert nextId tvarHandle tvars
+  put $ AtomicRuntime timestamp newTvars
   pure $ TVar nextId
 
-readTVar' :: FromJSON a => TVar a -> STM' a
+readTVar' :: FromJSON a => TVar a -> STML' a
 readTVar' (TVar tvarId) = do
-  Runtime tmvarsMap <- get
-  case Map.lookup tvarId tmvarsMap of
-    Nothing   -> error $ "Impossible: TVar not found: " ++ show tvarId
-    Just mvar -> do
-      s <- liftIO $ takeMVar mvar      -- TODO: Blocking operation. Should be not blocking.
-      case decode s of
-        Nothing -> error $ "Decode error of TVar: " ++ show tvarId
+  AtomicRuntime timestamp tvars <- get
+
+  case Map.lookup tvarId tvars of
+    Nothing                                -> error $ "Impossible: TVar not found: " ++ show tvarId
+    Just (TVarHandle tvarId tvarTime mvar) -> liftIO $ tryReadMVar mvar >>= \case
+      Nothing -> error $ "Impossible: Reading of MVar gave Nothing: " ++ show tvarId
+      Just s  -> case decode s of
+        Nothing -> error $ "Impossible: Decode error of TVar: " ++ show tvarId
         Just r  -> pure r
 
-writeTVar' ::  ToJSON a => TVar a -> a -> STM' ()
+writeTVar' ::  ToJSON a => TVar a -> a -> STML' ()
 writeTVar' (TVar tvarId) a = do
-  Runtime tmvarsMap <- get
-  case Map.lookup tvarId tmvarsMap of
-    Nothing   -> error $ "Impossible: TVar not found: " ++ show tvarId
-    Just mvar -> liftIO $ putMVar mvar $ encode a  -- TODO: Blocking operation. Should be not blocking.
+  AtomicRuntime timestamp tvars <- get
+
+  case Map.lookup tvarId tvars of
+    Nothing                                -> error $ "Impossible: TVar not found: " ++ show tvarId
+    Just (TVarHandle tvarId tvarTime mvar) -> liftIO $ putMVar mvar $ encode a  -- TODO: Blocking operation. Should be not blocking.
 
 
-interpretStmf :: STMF a -> STM' a
+interpretStmf :: STMF a -> STML' a
 
 interpretStmf (NewTVar a nextF) = do
   tvar <- newTVar' a
@@ -61,8 +77,5 @@ interpretStmf (WriteTVar tvar a next) = do
   writeTVar' tvar a
   pure next
 
-runSTML' :: STML a -> STM' a
+runSTML' :: STML a -> STML' a
 runSTML' = foldFree interpretStmf
-
-runSTML :: STML a -> IO a
-runSTML stm = evalStateT (runSTML' stm) (Runtime Map.empty)

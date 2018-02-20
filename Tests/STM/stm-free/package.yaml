@@ -19,6 +19,7 @@ dependencies:
 - aeson
 - containers
 - bytestring
+- time
 
 library:
   source-dirs: src
