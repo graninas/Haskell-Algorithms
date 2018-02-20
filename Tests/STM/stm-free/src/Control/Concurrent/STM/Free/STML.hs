@@ -3,29 +3,32 @@
 module Control.Concurrent.STM.Free.STML where
 
 import           Control.Monad.Free
+import           Data.Aeson                       (FromJSON, ToJSON, decode,
+                                                   encode)
+import           GHC.Generics                     (Generic)
 
 import           Control.Concurrent.STM.Free.TVar
 
 data STMF next where
-  NewTVar   ::           a -> (TVar a -> next) -> STMF next
-  WriteTVar :: TVar a -> a -> next             -> STMF next
-  ReadTVar  :: TVar a ->      (a -> next)      -> STMF next
+  NewTVar   :: ToJSON a   =>           a -> (TVar a -> next) -> STMF next
+  WriteTVar :: ToJSON a   => TVar a -> a -> next             -> STMF next
+  ReadTVar  :: FromJSON a => TVar a ->      (a -> next)      -> STMF next
 
 instance Functor STMF where
   fmap g (NewTVar        a nextF) = NewTVar        a (g . nextF)
   fmap g (WriteTVar tvar a next ) = WriteTVar tvar a (g next)
   fmap g (ReadTVar  tvar   nextF) = ReadTVar  tvar   (g . nextF)
 
-type STML a = Free STMF a
+type STML next = Free STMF next
 
-newTVar :: a -> Free STMF (TVar a)
+newTVar :: ToJSON a => a -> Free STMF (TVar a)
 newTVar a = liftF (NewTVar a id)
 
-writeTVar :: TVar a -> a -> Free STMF ()
+writeTVar :: ToJSON a => TVar a -> a -> Free STMF ()
 writeTVar tvar a = liftF (WriteTVar tvar a ())
 
-readTVar :: TVar a -> Free STMF a
+readTVar :: FromJSON a => TVar a -> Free STMF a
 readTVar tvar = liftF (ReadTVar tvar id)
 
-modifyTVar :: TVar a -> (a -> a) -> STM ()
+modifyTVar :: (ToJSON a, FromJSON a) => TVar a -> (a -> a) -> STML ()
 modifyTVar tvar f = readTVar tvar >>= writeTVar tvar . f

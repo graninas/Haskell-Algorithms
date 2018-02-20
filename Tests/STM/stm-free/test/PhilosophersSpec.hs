@@ -23,7 +23,7 @@ spec =
     it "Philosophers test" $ do
 
       stm <- testFork
-      res <- runSTM stm
+      res1 <- runSTM stm
 
       res1 `shouldBe` Fork "1" Free
 

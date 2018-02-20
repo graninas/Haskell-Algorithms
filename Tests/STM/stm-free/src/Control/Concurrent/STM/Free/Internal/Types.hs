@@ -1,13 +1,13 @@
 module Control.Concurrent.STM.Free.Internal.Types where
 
-import qualified Data.Map as Map
-import qualified Data.Aeson as A
-import qualified Data.ByteString.Lazy as BSL
-import GHC.Generics (Generic)
+import           Control.Concurrent.MVar    (MVar, newMVar, putMVar, takeMVar)
 import           Control.Monad.Free
-import           Control.Concurrent.MVar (MVar, takeMVar, newMVar, putMVar)
-import           Control.Monad.State.Strict       (StateT, evalStateT, get,
-                                                     modify, put)
+import           Control.Monad.State.Strict (StateT, evalStateT, get, modify,
+                                             put)
+import qualified Data.Aeson                 as A
+import qualified Data.ByteString.Lazy       as BSL
+import qualified Data.Map                   as Map
+import           GHC.Generics               (Generic)
 
 
 type TVarId = Int
@@ -15,7 +15,7 @@ type TVarId = Int
 type TVars = Map.Map Int (MVar BSL.ByteString)
 
 data StmlRuntime = StmlRuntime
-  { tvars :: TVars
+  { tmvars :: TVars
 
   }
 
