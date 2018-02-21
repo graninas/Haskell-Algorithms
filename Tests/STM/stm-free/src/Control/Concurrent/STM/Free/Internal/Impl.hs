@@ -1,4 +1,4 @@
-module Control.Concurrent.STM.Free.Internal.STM.Interpreter where
+module Control.Concurrent.STM.Free.Internal.Impl where
 
 import           Control.Concurrent.MVar                               (MVar,
                                                                         newMVar,
@@ -27,7 +27,6 @@ import           GHC.Generics                                          (Generic)
 import           Control.Concurrent.STM.Free.Internal.Common
 import           Control.Concurrent.STM.Free.Internal.STML.Interpreter
 import           Control.Concurrent.STM.Free.Internal.Types
-import           Control.Concurrent.STM.Free.STM
 import           Control.Concurrent.STM.Free.STML
 import           Control.Concurrent.STM.Free.TVar
 
@@ -37,28 +36,15 @@ cloneTVarHandle (tvarId, TVarHandle _ timestamp tvarData) = do
   newTVarData <- readIORef tvarData >>= newIORef
   pure (tvarId, TVarHandle tvarId timestamp newTVarData)
 
-takeSnapshot :: Lock -> TVars -> IO TVars
-takeSnapshot lock tvars = do
+takeSnapshot :: Context -> IO (UTCTime, TVars)
+takeSnapshot (Context lock tvars) = do
   takeLock lock
   tvarKVs <- mapM cloneTVarHandle (Map.toList tvars)
-  pure $ Map.fromList tvarKVs
+  releaseLock lock
+  timestamp <- getCurrentTime
+  pure (timestamp, Map.fromList tvarKVs)
 
-interpretStmModelF :: StmModelF a -> STM' a
-
-interpretStmModelF (Atomically stml nextF) = do
-  StmRuntime tvars lock <- get
-
-  snapshot  <- liftIO $ takeSnapshot lock tvars
-  timestamp <- liftIO getCurrentTime
-  a <- liftIO $ evalStateT (runSTML' stml) (AtomicRuntime timestamp snapshot)
-
-  -- Check goes here
-  pure $ nextF a
-
-runSTM' :: STM a -> STM' a
-runSTM' = foldFree interpretStmModelF
-
-runSTM :: STM a -> IO a
-runSTM stm = do
-  commitLock <- newMVar ()
-  evalStateT (runSTM' stm) (StmRuntime Map.empty commitLock)
+runSTM :: Context -> STML a -> IO a
+runSTM ctx stml = do
+  (timestamp, snapshot)  <- liftIO $ takeSnapshot ctx
+  evalStateT (runSTML stml) (AtomicRuntime timestamp snapshot)

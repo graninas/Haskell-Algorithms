@@ -20,6 +20,7 @@ dependencies:
 - containers
 - bytestring
 - time
+- random
 
 library:
   source-dirs: src

@@ -29,16 +29,9 @@ import           Control.Concurrent.STM.Free.Internal.Types
 import           Control.Concurrent.STM.Free.STML
 import           Control.Concurrent.STM.Free.TVar
 
--- TODO: this is the first implementation that is know to be wrong from STM point of view.
-
 -- TODO: reading TVar - at any time is successful operation or it should be aware of TVar changing in other transactions?
 
-createTVar :: ToJSON a => UTCTime -> Int -> a -> IO TVarHandle
-createTVar timestamp tvarId a = do
-   tvarData <- newIORef $ encode a
-   pure $ TVarHandle tvarId timestamp tvarData
-
-newTVar' :: ToJSON a => a -> STML' (TVar a)
+newTVar' :: ToJSON a => a -> Atomic (TVar a)
 newTVar' a = do
   AtomicRuntime timestamp tvars <- get
 
@@ -49,7 +42,7 @@ newTVar' a = do
   put $ AtomicRuntime timestamp newTvars
   pure $ TVar nextId
 
-readTVar' :: FromJSON a => TVar a -> STML' a
+readTVar' :: FromJSON a => TVar a -> Atomic a
 readTVar' (TVar tvarId) = do
   AtomicRuntime timestamp tvars <- get
 
@@ -61,7 +54,7 @@ readTVar' (TVar tvarId) = do
         Nothing -> error $ "Impossible: Decode error of TVar: " ++ show tvarId
         Just r  -> pure r
 
-writeTVar' ::  ToJSON a => TVar a -> a -> STML' ()
+writeTVar' ::  ToJSON a => TVar a -> a -> Atomic ()
 writeTVar' (TVar tvarId) a = do
   AtomicRuntime timestamp tvars <- get
 
@@ -69,11 +62,12 @@ writeTVar' (TVar tvarId) a = do
     Nothing                        -> error $ "Impossible: TVar not found: " ++ show tvarId
     Just (TVarHandle _ _ tvarData) -> liftIO $ writeIORef tvarData $ encode a
 
-interpretStmf :: STMF a -> STML' a
+interpretStmf :: STMF a -> Atomic a
 
 interpretStmf (NewTVar a nextF)       = nextF      <$> newTVar' a
 interpretStmf (ReadTVar tvar nextF)   = nextF      <$> readTVar' tvar
 interpretStmf (WriteTVar tvar a next) = const next <$> writeTVar' tvar a
+interpretStmf Retry                   = error "Retry is not implemented."
 
-runSTML' :: STML a -> STML' a
-runSTML' = foldFree interpretStmf
+runSTML :: STML a -> Atomic a
+runSTML = foldFree interpretStmf

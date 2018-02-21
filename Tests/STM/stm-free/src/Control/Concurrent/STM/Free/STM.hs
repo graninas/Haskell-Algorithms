@@ -2,21 +2,26 @@
 
 module Control.Concurrent.STM.Free.STM where
 
+import           Control.Concurrent.MVar                    (MVar, newMVar,
+                                                             putMVar, takeMVar)
 import           Control.Monad.Free
-import           Data.Aeson                       (FromJSON, ToJSON, decode,
-                                                   encode)
-import           GHC.Generics                     (Generic)
+import           Data.Aeson                                 (FromJSON, ToJSON,
+                                                             decode, encode)
+import qualified Data.Map                                   as Map
+import           GHC.Generics                               (Generic)
 
+import           Control.Concurrent.STM.Free.Internal.Impl
+import           Control.Concurrent.STM.Free.Internal.Types
 import           Control.Concurrent.STM.Free.STML
 import           Control.Concurrent.STM.Free.TVar
 
-data StmModelF next where
-  Atomically :: STML a -> (a -> next) -> StmModelF next
+atomically :: Context -> STML a -> IO a
+atomically = runSTM
 
-instance Functor StmModelF where
-  fmap g (Atomically stml nextF) = Atomically stml (g . nextF)
+newTVarIO :: ToJSON a => Context -> a -> IO (TVar a)
+newTVarIO ctx = atomically ctx . newTVar
 
-type STM next = Free StmModelF next
-
-atomically :: STML a -> STM a
-atomically l = liftF (Atomically l id)
+newContext :: IO Context
+newContext = do
+  lock <- newMVar ()
+  pure $ Context lock Map.empty

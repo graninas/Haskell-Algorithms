@@ -25,13 +25,11 @@ data AtomicRuntime = AtomicRuntime
   , localTVars :: TVars
   }
 
+type Atomic a = StateT AtomicRuntime IO a
+
 type Lock = MVar ()
 
-data StmRuntime = StmRuntime
-  { tvars :: TVars
-  , lock  :: Lock     -- TODO: lock for groups of TVars, not for all of them
+data Context = Context
+  { lock  :: Lock     -- TODO: lock for groups of TVars, not for all of them
+  , tvars :: TVars
   }
-
-
-type STML' a = StateT AtomicRuntime IO a
-type STM' a = StateT StmRuntime IO a

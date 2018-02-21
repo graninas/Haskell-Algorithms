@@ -20,11 +20,13 @@ import           Data.Time.Clock                            (UTCTime,
 import           GHC.Generics                               (Generic)
 
 import           Control.Concurrent.STM.Free.Internal.Types
-import           Control.Concurrent.STM.Free.STM
 import           Control.Concurrent.STM.Free.STML
 import           Control.Concurrent.STM.Free.TVar
 
-
+createTVar :: ToJSON a => UTCTime -> Int -> a -> IO TVarHandle
+createTVar timestamp tvarId a = do
+   tvarData <- newIORef $ encode a
+   pure $ TVarHandle tvarId timestamp tvarData
 
 takeLock :: Lock -> IO ()
 takeLock = takeMVar
