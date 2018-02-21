@@ -4,6 +4,8 @@ import           Control.Concurrent.MVar                               (MVar,
                                                                         newMVar,
                                                                         putMVar,
                                                                         takeMVar)
+import           Control.Exception                                     (NonTermination,
+                                                                        catch)
 import           Control.Monad.Free
 import           Control.Monad.IO.Class                                (liftIO)
 import           Control.Monad.State.Strict                            (StateT, evalStateT,
@@ -65,11 +67,15 @@ tryCommit (Context mtvars) timestamp stagedTVars = do
     merge :: Timestamp -> TVarHandle -> TVarHandle -> TVarHandle
     merge ts' (TVarHandle tvarId _ d) _ = TVarHandle tvarId ts' d
 
+
 runSTM :: Int -> Context -> STML a -> IO a
 runSTM delay ctx stml = do
   (timestamp, snapshot)              <- takeSnapshot ctx
-  (res, AtomicRuntime _ stagedTVars) <- runStateT (runSTML stml) (AtomicRuntime timestamp snapshot)
-  success <- tryCommit ctx timestamp stagedTVars
-  if success
-    then return res
-    else runSTM (delay * 2) ctx stml      -- TODO: tail recursion
+  (eRes, AtomicRuntime _ stagedTVars) <- runStateT (runSTML stml) (AtomicRuntime timestamp snapshot)
+  case eRes of
+    Left RetryCmd -> runSTM (delay * 2) ctx stml      -- TODO: tail recursion
+    Right res     -> do
+      success <- tryCommit ctx timestamp stagedTVars
+      if success
+        then return res
+        else runSTM (delay * 2) ctx stml      -- TODO: tail recursion

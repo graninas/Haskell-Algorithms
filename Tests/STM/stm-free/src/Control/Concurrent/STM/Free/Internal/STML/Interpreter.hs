@@ -62,12 +62,20 @@ writeTVar' (TVar tvarId) a = do
     Nothing                        -> error $ "Impossible: TVar not found: " ++ show tvarId
     Just (TVarHandle _ _ tvarData) -> liftIO $ writeIORef tvarData $ encode a
 
-interpretStmf :: STMF a -> Atomic a
+interpretStmf :: STMF a -> Atomic (Either RetryCmd a)
 
-interpretStmf (NewTVar a nextF)       = nextF      <$> newTVar' a
-interpretStmf (ReadTVar tvar nextF)   = nextF      <$> readTVar' tvar
-interpretStmf (WriteTVar tvar a next) = const next <$> writeTVar' tvar a
-interpretStmf Retry                   = error "Retry is not implemented."
+interpretStmf (NewTVar a nextF)       = Right . nextF      <$> newTVar' a
+interpretStmf (ReadTVar tvar nextF)   = Right . nextF      <$> readTVar' tvar
+interpretStmf (WriteTVar tvar a next) = const (Right next) <$> writeTVar' tvar a
+interpretStmf Retry                   = pure $ Left RetryCmd
 
-runSTML :: STML a -> Atomic a
-runSTML = foldFree interpretStmf
+interpretStml :: STML a -> Atomic (Either RetryCmd a)
+interpretStml (Pure a) = pure $ Right a
+interpretStml (Free f) = do
+  eRes <- interpretStmf f
+  case eRes of
+    Left RetryCmd -> pure $ Left RetryCmd
+    Right res     -> interpretStml res
+
+runSTML :: STML a -> Atomic (Either RetryCmd a)
+runSTML = interpretStml
