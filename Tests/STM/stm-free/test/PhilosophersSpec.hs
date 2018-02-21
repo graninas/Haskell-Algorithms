@@ -8,24 +8,15 @@ import           Philosophers.STM
 import           Philosophers.Types
 import           Test.Hspec
 
-mkFork' :: Int -> STML TFork
-mkFork' n = newTVar $ Fork (show n) Free
-
-testFork :: Context -> IO (Bool, Bool)
-testFork ctx = do
-  fork1   <- atomically ctx $ mkFork' 1
-  result1 <- atomically ctx $ takeFork fork1
-  result2 <- atomically ctx $ takeFork fork1
-  pure (result1, result2)
-
 spec = do
   describe "STM test" $ do
-    it "newTVar / readTVar test" $ do
+
+    it "newTVar / readTVar" $ do
       ctx <- newContext
       res <- atomically ctx (newTVar (10 :: Int) >>= readTVar)
       res `shouldBe` 10
 
-    it "newTVar / writeTVar / readTVar test" $ do
+    it "newTVar / writeTVar / readTVar" $ do
       ctx <- newContext
       res <- atomically ctx $ do
         tvar <- newTVar (10 :: Int)
@@ -33,13 +24,11 @@ spec = do
         readTVar tvar
       res `shouldBe` 20
 
+    it "TVar created in separate transaction" $ do
+        ctx  <- newContext
+        tvar <- atomically ctx $ newTVar (10 :: Int)
+        res  <- atomically ctx $ readTVar tvar
+        res `shouldBe` 10
 
   describe "Philosophers test" $
-    it "Philosophers test" $ do
-      ctx <- newContext
-      (res1, res2) <- testFork ctx
-
-      res1 `shouldBe` True
-      res2 `shouldBe` False
-
-      putStrLn "Ok."
+    it "Philosopers" $ runPhilosophers 5

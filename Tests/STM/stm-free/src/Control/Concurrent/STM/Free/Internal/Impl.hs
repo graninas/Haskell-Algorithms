@@ -9,7 +9,8 @@ import           Control.Monad.IO.Class                                (liftIO)
 import           Control.Monad.State.Strict                            (StateT, evalStateT,
                                                                         get,
                                                                         modify,
-                                                                        put)
+                                                                        put,
+                                                                        runStateT)
 import           Data.Aeson                                            (FromJSON,
                                                                         ToJSON,
                                                                         decode,
@@ -36,15 +37,39 @@ cloneTVarHandle (tvarId, TVarHandle _ timestamp tvarData) = do
   newTVarData <- readIORef tvarData >>= newIORef
   pure (tvarId, TVarHandle tvarId timestamp newTVarData)
 
-takeSnapshot :: Context -> IO (UTCTime, TVars)
-takeSnapshot (Context lock tvars) = do
-  takeLock lock
+takeSnapshot :: Context -> IO (Timestamp, TVars)
+takeSnapshot (Context mtvars) = do
+  tvars <- takeMVar mtvars
   tvarKVs <- mapM cloneTVarHandle (Map.toList tvars)
-  releaseLock lock
+  putMVar mtvars tvars
   timestamp <- getCurrentTime
   pure (timestamp, Map.fromList tvarKVs)
 
-runSTM :: Context -> STML a -> IO a
-runSTM ctx stml = do
-  (timestamp, snapshot)  <- liftIO $ takeSnapshot ctx
-  evalStateT (runSTML stml) (AtomicRuntime timestamp snapshot)
+tryCommit :: Context -> Timestamp -> TVars -> IO Bool
+tryCommit (Context mtvars) timestamp stagedTVars = do
+  tvars <- takeMVar mtvars
+
+  let conflict = Map.foldMapWithKey (f tvars "") stagedTVars
+  let newTVars = Map.unionWith (merge timestamp) stagedTVars tvars
+
+  putMVar mtvars $ if null conflict then newTVars else tvars
+
+  pure $ null conflict
+
+  where
+    f :: TVars -> String -> TVarId -> TVarHandle -> String
+    f origTvars acc tvarId (TVarHandle _ stagedTS _) = case Map.lookup tvarId origTvars of
+      Nothing                                           -> acc
+      Just (TVarHandle _ origTS _) | origTS == stagedTS -> acc
+                                   | otherwise          -> acc ++ " " ++ show tvarId
+    merge :: Timestamp -> TVarHandle -> TVarHandle -> TVarHandle
+    merge ts' (TVarHandle tvarId _ d) _ = TVarHandle tvarId ts' d
+
+runSTM :: Int -> Context -> STML a -> IO a
+runSTM delay ctx stml = do
+  (timestamp, snapshot)              <- takeSnapshot ctx
+  (res, AtomicRuntime _ stagedTVars) <- runStateT (runSTML stml) (AtomicRuntime timestamp snapshot)
+  success <- tryCommit ctx timestamp stagedTVars
+  if success
+    then return res
+    else runSTM (delay * 2) ctx stml      -- TODO: tail recursion

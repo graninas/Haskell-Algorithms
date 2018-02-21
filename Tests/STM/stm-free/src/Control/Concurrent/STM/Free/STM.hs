@@ -15,13 +15,14 @@ import           Control.Concurrent.STM.Free.Internal.Types
 import           Control.Concurrent.STM.Free.STML
 import           Control.Concurrent.STM.Free.TVar
 
+delayBase :: Int
+delayBase = 500 -- ms
+
 atomically :: Context -> STML a -> IO a
-atomically = runSTM
+atomically = runSTM delayBase
 
 newTVarIO :: ToJSON a => Context -> a -> IO (TVar a)
 newTVarIO ctx = atomically ctx . newTVar
 
 newContext :: IO Context
-newContext = do
-  lock <- newMVar ()
-  pure $ Context lock Map.empty
+newContext = Context <$> newMVar Map.empty

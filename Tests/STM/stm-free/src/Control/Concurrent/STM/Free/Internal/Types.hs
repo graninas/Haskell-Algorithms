@@ -14,22 +14,21 @@ import qualified Data.Map                   as Map
 import           Data.Time.Clock            (UTCTime, getCurrentTime)
 import           GHC.Generics               (Generic)
 
+type Timestamp = UTCTime
+
 type TVarId = Int
 
-type TVarData   = IORef BSL.ByteString
-data TVarHandle = TVarHandle TVarId UTCTime TVarData
+type TVarData   = IORef BSL.ByteString                  -- TODO: It's not necessary since MVar
+data TVarHandle = TVarHandle TVarId Timestamp TVarData  -- TODO: remove TVarId
 type TVars      = Map.Map TVarId TVarHandle
 
 data AtomicRuntime = AtomicRuntime
-  { timestamp  :: UTCTime
+  { timestamp  :: Timestamp
   , localTVars :: TVars
   }
 
 type Atomic a = StateT AtomicRuntime IO a
 
-type Lock = MVar ()
-
-data Context = Context
-  { lock  :: Lock     -- TODO: lock for groups of TVars, not for all of them
-  , tvars :: TVars
+newtype Context = Context
+  { mtvars :: MVar TVars
   }

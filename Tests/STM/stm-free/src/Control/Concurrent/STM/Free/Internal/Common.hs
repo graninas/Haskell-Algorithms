@@ -27,9 +27,3 @@ createTVar :: ToJSON a => UTCTime -> Int -> a -> IO TVarHandle
 createTVar timestamp tvarId a = do
    tvarData <- newIORef $ encode a
    pure $ TVarHandle tvarId timestamp tvarData
-
-takeLock :: Lock -> IO ()
-takeLock = takeMVar
-
-releaseLock :: Lock -> IO ()
-releaseLock m = putMVar m ()
