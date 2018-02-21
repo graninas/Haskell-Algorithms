@@ -1,6 +1,7 @@
 module Main where
 
 import           Control.Concurrent.STM.Free
+import           Philosophers.Philosophers
 
 main :: IO ()
-main = putStrLn "Not implemented."
+main = runPhilosophers 5
