@@ -28,15 +28,15 @@ travel1Tree = tree $
     <~> on "forward" travel2Tree
 
 interpretLang :: LangF s -> IO s
-interpretLang (PrintS s next) = print s >> return next
+interpretLang (PrintS s next)  = print s >> return next
+interpretLang (GetInput nextF) = error "Not implemented."
 
 runLang :: Lang s -> IO (Event, s)
 runLang l = do
   r <- foldFree interpretLang l
   return ("forward", r)
 
-isBkEv "back" = True
-isBkEv _      = False
+isBkEv event = event == "back"
 
 spec = describe "Tree transitions test." $
   it "Test Tree transitions." $
