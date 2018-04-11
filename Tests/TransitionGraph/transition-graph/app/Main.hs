@@ -10,20 +10,20 @@ import           Lib
 printLevel :: String -> Lang ()
 printLevel = printS
 
-travel3Tree :: Tree () ()
-travel3Tree = tree $
+travel3Graph :: Graph () ()
+travel3Graph = graph $
   with location3
     <~> on "forward" (leaf (return ()))
 
-travel2Tree :: Tree () ()
-travel2Tree = tree $
+travel2Graph :: Graph () ()
+travel2Graph = graph $
   with location2
-    <~> on "forward" travel3Tree
+    <~> on "forward" travel3Graph
 
-travel1Tree :: Tree () ()
-travel1Tree = tree $
+travel1Graph :: Graph () ()
+travel1Graph = graph $
   with location1
-    <~> on "forward" travel2Tree
+    <~> on "forward" travel2Graph
 
 location1 :: Lang ()
 location1 = location "You are standing on front of a house."
@@ -55,7 +55,7 @@ isBkEv event = event == "back"
 
 main :: IO ()
 main = do
-  runTree (Runtime runLang isBkEv) travel1Tree
+  runGraph (Runtime runLang isBkEv) travel1Graph
 
 
   pure ()

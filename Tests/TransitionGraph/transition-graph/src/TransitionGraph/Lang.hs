@@ -2,7 +2,7 @@
 {-# LANGUAGE FlexibleContexts          #-}
 {-# LANGUAGE RankNTypes                #-}
 
-module TransitionTree.Lang where
+module TransitionGraph.Lang where
 
 import           Control.Monad             (void, when)
 import           Control.Monad.Free        (Free (..), foldFree, liftF)

@@ -2,7 +2,7 @@
 {-# LANGUAGE FlexibleContexts          #-}
 {-# LANGUAGE RankNTypes                #-}
 
-module TransitionTree.Runtime where
+module TransitionGraph.Runtime where
 
 import           Control.Monad             (void, when)
 import           Control.Monad.Free        (Free (..), foldFree, liftF)
@@ -12,8 +12,9 @@ import qualified Control.Monad.Trans.State as ST
 
 import           Data.Exists
 
-import           TransitionTree.Lang
-import           TransitionTree.Tree
+import           TransitionGraph.Lang
+import           TransitionGraph.Graph
+import           TransitionGraph.Interpreter
 
 data Runtime m = Runtime
   { runLang_     :: forall output. Lang output -> m (Event, output)
@@ -28,12 +29,12 @@ runLang' (Runtime runLang isBackEvent) flow = do
     then pure Backward
     else pure $ Forward e i
 
-getLang :: forall i o b. i -> TreeF i o b -> Lang b
-getLang _     (TreeF  flow  _) = flow
-getLang input (TreeF1 flowF _) = flowF input
+getLang :: forall i o b. i -> GraphF i o b -> Lang b
+getLang _     (GraphF  flow  _) = flow
+getLang input (GraphF1 flowF _) = flowF input
 
 makeTransition' :: forall m i o b. Monad m =>
-  Runtime m -> Bool -> i -> TreeF i o b -> m TransitionResult
+  Runtime m -> Bool -> i -> GraphF i o b -> m TransitionResult
 makeTransition' runtime backable i3 g3 = do
   let f3 = getLang i3 g3
   transitionResult <- makeTransition runtime f3 g3
@@ -45,7 +46,7 @@ makeTransition' runtime backable i3 g3 = do
     FallbackRerun -> makeTransition' runtime backable i3 g3
 
 makeTransition :: forall m i o b. Monad m =>
-  Runtime m -> Lang b -> TreeF i o b -> m TransitionResult
+  Runtime m -> Lang b -> GraphF i o b -> m TransitionResult
 makeTransition runtime f2 g2 = do
   flowResult <- runLang' runtime f2
   case flowResult of
@@ -53,11 +54,11 @@ makeTransition runtime f2 g2 = do
       let trackResult = runTransition e2 g2
       case trackResult of
         Nop -> pure Done
-        BackTrack g3@(Tree g3Ex) -> runExists (makeTransition' runtime True i3) g3Ex
-        ForwardTrack g3@(Tree g3Ex) -> runExists (makeTransition' runtime False i3) g3Ex
+        BackTrack g3@(Graph g3Ex) -> runExists (makeTransition' runtime True i3) g3Ex
+        ForwardTrack g3@(Graph g3Ex) -> runExists (makeTransition' runtime False i3) g3Ex
     Backward -> pure Fallback
 
-runTree :: forall m. Monad m => Runtime m -> Tree () () -> m ()
-runTree runtime (Tree ex) = do
+runGraph :: forall m. Monad m => Runtime m -> Graph () () -> m ()
+runGraph runtime (Graph ex) = do
   _ <- runExists (makeTransition' runtime False ()) ex
   pure ()
