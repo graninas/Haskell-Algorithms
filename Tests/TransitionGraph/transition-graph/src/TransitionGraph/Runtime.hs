@@ -12,29 +12,39 @@ import qualified Control.Monad.Trans.State as ST
 
 import           Data.Exists
 
-import           TransitionGraph.Lang
 import           TransitionGraph.Graph
 import           TransitionGraph.Interpreter
 
-data Runtime m = Runtime
-  { runLang_     :: forall output. Lang output -> m (Event, output)
+data Runtime lang m = Runtime
+  { runLang_     :: forall output. lang output -> m (Event, output)
   , isBackEvent_ :: Event -> Bool
   }
 
-runLang' :: forall m a. Monad m =>
-  Runtime m -> Lang a -> m (LangResult Event a)
+runLang'
+  :: (Monad m, Monad lang)
+  => Runtime lang m
+  -> lang a
+  -> m (LangResult Event a)
 runLang' (Runtime runLang isBackEvent) flow = do
   (e, i) <- runLang flow
   if isBackEvent e
     then pure Backward
     else pure $ Forward e i
 
-getLang :: forall i o b. i -> GraphF i o b -> Lang b
+getLang
+  :: i
+  -> GraphF lang i o b
+  -> lang b
 getLang _     (GraphF  flow  _) = flow
 getLang input (GraphF1 flowF _) = flowF input
 
-makeTransition' :: forall m i o b. Monad m =>
-  Runtime m -> Bool -> i -> GraphF i o b -> m TransitionResult
+makeTransition'
+  :: (Monad m, Monad lang)
+  => Runtime lang m
+  -> Bool
+  -> i
+  -> GraphF lang i o b
+  -> m TransitionResult
 makeTransition' runtime backable i3 g3 = do
   let f3 = getLang i3 g3
   transitionResult <- makeTransition runtime f3 g3
@@ -45,8 +55,12 @@ makeTransition' runtime backable i3 g3 = do
     Done -> pure Done
     FallbackRerun -> makeTransition' runtime backable i3 g3
 
-makeTransition :: forall m i o b. Monad m =>
-  Runtime m -> Lang b -> GraphF i o b -> m TransitionResult
+makeTransition
+  :: (Monad m, Monad lang)
+  => Runtime lang m
+  -> lang b
+  -> GraphF lang i o b
+  -> m TransitionResult
 makeTransition runtime f2 g2 = do
   flowResult <- runLang' runtime f2
   case flowResult of
@@ -58,7 +72,11 @@ makeTransition runtime f2 g2 = do
         ForwardTrack g3@(Graph g3Ex) -> runExists (makeTransition' runtime False i3) g3Ex
     Backward -> pure Fallback
 
-runGraph :: forall m. Monad m => Runtime m -> Graph () () -> m ()
+runGraph
+  :: (Monad m, Monad lang)
+  => Runtime lang m
+  -> Graph lang () ()
+  -> m ()
 runGraph runtime (Graph ex) = do
   _ <- runExists (makeTransition' runtime False ()) ex
   pure ()

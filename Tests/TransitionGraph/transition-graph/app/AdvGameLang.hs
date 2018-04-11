@@ -2,7 +2,7 @@
 {-# LANGUAGE FlexibleContexts          #-}
 {-# LANGUAGE RankNTypes                #-}
 
-module TransitionGraph.Lang where
+module AdvGameLang where
 
 import           Control.Monad             (void, when)
 import           Control.Monad.Free        (Free (..), foldFree, liftF)
@@ -12,18 +12,18 @@ import qualified Control.Monad.Trans.State as ST
 
 import           Data.Exists
 
-data LangF a
+data AdventureLF a
   = PrintS String a
   | GetInput (String -> a)
 
-type Lang a = Free LangF a
+type AdventureL = Free AdventureLF
 
-instance Functor LangF where
+instance Functor AdventureLF where
   fmap f (PrintS   s next)  = PrintS s (f next)
   fmap f (GetInput   nextF) = GetInput (f . nextF)
 
-printS :: String -> Lang ()
+printS :: String -> AdventureL ()
 printS s = liftF $ PrintS s ()
 
-getInput :: Lang String
+getInput :: AdventureL String
 getInput = liftF $ GetInput id

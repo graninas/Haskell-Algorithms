@@ -2,6 +2,8 @@
 {-# LANGUAGE FlexibleContexts          #-}
 {-# LANGUAGE RankNTypes                #-}
 
+{-# LANGUAGE PartialTypeSignatures                #-}
+
 module TransitionGraph.Graph where
 
 import           Control.Monad             (void, when)
@@ -12,50 +14,78 @@ import qualified Control.Monad.Trans.State as ST
 
 import           Data.Exists
 
-import           TransitionGraph.Lang
-
 type Event = String
 
-data TransitionF b o u
-  = Backable    Event (Graph b o) u
-  | ForwardOnly Event (Graph b o) u
+data TransitionF lang b o u
+  = Backable    Event (Graph lang b o) u
+  | ForwardOnly Event (Graph lang b o) u
 
-type Transition b o u = Free (TransitionF b o) u
+type Transition lang b o u = Free (TransitionF lang b o) u
 
-data GraphF i o b
-  = GraphF       (Lang b) (Transition b o ())
-  | GraphF1 (i -> Lang b) (Transition b o ())
+data GraphF lang i o b
+  = GraphF  (     lang b) (Transition lang b o ())
+  | GraphF1 (i -> lang b) (Transition lang b o ())
 
-newtype Graph i o = Graph (Exists (GraphF i o))
+newtype Graph lang i o
+  = Graph (Exists (GraphF lang i o))
 
-type PartialTrans i o b = Transition b o () -> Graph i o
-data Event' i o = Event' Event (Graph i o)
+type PartialTrans lang i o b = Transition lang b o () -> Graph lang i o
+data Event' lang i o = Event' Event (Graph lang i o)
 
-instance Functor (TransitionF b o) where
+instance Functor (TransitionF lang b o) where
   fmap f (Backable    e g next) = Backable    e g (f next)
   fmap f (ForwardOnly e g next) = ForwardOnly e g (f next)
 
-(<~>) = backable''
-(~>) = forwardOnly''
+(<~>) = transable backable
+(~>)  = transable forwardOnly
 
 infixl 3 <~>
 infixl 3 ~>
 
-with :: forall b o. Lang b -> Transition b o () -> Graph () o
+with
+  :: (Monad lang)
+  => lang b
+  -> Transition lang b o ()
+  -> Graph lang () o
 with flow table = Graph $ mkExists $ GraphF flow table
 
-with1 :: forall i b o. (i -> Lang b) -> Transition b o () -> Graph i o
+with1
+  :: (Monad lang)
+  => (i -> lang b)
+  -> Transition lang b o ()
+  -> Graph lang i o
 with1 flowF1 table = Graph $ mkExists $ GraphF1 flowF1 table
 
-leaf :: Lang () -> Graph () ()
+leaf
+  :: (Monad lang)
+  => lang ()
+  -> Graph lang () ()
 leaf flow = with flow (pure ())
 
-leaf1 :: forall i. (i -> Lang ()) -> Graph i ()
+leaf1
+  :: (Monad lang)
+  => (i -> lang ())
+  -> Graph lang i ()
 leaf1 flowF1 = with1 flowF1 (pure ())
 
 graph part = part $ pure ()
 
+on
+  :: Event
+  -> Graph lang i o
+  -- -> (forall (lang :: * -> *). Graph lang i o)
+  -> Event' lang i o
 on = Event'
+
+transable
+  :: (Event
+      -> Graph lang i o
+      -> Free (TransitionF lang i o) b
+      )
+  -> (Free (TransitionF lang i o) b -> c)
+  -> Event' lang i o
+  -> Free (TransitionF lang i o) a
+  -> c
 
 transable transType part (Event' e g) = part . transed
   where
@@ -63,11 +93,14 @@ transable transType part (Event' e g) = part . transed
       prevTrans
       transType e g
 
-backable' :: Event -> Graph i o -> Transition i o ()
-backable' e g = liftF $ Backable e g ()
+backable
+  :: Event
+  -> Graph lang i o
+  -> Transition lang i o ()
+backable e g = liftF $ Backable e g ()
 
-forwardOnly' :: Event -> Graph i o -> Transition i o ()
-forwardOnly' e g = liftF $ ForwardOnly e g ()
-
-backable'' = transable backable'
-forwardOnly'' = transable forwardOnly'
+forwardOnly
+  :: Event
+  -> Graph lang i o
+  -> Transition lang i o ()
+forwardOnly e g = liftF $ ForwardOnly e g ()

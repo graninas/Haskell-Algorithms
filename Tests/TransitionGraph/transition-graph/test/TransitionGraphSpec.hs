@@ -9,35 +9,24 @@ import           Test.Hspec
 
 import           Lib
 
-printLevel :: String -> Lang ()
-printLevel = printS
-
-travel3Graph :: Graph () ()
+travel3Graph :: Graph IO () ()
 travel3Graph = graph $
-  with (printLevel "3")
+  with (print "3")
     <~> on "forward" (leaf (return ()))
 
-travel2Graph :: Graph () ()
+travel2Graph :: Graph IO () ()
 travel2Graph = graph $
-  with (printLevel "2")
+  with (print "2")
     <~> on "forward" travel3Graph
 
-travel1Graph :: Graph () ()
+travel1Graph :: Graph IO () ()
 travel1Graph = graph $
-  with (printLevel "1")
+  with (print "1")
     <~> on "forward" travel2Graph
 
-interpretLang :: LangF s -> IO s
-interpretLang (PrintS s next)  = print s >> return next
-interpretLang (GetInput nextF) = error "Not implemented."
-
-runLang :: Lang s -> IO (Event, s)
-runLang l = do
-  r <- foldFree interpretLang l
-  return ("forward", r)
-
-isBkEv event = event == "back"
+ioRunner :: IO output -> IO (Event, output)
+ioRunner act = act >>= \o -> pure ("forward", o)
 
 spec = describe "Graph transitions test." $
   it "Test Graph transitions." $
-    runGraph (Runtime runLang isBkEv) travel1Graph
+    runGraph (Runtime ioRunner (== "back")) travel1Graph

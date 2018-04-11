@@ -4,58 +4,60 @@ import           Control.Monad.Free    (Free (..), foldFree, liftF)
 import qualified Data.ByteString.Char8 as BS
 
 import           Lib
+import           AdvGameLang
 
+type AGGraph a b = Graph AdventureL a b
 
-
-printLevel :: String -> Lang ()
+printLevel :: String -> AdventureL ()
 printLevel = printS
 
-travel3Graph :: Graph () ()
+nop :: AdventureL ()
+nop = pure ()
+
+travel3Graph :: AGGraph () ()
 travel3Graph = graph $
   with location3
-    <~> on "forward" (leaf (return ()))
+    <~> on "forward" (leaf nop)
 
-travel2Graph :: Graph () ()
+travel2Graph :: AGGraph () ()
 travel2Graph = graph $
   with location2
     <~> on "forward" travel3Graph
 
-travel1Graph :: Graph () ()
+travel1Graph :: AGGraph () ()
 travel1Graph = graph $
   with location1
     <~> on "forward" travel2Graph
 
-location1 :: Lang ()
+location1 :: AdventureL ()
 location1 = location "You are standing on front of a house."
 
-location2 :: Lang ()
+location2 :: AdventureL ()
 location2 = location "Another location."
 
-location3 :: Lang ()
+location3 :: AdventureL ()
 location3 = location "Location #3."
 
-location :: String -> Lang ()
+location :: String -> AdventureL ()
 location description = do
   printLevel description
-  -- getInput
 
-interpretLang :: LangF s -> IO s
-interpretLang (PrintS s next)  = print s >> return next
--- interpretLang (GetInput nextF) = nextF <$> getLine
-interpretLang (GetInput nextF) = error "Not implemented."
+interpret :: AdventureLF s -> IO s
+interpret (PrintS s next)  = print s >> pure next
+interpret (GetInput nextF) = error "Not implemented."
 
-runLang :: Lang s -> IO (Event, s)
-runLang l = do
-  result <- foldFree interpretLang l
+run :: AdventureL s -> IO (Event, s)
+run l = do
+  result <- foldFree interpret l
   input  <- getLine
-  return (input, result)
+  pure (input, result)
 
 isBkEv event = event == "back"
 
 
 main :: IO ()
 main = do
-  runGraph (Runtime runLang isBkEv) travel1Graph
+  runGraph (Runtime run isBkEv) travel1Graph
 
 
   pure ()
