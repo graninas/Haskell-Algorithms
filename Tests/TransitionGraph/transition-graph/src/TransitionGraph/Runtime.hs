@@ -49,11 +49,12 @@ makeTransition' runtime backable i3 g3 = do
   let f3 = getLang i3 g3
   transitionResult <- makeTransition runtime f3 g3
   case transitionResult of
-    Fallback -> if backable
+    Done          -> pure Done
+    FallbackRerun -> makeTransition' runtime backable i3 g3
+    Fallback      ->
+      if backable
       then pure FallbackRerun
       else pure Done -- throw "No fallback"
-    Done -> pure Done
-    FallbackRerun -> makeTransition' runtime backable i3 g3
 
 makeTransition
   :: (Monad m, Monad lang)
@@ -64,13 +65,13 @@ makeTransition
 makeTransition runtime f2 g2 = do
   flowResult <- runLang' runtime f2
   case flowResult of
+    Backward      -> pure Fallback
     Forward e2 i3 -> do
       let trackResult = runTransition e2 g2
       case trackResult of
-        Nop -> pure Done
-        BackTrack g3@(Graph g3Ex) -> runExists (makeTransition' runtime True i3) g3Ex
+        Nop                          -> pure Done
+        BackTrack    g3@(Graph g3Ex) -> runExists (makeTransition' runtime True i3) g3Ex
         ForwardTrack g3@(Graph g3Ex) -> runExists (makeTransition' runtime False i3) g3Ex
-    Backward -> pure Fallback
 
 runGraph
   :: (Monad m, Monad lang)

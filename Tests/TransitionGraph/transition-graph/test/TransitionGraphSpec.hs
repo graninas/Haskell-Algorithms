@@ -29,4 +29,4 @@ ioRunner act = act >>= \o -> pure ("forward", o)
 
 spec = describe "Graph transitions test." $
   it "Test Graph transitions." $
-    runGraph (Runtime ioRunner (== "back")) travel1Graph
+    runGraph (GraphRuntime ioRunner (== "back")) travel1Graph
