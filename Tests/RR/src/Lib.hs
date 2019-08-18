@@ -5,6 +5,7 @@
 {-# LANGUAGE FunctionalDependencies    #-}
 {-# LANGUAGE TypeSynonymInstances      #-}
 {-# LANGUAGE FlexibleInstances         #-}
+{-# LANGUAGE TypeApplications          #-}
 
 module Lib
     ( someFunc
@@ -147,6 +148,7 @@ data PlaybackError = PlaybackError
   }
   deriving (Show, Eq, Ord, Generic, ToJSON, FromJSON)
 
+-- TODO: MVar
 data RecorderRuntime = RecorderRuntime
   { recordingRef :: IORef RecordingEntries
   }
@@ -206,15 +208,15 @@ setReplayingError playerRt err = do
   writeIORef (errorRef playerRt) $ Just err
   error $ show err
 
--- pushRecordingEntry
---   :: forall eff
---    . RecorderRuntime
---   -> RecordingEntry
---   -> Aff (avar :: AVAR | eff) Unit
--- pushRecordingEntry recorderRt (RecordingEntry _ mode entryName encoded) = do
---   entries <- takeVar recorderRt.recordingVar
---   let re = RecordingEntry (Array.length entries) mode entryName encoded
---   putVar (Array.snoc entries re) recorderRt.recordingVar
+pushRecordingEntry
+  :: RecorderRuntime
+  -> RecordingEntry
+  -> IO ()
+pushRecordingEntry recorderRt (RecordingEntry _ n p) = do
+  entries <- readIORef $ recordingRef recorderRt
+  let idx = (MArr.size entries)
+  let re = RecordingEntry idx n p
+  writeIORef (recordingRef recorderRt) $ MArr.insert idx re entries
 
 popNextRecordingEntry :: PlayerRuntime -> IO (Maybe RecordingEntry)
 popNextRecordingEntry playerRt = do
@@ -281,24 +283,18 @@ replay playerRt mkRRItem ioAct = do
       compareRRItems playerRt stepInfo $ mkRRItem r
       pure r
 
-
--- record
---   :: forall eff rt st rrItem native. RecorderRuntime
---   -> RRItemDict rrItem native
---   -> InterpreterMT' rt st eff native
---   -> InterpreterMT' rt st eff native
--- record recorderRt rrItemDict lAct = do
---   native <- lAct
---   let tag = getTag' rrItemDict
---   when (not $ Array.elem tag recorderRt.disableEntries)
---     $ lift3
---     $ pushRecordingEntry recorderRt
---     $ toRecordingEntry' rrItemDict (mkEntry' rrItemDict native) 0 Normal
---   pure native
-
---------------------------------
-
-record = undefined
+record
+  :: RRItem rrItem
+  => RecorderRuntime
+  -> Proxy rrItem
+  -> (native -> rrItem)
+  -> IO native
+  -> IO native
+record recorderRt rrItemP mkRRItem ioAct = do
+  native <- ioAct
+  let tag = getTag rrItemP
+  pushRecordingEntry recorderRt $ toRecordingEntry (mkRRItem native) 0
+  pure native
 
 withRunMode
   :: RRItem rrItem
@@ -309,7 +305,7 @@ withRunMode
   -> IO native
 withRunMode RegularMode _ act = act
 withRunMode (RecordingMode recorderRt) mkRRItem act
-  = record recorderRt mkRRItem act
+  = record recorderRt Proxy mkRRItem act
 withRunMode (ReplayingMode playerRt) mkRRItem act
   = replay playerRt mkRRItem act
 
