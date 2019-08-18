@@ -10,16 +10,47 @@ module Lib
     ( someFunc
     ) where
 
-import           Control.Monad      (unless, when)
+import           Control.Monad      (unless, when, void)
 import           Control.Monad.Free
 import qualified Data.ByteString.Char8 as BS
 import qualified Data.ByteString.Lazy as BSL
 import           Data.UUID          (toString)
+import           Data.Maybe         (isJust)
+import qualified Data.IntMap as MArr
+import           Data.IORef         (IORef, newIORef, readIORef, writeIORef)
 import           Data.UUID.V4       (nextRandom)
 import           Data.Aeson         (ToJSON, FromJSON, encode, decode)
 import           Data.Proxy         (Proxy(..))
 import           Data.Text          (Text)
 import           GHC.Generics       (Generic)
+
+type EntryName = String
+type EntryPayload = String
+type EntryIndex = Int
+data RecordingEntry = RecordingEntry EntryIndex EntryName EntryPayload
+  deriving (Show, Eq, Ord, Generic, ToJSON, FromJSON)
+
+type RecordingEntries = MArr.IntMap RecordingEntry
+newtype Recording = Recording RecordingEntries
+
+class (Eq rrItem, ToJSON rrItem, FromJSON rrItem)
+  => RRItem rrItem where
+  toRecordingEntry   :: rrItem -> Int -> RecordingEntry
+  fromRecordingEntry :: RecordingEntry -> Maybe rrItem
+  getTag             :: Proxy rrItem -> String
+
+class RRItem rrItem => MockedResult rrItem native where
+  getMock :: rrItem -> Maybe native
+
+encodeToStr :: ToJSON a => a -> String
+encodeToStr = BS.unpack . BSL.toStrict . encode
+
+decodeFromStr :: FromJSON a => String -> Maybe a
+decodeFromStr = decode . BSL.fromStrict . BS.pack
+
+note :: forall a b. a -> Maybe b -> Either a b
+note a Nothing = Left a
+note _ (Just b) = Right b
 
 data GenerateGUIDEntry = GenerateGUIDEntry
   { guid :: String
@@ -34,18 +65,40 @@ data RunIOEntry = RunIOEntry
   }
   deriving (Show, Eq, Ord, Generic, ToJSON, FromJSON)
 
+mkRunIOEntry :: ToJSON a => a -> RunIOEntry
+mkRunIOEntry = RunIOEntry . encodeToStr
+
 data LogInfoEntry = LogInfoEntry
   { message :: String
   }
   deriving (Show, Eq, Ord, Generic, ToJSON, FromJSON)
 
-instance RRItem GenerateGUIDEntry String where
-  toRecordingEntry rrItem idx = RecordingEntry idx "GenerateGUIDEntry"
-    $ BS.unpack $ BSL.toStrict $ encode rrItem
-  fromRecordingEntry (RecordingEntry _ _ payload) =
-    decode $ BSL.fromStrict $ BS.pack payload
+mkLogInfoEntry :: String -> () -> LogInfoEntry
+mkLogInfoEntry msg _ = LogInfoEntry msg
+
+instance RRItem GenerateGUIDEntry where
+  toRecordingEntry rrItem idx = RecordingEntry idx "GenerateGUIDEntry" $ encodeToStr rrItem
+  fromRecordingEntry (RecordingEntry _ _ payload) = decodeFromStr payload
   getTag _ = "GenerateGUIDEntry"
-  parseRRItem (GenerateGUIDEntry guid) = Just guid
+
+instance MockedResult GenerateGUIDEntry String where
+  getMock (GenerateGUIDEntry g) = Just g
+
+instance RRItem RunIOEntry where
+  toRecordingEntry rrItem idx = RecordingEntry idx "RunIOEntry" $ encodeToStr rrItem
+  fromRecordingEntry (RecordingEntry _ _ payload) = decodeFromStr payload
+  getTag _ = "RunIOEntry"
+
+instance FromJSON a => MockedResult RunIOEntry a where
+  getMock (RunIOEntry r) = decodeFromStr r
+
+instance RRItem LogInfoEntry where
+  toRecordingEntry rrItem idx = RecordingEntry idx "LogInfoEntry" $ encodeToStr rrItem
+  fromRecordingEntry (RecordingEntry _ _ payload) = decodeFromStr payload
+  getTag _ = "LogInfoEntry"
+
+instance MockedResult LogInfoEntry () where
+  getMock _ = Just ()
 
 
 data FlowF next where
@@ -79,6 +132,37 @@ compareGUIDs fileName = do
   when equal $ logInfo "GUIDs are equal."
   unless equal $ logInfo "GUIDs are not equal."
 
+data PlaybackErrorType
+  = UnexpectedRecordingEnd
+  | UnknownRRItem
+  | MockDecodingFailed
+  | ItemMismatch
+  | UnknownPlaybackError
+  | ForkedFlowRecordingsMissed
+  deriving (Show, Eq, Ord, Generic, ToJSON, FromJSON)
+
+data PlaybackError = PlaybackError
+  { errorType :: PlaybackErrorType
+  , errorMessage :: String
+  }
+  deriving (Show, Eq, Ord, Generic, ToJSON, FromJSON)
+
+data RecorderRuntime = RecorderRuntime
+  { recordingRef :: IORef RecordingEntries
+  }
+
+data PlayerRuntime = PlayerRuntime
+  { recording :: RecordingEntries
+  , stepRef :: IORef Int
+  , errorRef :: IORef (Maybe PlaybackError)
+  }
+
+data Runtime
+  = RegularMode
+  | RecordingMode RecorderRuntime
+  | ReplayingMode PlayerRuntime
+
+
 interpretFlowF :: FlowF a -> IO a
 interpretFlowF (GenerateGUID next) = next . toString <$> nextRandom
 interpretFlowF (RunIO ioAct next)  = next <$> ioAct
@@ -90,55 +174,156 @@ interpretFlowFTest (GenerateGUID next) = pure $ next "111"
 interpretFlowFTest (RunIO ioAct next)  = error "IO not supported in tests."
 interpretFlowFTest (LogInfo msg next)  = pure $ next ()
 
-data RecorderRuntime = RecorderRuntime
-data PlayerRuntime = PlayerRuntime
+--------------------------------
 
-data Runtime
-  = RegularMode
-  | RecordingMode RecorderRuntime
-  | ReplayingMode PlayerRuntime
+showInfo :: String -> String -> String
+showInfo flowStep recordingEntry =
+  "\n    Flow step: " ++ flowStep
+  ++ "\n    Recording entry: " ++ recordingEntry
+
+unexpectedRecordingEnd :: String -> PlaybackError
+unexpectedRecordingEnd flowStep
+  = PlaybackError UnexpectedRecordingEnd
+  $ "\n    Flow step: " ++ flowStep
+
+unknownRRItem :: String -> String -> PlaybackError
+unknownRRItem flowStep recordingEntry
+  = PlaybackError UnknownRRItem
+  $ showInfo flowStep recordingEntry
+
+mockDecodingFailed :: String -> String -> PlaybackError
+mockDecodingFailed flowStep recordingEntry
+  = PlaybackError MockDecodingFailed
+  $ showInfo flowStep recordingEntry
+
+itemMismatch :: String -> String -> PlaybackError
+itemMismatch flowStep recordingEntry
+  = PlaybackError ItemMismatch
+  $ showInfo flowStep recordingEntry
+
+setReplayingError :: PlayerRuntime -> PlaybackError -> IO a
+setReplayingError playerRt err = do
+  writeIORef (errorRef playerRt) $ Just err
+  error $ show err
+
+-- pushRecordingEntry
+--   :: forall eff
+--    . RecorderRuntime
+--   -> RecordingEntry
+--   -> Aff (avar :: AVAR | eff) Unit
+-- pushRecordingEntry recorderRt (RecordingEntry _ mode entryName encoded) = do
+--   entries <- takeVar recorderRt.recordingVar
+--   let re = RecordingEntry (Array.length entries) mode entryName encoded
+--   putVar (Array.snoc entries re) recorderRt.recordingVar
+
+popNextRecordingEntry :: PlayerRuntime -> IO (Maybe RecordingEntry)
+popNextRecordingEntry playerRt = do
+  cur <- readIORef $ stepRef playerRt
+  let mbItem = MArr.lookup cur $ recording playerRt
+  when (isJust mbItem) $ writeIORef (stepRef playerRt) (cur + 1)
+  pure mbItem
+
+popNextRRItem
+  :: RRItem rrItem
+  => PlayerRuntime
+  -> Proxy rrItem
+  -> IO (Either PlaybackError (RecordingEntry, rrItem))
+popNextRRItem playerRt rrItemP = do
+  mbRecordingEntry <- popNextRecordingEntry playerRt
+  let flowStep = getTag rrItemP
+  -- let flowStepInfo = getInfo' rrItemDict
+  pure $ do
+    recordingEntry <- note (unexpectedRecordingEnd "") mbRecordingEntry
+    let unknownErr = unknownRRItem $ show recordingEntry
+    rrItem <- note (unknownErr "") $ fromRecordingEntry recordingEntry
+    pure (recordingEntry, rrItem)
+
+popNextRRItemAndResult
+  :: RRItem rrItem
+  => MockedResult rrItem native
+  => PlayerRuntime
+  -> Proxy rrItem
+  -> IO (Either PlaybackError (RecordingEntry, rrItem, native))
+popNextRRItemAndResult playerRt rrItemP = do
+  let flowStep = getTag rrItemP
+  eNextRRItem <- popNextRRItem playerRt rrItemP
+  pure $ do
+    (recordingEntry, rrItem) <- eNextRRItem
+    let mbNative = getMock rrItem
+    nextResult <- note (mockDecodingFailed flowStep (show recordingEntry)) mbNative
+    pure (recordingEntry, rrItem, nextResult)
+
+compareRRItems
+  :: RRItem rrItem
+  => MockedResult rrItem native
+  => PlayerRuntime
+  -> (RecordingEntry, rrItem, native)
+  -> rrItem
+  -> IO ()
+compareRRItems playerRt (recordingEntry, rrItem, mockedResult) flowRRItem = do
+  when (rrItem /= flowRRItem) $ do
+    -- let flowStep = encodeJSON'  flowRRItem
+    let flowStep = encodeToStr flowRRItem
+    setReplayingError playerRt $ itemMismatch flowStep (show recordingEntry)
+
+replay
+  :: RRItem rrItem
+  => MockedResult rrItem native
+  => PlayerRuntime
+  -> (native -> rrItem)
+  -> IO native
+  -> IO native
+replay playerRt mkRRItem ioAct = do
+  eNextRRItemRes <- popNextRRItemAndResult playerRt Proxy
+  case eNextRRItemRes of
+    Left err -> setReplayingError playerRt err
+    Right stepInfo@(_, _, r) -> do
+      compareRRItems playerRt stepInfo $ mkRRItem r
+      pure r
 
 
-type EntryName = String
-type EntryPayload = String
-type EntryIndex = Int
-data RecordingEntry = RecordingEntry EntryIndex EntryName EntryPayload
+-- record
+--   :: forall eff rt st rrItem native. RecorderRuntime
+--   -> RRItemDict rrItem native
+--   -> InterpreterMT' rt st eff native
+--   -> InterpreterMT' rt st eff native
+-- record recorderRt rrItemDict lAct = do
+--   native <- lAct
+--   let tag = getTag' rrItemDict
+--   when (not $ Array.elem tag recorderRt.disableEntries)
+--     $ lift3
+--     $ pushRecordingEntry recorderRt
+--     $ toRecordingEntry' rrItemDict (mkEntry' rrItemDict native) 0 Normal
+--   pure native
 
--- type RecordingEntries = [RecordingEntry]
--- newtype Recording = Recording RecordingEntries
-
-class (Eq rrItem, ToJSON rrItem, FromJSON rrItem)
-  => RRItem rrItem native
-   | rrItem -> native where
-  toRecordingEntry   :: rrItem -> Int -> RecordingEntry
-  fromRecordingEntry :: RecordingEntry -> Maybe rrItem
-  getTag             :: Proxy rrItem -> String
-  parseRRItem        :: rrItem -> Maybe native
-
+--------------------------------
 
 record = undefined
-replay = undefined
 
 withRunMode
-  :: RRItem rrItem native
+  :: RRItem rrItem
+  => MockedResult rrItem native
   => Runtime
   -> (native -> rrItem)
   -> IO native
   -> IO native
 withRunMode RegularMode _ act = act
-withRunMode (RecordingMode recorderRt) rrItem act
-  = record recorderRt rrItem act
-withRunMode (ReplayingMode playerRt) rrItem act
-  = replay playerRt rrItem act
+withRunMode (RecordingMode recorderRt) mkRRItem act
+  = record recorderRt mkRRItem act
+withRunMode (ReplayingMode playerRt) mkRRItem act
+  = replay playerRt mkRRItem act
 
 interpretFlowFRR :: Runtime -> FlowF a -> IO a
-interpretFlowFRR rt (GenerateGUID next) = do
-  res <- withRunMode rt
-    mkGenerateGUIDEntry
+interpretFlowFRR rt (GenerateGUID next) =
+  next <$> withRunMode rt mkGenerateGUIDEntry
     (toString <$> nextRandom)
-  pure $ next res
-interpretFlowFRR rt (RunIO ioAct next)  = error "IO not supported in tests."
-interpretFlowFRR rt (LogInfo msg next)  = pure $ next ()
+interpretFlowFRR rt (RunIO ioAct next) =
+  next <$> withRunMode rt mkRunIOEntry ioAct
+interpretFlowFRR rt (LogInfo msg next) = do
+  void $ withRunMode rt
+    (mkLogInfoEntry msg)
+    (putStrLn msg)
+  pure $ next ()
 
 -- initDB :: String -> DB.DBConfig -> Maybe DB.Connection
 -- initDB dbName cfg = do
